@@ -4,7 +4,7 @@
 # GitHub-Release veröffentlichen.
 #
 # Verwendung:
-#   ./scripts/release.sh 3.4.0 ["Was ist neu"]
+#   ./scripts/release.sh 1.1 ["Was ist neu"]
 #
 # Voraussetzungen:
 #   - gh (GitHub CLI), angemeldet
@@ -28,8 +28,8 @@ cd "$PROJECT_ROOT"
 
 VERSION="${1:-}"
 NOTES="${2:-}"
-[[ -n "$VERSION" ]] || fail "Version fehlt. Beispiel: ./scripts/release.sh 3.4.0"
-[[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "Version muss dem Muster X.Y.Z folgen"
+[[ -n "$VERSION" ]] || fail "Version fehlt. Beispiel: ./scripts/release.sh 1.1"
+[[ "$VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]] || fail "Version muss dem Muster X.Y oder X.Y.Z folgen"
 
 PRODUCT_NAME="${U4C_PRODUCT_NAME:-Claude Max Monitor}"
 BUNDLE_ID="${U4C_BUNDLE_ID:-xyz.fi5h.Usage4Claude}"
