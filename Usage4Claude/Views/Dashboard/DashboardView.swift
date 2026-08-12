@@ -102,8 +102,8 @@ enum DashboardMetrics {
 
 struct DashboardView: View {
     @ObservedObject var manager: DashboardRefreshManager
-    /// 菜单操作回调，复用详情窗口那套 MenuAction
-    var onMenuAction: ((UsageDetailView.MenuAction) -> Void)?
+    /// 菜单操作回调
+    var onMenuAction: ((MenuAction) -> Void)?
     /// 独立窗口模式：不再提供"在窗口中打开"入口，也不需要退出按钮之外的窗口管理
     var isStandaloneWindow: Bool = false
 
@@ -337,23 +337,56 @@ struct DashboardView: View {
 
     // MARK: - Grid
 
+    @ViewBuilder
     private var grid: some View {
-        ScrollView(.vertical, showsIndicators: true) {
-            LazyVGrid(columns: gridColumns, alignment: .leading, spacing: DashboardMetrics.cardSpacing) {
-                ForEach(orderedSnapshots) { snapshot in
-                    AccountUsageCard(
-                        snapshot: snapshot,
-                        isCurrent: isCurrent(snapshot),
-                        showRemainingMode: $showRemainingMode,
-                        onSelect: { select(snapshot) },
-                        onRefresh: { manager.refreshAccount(id: snapshot.id) },
-                        onOpenAuthSettings: { onMenuAction?(.authSettings) }
-                    )
+        if manager.snapshots.isEmpty {
+            emptyState
+                .frame(height: gridHeight + DashboardMetrics.outerPadding * 2)
+        } else {
+            ScrollView(.vertical, showsIndicators: true) {
+                LazyVGrid(columns: gridColumns, alignment: .leading, spacing: DashboardMetrics.cardSpacing) {
+                    ForEach(orderedSnapshots) { snapshot in
+                        AccountUsageCard(
+                            snapshot: snapshot,
+                            isCurrent: isCurrent(snapshot),
+                            showRemainingMode: $showRemainingMode,
+                            onSelect: { select(snapshot) },
+                            onRefresh: { manager.refreshAccount(id: snapshot.id) },
+                            onOpenAuthSettings: { onMenuAction?(.authSettings) }
+                        )
+                    }
                 }
+                .padding(DashboardMetrics.outerPadding)
             }
-            .padding(DashboardMetrics.outerPadding)
+            .frame(height: gridHeight + DashboardMetrics.outerPadding * 2)
         }
-        .frame(height: gridHeight + DashboardMetrics.outerPadding * 2)
+    }
+
+    /// Leerer Zustand: kein Konto hinterlegt. Statt einer leeren Karten-Grid
+    /// ein freundlicher Hinweis mit direktem Weg in die Authentifizierung.
+    private var emptyState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "person.crop.circle.badge.plus")
+                .font(.system(size: 40))
+                .foregroundColor(.secondary)
+
+            Text(L.Welcome.subtitle)
+                .font(.subheadline)
+                .multilineTextAlignment(.center)
+                .foregroundColor(.secondary)
+                .padding(.horizontal, DashboardMetrics.outerPadding * 2)
+
+            Button(action: { onMenuAction?(.authSettings) }) {
+                Label(L.Account.addAccount, systemImage: "plus")
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Footer

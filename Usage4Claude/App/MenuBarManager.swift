@@ -170,7 +170,7 @@ class MenuBarManager: ObservableObject {
     
     /// 处理菜单操作
     /// 关闭弹出窗口并执行相应的操作
-    private func handleMenuAction(_ action: UsageDetailView.MenuAction) {
+    private func handleMenuAction(_ action: MenuAction) {
         switch action {
         case .refresh:
             dataManager.handleManualRefresh()
@@ -199,10 +199,6 @@ class MenuBarManager: ObservableObject {
         case .codexRelogin:
             closePopover()
             WebLoginWindowManager.shared.showCodexLoginWindow()
-        case .showDashboard:
-            setPopoverMode(dashboard: true)
-        case .showClassicDetail:
-            setPopoverMode(dashboard: false)
         case .openDashboardWindow:
             closePopover()
             openDashboardWindow()
@@ -212,37 +208,6 @@ class MenuBarManager: ObservableObject {
     }
 
     // MARK: - Dashboard
-
-    /// Vom Benutzer im Menü explizit gewählte Übersicht (Sitzungs-Override).
-    /// Bei genau einem Claude- und einem Codex-Konto wird nicht automatisch in die
-    /// Übersicht gewechselt (siehe unten), manuell soll es aber gehen.
-    private var forceDashboardInPopover = false
-
-    /// Soll der Popover die Mehrkonten-Übersicht zeigen? Schalter an, genug Konten,
-    /// und mindestens ein Provider mit mehr als einem Konto (oder manuell gewählt).
-    /// Ein Claude + ein Codex bleibt beim klassischen Detailfenster — dessen
-    /// Zweispaltenansicht zeigt dort schlicht mehr.
-    private var shouldShowDashboard: Bool {
-        // Sobald mindestens ein Konto existiert, immer die Gesamtübersicht zeigen —
-        // es gibt keine Einzelansicht mehr. Ohne Konten bleibt der Willkommens-Screen.
-        settings.hasAnyDashboardAccount
-    }
-
-    /// Zwischen Übersicht und klassischem Detail umschalten (Einstellung wird gemerkt).
-    private func setPopoverMode(dashboard: Bool) {
-        forceDashboardInPopover = dashboard
-        if settings.dashboardEnabled != dashboard {
-            settings.dashboardEnabled = dashboard
-        }
-
-        // Der Inhalt des Popovers wird beim Öffnen einmalig gebaut — für den
-        // Formwechsel muss er neu aufgebaut werden.
-        guard ui.popover.isShown, let button = ui.statusItem.button else { return }
-        closePopover()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
-            self?.openPopover(relativeTo: button)
-        }
-    }
 
     /// Übersicht in einem eigenständigen Fenster öffnen
     @objc func openDashboardWindow() {
@@ -359,64 +324,22 @@ class MenuBarManager: ObservableObject {
         // 显示更新通知（如果有）
         showUpdateNotificationIfNeeded()
 
-        // Mehrkonten-Übersicht: Inhalt wird vom DashboardRefreshManager eigenständig
-        // versorgt (er lädt erst beim onAppear der View, deaktiviert also keine Requests).
-        if shouldShowDashboard {
-            ui.setPopoverContent(
-                DashboardView(
-                    manager: DashboardRefreshManager.shared,
-                    onMenuAction: { [weak self] action in
-                        self?.handleMenuAction(action)
-                    }
-                )
+        // Immer die Mehrkonten-Übersicht: Es gibt keine Einzelkonto-Detailansicht mehr.
+        // Ohne Konten zeigt die Übersicht selbst einen freundlichen Leerzustand.
+        // Der Inhalt wird vom DashboardRefreshManager eigenständig versorgt (er lädt
+        // erst beim onAppear der View, deaktiviert also keine Requests). Kein
+        // Sekundentakt-Timer: die Restzeit-Zellen aktualisieren sich über TimelineView.
+        ui.setPopoverContent(
+            DashboardView(
+                manager: DashboardRefreshManager.shared,
+                onMenuAction: { [weak self] action in
+                    self?.handleMenuAction(action)
+                }
             )
-            // Kein Sekundentakt-Timer: die Restzeit-Zellen aktualisieren sich über
-            // TimelineView selbst.
-            ui.openPopover(relativeTo: button)
-            return
-        }
-
-        // 创建并设置内容视图
-        ui.setPopoverContent(UsageDetailView(
-            usageData: Binding(
-                get: { self.usageData },
-                set: { self.usageData = $0 }
-            ),
-            codexUsageData: Binding(
-                get: { self.codexUsageData },
-                set: { self.codexUsageData = $0 }
-            ),
-            errorMessage: Binding(
-                get: { self.errorMessage },
-                set: { self.errorMessage = $0 }
-            ),
-            codexErrorMessage: Binding(
-                get: { self.codexErrorMessage },
-                set: { self.codexErrorMessage = $0 }
-            ),
-            codexNeedsRelogin: Binding(
-                get: { self.codexNeedsRelogin },
-                set: { _ in }
-            ),
-            refreshState: self.refreshState,
-            onMenuAction: { [weak self] action in
-                self?.handleMenuAction(action)
-            },
-            hasAvailableUpdate: Binding(
-                get: { self.hasAvailableUpdate },
-                set: { self.hasAvailableUpdate = $0 }
-            ),
-            shouldShowUpdateBadge: Binding(
-                get: { self.shouldShowUpdateBadge },
-                set: { _ in }
-            )
-        ))
+        )
 
         // 打开 popover
         ui.openPopover(relativeTo: button)
-
-        // 启动刷新定时器
-        startPopoverRefreshTimer()
     }
 
     /// 显示更新通知（如果需要）
@@ -439,18 +362,6 @@ class MenuBarManager: ObservableObject {
         dataManager.stopPopoverRefreshTimer()
     }
 
-    /// 更新弹出窗口内容
-    private func updatePopoverContent() {
-        objectWillChange.send()
-    }
-
-    /// 启动弹出窗口刷新定时器
-    private func startPopoverRefreshTimer() {
-        dataManager.startPopoverRefreshTimer { [weak self] in
-            self?.updatePopoverContent()
-        }
-    }
-    
     // MARK: - Data Fetching
 
     /// 开始数据刷新
