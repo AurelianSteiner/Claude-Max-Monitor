@@ -158,7 +158,8 @@ final class CodexOAuthCoordinator: ObservableObject {
                 organizationName: displayName,
                 alias: nil,
                 provider: .codex
-            )
+            ,
+                email: email)
             let stored = UserSettings.shared.addCodexAccount(account)
             UserSettings.shared.switchToCodexAccount(stored)
 

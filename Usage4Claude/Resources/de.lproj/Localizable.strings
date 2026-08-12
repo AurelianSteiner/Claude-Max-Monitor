@@ -442,9 +442,6 @@
 "dashboard.show_dashboard" = "Übersicht anzeigen";
 "dashboard.show_classic_detail" = "Einzelansicht anzeigen";
 "dashboard.open_window" = "Übersicht in Fenster öffnen";
-"dashboard.badge_active" = "Aktiv";
-"dashboard.badge_most_free" = "Am freisten";
-"dashboard.badge_exhausted" = "Fast aufgebraucht";
 "dashboard.sort_by_order" = "Reihenfolge der Accounts";
 "dashboard.sort_by_availability" = "Freieste zuerst";
 "dashboard.sort_help" = "Sortierung und Spalten";
@@ -468,3 +465,4 @@
 "error.http_status" = "HTTP-Fehler %d";
 "weblogin.cookie_login" = "Anmeldung im App-Fenster";
 "weblogin.cookie_login_help" = "Im eingebetteten Fenster bei claude.ai anmelden — die App liest den Session-Cookie selbst aus. Funktioniert ohne localhost-Redirect.";
+"dashboard.weekly_limit" = "Wochenlimit";

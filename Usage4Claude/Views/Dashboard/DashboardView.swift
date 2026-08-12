@@ -29,7 +29,8 @@ enum DashboardMetrics {
 
     private static let rowHeight: CGFloat = 26
     private static let rowSpacing: CGFloat = 4
-    private static let cardChromeHeight: CGFloat = 12 * 2 + 16 + 10  // 上下内边距 + 标题行 + 间距
+    // Innenabstand oben/unten + Kopfzeile (Name + Email) + Abstände + Headline-Block
+    private static let cardChromeHeight: CGFloat = 12 * 2 + 30 + 10 + 10
 
     /// 卡片里要展示的限制行。沿用设置里的"智能 / 自定义显示"规则，
     /// 因此 Dashboard 与详情窗口显示的指标始终一致。
@@ -60,12 +61,18 @@ enum DashboardMetrics {
             // 错误 / 加载占位：两行文字 + 按钮的高度，取一个足够的固定值
             return cardChromeHeight + (snapshot.errorMessage != nil ? 86 : ringSlotWidth)
         }
-        let rowCount = activeTypes(for: snapshot).count + overflowWeeklyModels(for: snapshot).count
+        // Sitzungs- und Wochenfenster stehen im Headline-Block, nicht in den Zeilen
+        let promoted: Set<LimitType> = snapshot.provider == .claude
+            ? [.fiveHour, .sevenDay]
+            : [.codexPrimary, .codexSecondary]
+        let rowCount = activeTypes(for: snapshot).filter { !promoted.contains($0) }.count
+            + overflowWeeklyModels(for: snapshot).count
         var rowsHeight = CGFloat(rowCount) * rowHeight + CGFloat(max(0, rowCount - 1)) * rowSpacing
+        if rowCount > 0 { rowsHeight += 10 }
         if snapshot.errorMessage != nil {
-            rowsHeight += 16  // "数据可能过时"提示行
+            rowsHeight += 16  // Hinweiszeile "Daten möglicherweise veraltet"
         }
-        return cardChromeHeight + max(ringSlotWidth, rowsHeight)
+        return cardChromeHeight + ringSlotWidth + rowsHeight
     }
 
     static func gridHeight(for snapshots: [AccountUsageSnapshot], columns: Int) -> CGFloat {
@@ -340,7 +347,6 @@ struct DashboardView: View {
                     AccountUsageCard(
                         snapshot: snapshot,
                         isCurrent: isCurrent(snapshot),
-                        isMostFree: snapshot.id == mostFreeAccountId,
                         showRemainingMode: $showRemainingMode,
                         onSelect: { select(snapshot) },
                         onRefresh: { manager.refreshAccount(id: snapshot.id) },

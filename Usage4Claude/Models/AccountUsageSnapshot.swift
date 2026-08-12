@@ -109,11 +109,16 @@ struct AccountUsageSnapshot: Identifiable {
         allLimits.max { $0.percentage < $1.percentage }
     }
 
-    /// Dünner Außenring: das schnell laufende Sitzungsfenster als Kontext,
-    /// sofern es nicht ohnehin schon der große Ring ist.
-    var contextLimit: RingLimit? {
-        let sessionType: LimitType = provider == .claude ? .fiveHour : .codexPrimary
-        guard criticalLimit?.type != sessionType else { return nil }
-        return allLimits.first { $0.type == sessionType }
+    /// Das schnell laufende Sitzungsfenster (5 Stunden bzw. Codex primary).
+    /// Füllt die Wasserstandsanzeige auf der Karte.
+    var sessionLimit: RingLimit? {
+        let type: LimitType = provider == .claude ? .fiveHour : .codexPrimary
+        return allLimits.first { $0.type == type }
+    }
+
+    /// Das Wochenfenster — die Zahl, an der laut Nutzer "eigentlich alles hängt".
+    var weeklyLimit: RingLimit? {
+        let type: LimitType = provider == .claude ? .sevenDay : .codexSecondary
+        return allLimits.first { $0.type == type }
     }
 }

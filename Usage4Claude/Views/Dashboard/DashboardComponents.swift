@@ -2,175 +2,166 @@
 //  DashboardComponents.swift
 //  Usage4Claude
 //
-//  Dashboard（多账户总览）的可复用小部件：紧凑圆环、状态徽章、配色映射。
-//  卡片本体见 AccountUsageCard.swift，容器见 DashboardView.swift。
+//  Bausteine der Mehrkonten-Übersicht: Farbskala, Wasserstand-Anzeige, Statusabzeichen.
+//  Die Karte selbst liegt in AccountUsageCard.swift, der Container in DashboardView.swift.
 //  Copyright © 2025 f-is-h. All rights reserved.
 //
 
 import SwiftUI
+import AppKit
 
-// MARK: - 配色映射
+// MARK: - Farbskala
 
-/// 把 `LimitType` 映射到既有的 `UsageColorScheme` 配色，Dashboard 与菜单栏 / 详情窗口保持同一套色系
+/// Vierstufige Auslastungsskala: Blau → Gelb → Orange → Rot.
+///
+/// Bewusst nicht die Ampelskala der Originalapp — Blau als Ruhezustand nimmt sich
+/// zurück, statt ein entspanntes Konto grün anzustrahlen. Die dritte Stufe ist
+/// Claudes Clay-Orange, dadurch bleibt die Skala in der Hausfarbe.
+///
+/// Jede Stufe hat zwei Töne: `fill` für Flächen (Wasser, Balken) und `ink` für Text.
+/// Der Flächenton wäre als Schrift auf hellem Grund zu schwach — besonders Gelb.
 enum DashboardPalette {
-    static func color(for type: LimitType, percentage: Double) -> Color {
-        switch type {
-        case .fiveHour:
-            return UsageColorScheme.fiveHourColorSwiftUI(percentage)
-        case .sevenDay:
-            return UsageColorScheme.sevenDayColorSwiftUI(percentage)
-        case .opusWeekly:
-            return Color(UsageColorScheme.opusWeeklyColor(percentage))
-        case .sonnetWeekly:
-            return Color(UsageColorScheme.sonnetWeeklyColor(percentage))
-        case .extraUsage:
-            return Color(UsageColorScheme.extraUsageColor(percentage))
-        case .codexPrimary:
-            return UsageColorScheme.codexPrimaryColorSwiftUI(percentage)
-        case .codexSecondary:
-            return UsageColorScheme.codexSecondaryColorSwiftUI(percentage)
-        case .codexExtraUsage:
-            return UsageColorScheme.codexExtraUsageColorSwiftUI(percentage)
+
+    enum Level {
+        case calm       // 0–49 %
+        case moderate   // 50–74 %
+        case high       // 75–89 %
+        case full       // 90–100 %
+
+        static func forPercentage(_ percentage: Double) -> Level {
+            switch percentage {
+            case ..<50: return .calm
+            case ..<75: return .moderate
+            case ..<90: return .high
+            default:    return .full
+            }
         }
+    }
+
+    /// Flächenton (Wasser, Balken)
+    static func fill(_ percentage: Double) -> Color {
+        switch Level.forPercentage(percentage) {
+        case .calm:     return dynamic(light: 0x5E86C4, dark: 0x6E96D4)
+        case .moderate: return dynamic(light: 0xE0A93F, dark: 0xE8B855)
+        case .high:     return dynamic(light: 0xD97757, dark: 0xE08767)
+        case .full:     return dynamic(light: 0xC9503F, dark: 0xD9604F)
+        }
+    }
+
+    /// Textton derselben Stufe — dunkler, damit Zahlen auf hellem Grund tragen
+    static func ink(_ percentage: Double) -> Color {
+        switch Level.forPercentage(percentage) {
+        case .calm:     return dynamic(light: 0x3E6DA8, dark: 0x8FB0DC)
+        case .moderate: return dynamic(light: 0xA9761B, dark: 0xE0B45C)
+        case .high:     return dynamic(light: 0xB4553A, dark: 0xE59A80)
+        case .full:     return dynamic(light: 0xA33528, dark: 0xE8796A)
+        }
+    }
+
+    /// Farbe für Text, der auf der Wasserfläche liegt
+    static let onFill = Color.white
+
+    /// Hex-Paar als NSColor mit Dynamic Provider: heller und dunkler Modus je eigener
+    /// Wert, damit die Töne in beiden Erscheinungsbildern tragen.
+    private static func dynamic(light: Int, dark: Int) -> Color {
+        Color(nsColor: NSColor(name: nil) { appearance in
+            let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            return nsColor(isDark ? dark : light)
+        })
+    }
+
+    private static func nsColor(_ hex: Int) -> NSColor {
+        NSColor(
+            red: CGFloat((hex >> 16) & 0xFF) / 255.0,
+            green: CGFloat((hex >> 8) & 0xFF) / 255.0,
+            blue: CGFloat(hex & 0xFF) / 255.0,
+            alpha: 1.0
+        )
     }
 }
 
-// MARK: - 紧凑圆环
+// MARK: - Wasserstand
 
-/// 卡片左侧的紧凑双层圆环：内圈主限制（5 小时 / Codex primary），
-/// 外圈次级限制（7 天 / Codex secondary）。语义与详情窗口的大圆环一致，
-/// 只是尺寸缩到一张卡片放得下的程度。
-struct DashboardUsageRing: View {
-    let primaryPercentage: Double
-    let primaryColor: Color
-    /// Kurzname des Limits im Ringzentrum — beantwortet „0 % wovon?"
-    let primaryLabel: String
-    let secondaryPercentage: Double?
-    let secondaryColor: Color
-    let showRemainingMode: Bool
-    let isLoading: Bool
+/// Kreis, der sich wie ein Gefäß füllt — der Pegel ist die Auslastung des
+/// Sitzungsfensters (5 Stunden bzw. Codex primary).
+///
+/// Die Prozentzahl wird zweimal gezeichnet: einmal in der Textfarbe, einmal in Weiß
+/// und auf die Wasserfläche beschnitten. Dadurch schneidet die Wellenlinie mitten
+/// durch die Ziffern, statt dass die Zahl an einem Schwellwert umspringt — und sie
+/// bleibt in jedem Füllstand lesbar.
+struct WaterLevelGauge: View {
+    let percentage: Double
+    let caption: String
+    var diameter: CGFloat = 74
 
-    private let diameter: CGFloat = 58
-    private let outerDiameter: CGFloat = 68
-
-    private var primaryRange: UsageRingTrimRange {
-        UsageRingDisplay.displayedTrimRange(
-            usedPercentage: primaryPercentage,
-            showRemainingMode: showRemainingMode
-        )
-    }
-
-    private var displayedPercentage: Int {
-        Int(UsageRingDisplay.displayedPercentage(
-            usedPercentage: primaryPercentage,
-            showRemainingMode: showRemainingMode
-        ))
-    }
+    private var clamped: Double { min(100, max(0, percentage)) }
 
     var body: some View {
         ZStack {
-            Circle()
-                .stroke(Color.gray.opacity(0.2), lineWidth: 7)
-                .frame(width: diameter, height: diameter)
+            Circle().fill(Color(NSColor.windowBackgroundColor))
 
-            Circle()
-                .trim(from: primaryRange.from, to: primaryRange.to)
-                .stroke(primaryColor, style: StrokeStyle(lineWidth: 7, lineCap: .round))
-                .frame(width: diameter, height: diameter)
-                .rotationEffect(.degrees(-90))
-                .opacity(isLoading ? 0.35 : 1)
-                .animation(.spring(response: 0.42, dampingFraction: 0.78), value: primaryRange)
+            WaterShape(level: clamped / 100.0)
+                .fill(DashboardPalette.fill(clamped))
+                .clipShape(Circle())
 
-            if let secondaryPercentage {
-                let outerRange = UsageRingDisplay.displayedTrimRange(
-                    usedPercentage: secondaryPercentage,
-                    showRemainingMode: showRemainingMode
-                )
-                Circle()
-                    .stroke(Color.gray.opacity(0.15), lineWidth: 2.5)
-                    .frame(width: outerDiameter, height: outerDiameter)
-                Circle()
-                    .trim(from: outerRange.from, to: outerRange.to)
-                    .stroke(secondaryColor, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
-                    .frame(width: outerDiameter, height: outerDiameter)
-                    .rotationEffect(.degrees(-90))
-                    .opacity(isLoading ? 0.35 : 1)
-                    .animation(.spring(response: 0.42, dampingFraction: 0.78), value: outerRange)
-            }
+            Circle().strokeBorder(Color.primary.opacity(0.18), lineWidth: 1)
 
-            if isLoading {
-                ProgressView()
-                    .controlSize(.small)
-            } else {
-                VStack(spacing: 0) {
-                    Text("\(displayedPercentage)%")
-                        .font(.system(size: 17, weight: .bold))
-                        .monospacedDigit()
-                        .foregroundColor(primaryPercentage >= 100 ? .red : .primary)
-                    // Nicht mehr nur „Verwendet": ohne den Limit-Namen ist unklar,
-                    // worauf sich die Zahl bezieht (5-Stunden-Fenster? Woche? Opus?).
-                    Text(primaryLabel)
-                        .font(.system(size: 8, weight: .medium))
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                        .frame(maxWidth: outerDiameter - 18)
-                }
-            }
+            numberStack(color: DashboardPalette.ink(clamped))
+            numberStack(color: DashboardPalette.onFill)
+                .clipShape(WaterShape(level: clamped / 100.0))
         }
-        .frame(width: outerDiameter, height: outerDiameter)
+        .frame(width: diameter, height: diameter)
+        .animation(.easeInOut(duration: 0.45), value: clamped)
+    }
+
+    private func numberStack(color: Color) -> some View {
+        VStack(spacing: 0) {
+            // Normale Systemschrift statt Schreibmaschinenschnitt; `monospacedDigit`
+            // hält die Ziffern trotzdem in Spur, wenn der Wert springt.
+            Text("\(Int(clamped.rounded()))%")
+                .font(.system(size: diameter * 0.19, weight: .semibold).monospacedDigit())
+                .foregroundColor(color)
+            Text(caption)
+                .font(.system(size: diameter * 0.11))
+                .foregroundColor(color.opacity(0.75))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .frame(maxWidth: diameter * 0.8)
+        }
     }
 }
 
-// MARK: - 状态徽章
+/// Wasserfläche mit leichter Welle an der Oberkante.
+/// `level` 0…1 misst von unten: 0 bleibt leer, 1 ist randvoll.
+struct WaterShape: Shape {
+    var level: Double
 
-/// 卡片右上角的小徽章（当前账户 / 最空闲 / 已耗尽）
-struct DashboardBadge: View {
-    enum Style {
-        case active
-        case mostFree
-        case exhausted
-
-        var tint: Color {
-            switch self {
-            case .active:    return .blue
-            case .mostFree:  return .green
-            case .exhausted: return .red
-            }
-        }
-
-        var systemImage: String {
-            switch self {
-            case .active:    return "checkmark.circle.fill"
-            case .mostFree:  return "leaf.fill"
-            case .exhausted: return "exclamationmark.triangle.fill"
-            }
-        }
-
-        var title: String {
-            switch self {
-            case .active:    return L.Dashboard.badgeActive
-            case .mostFree:  return L.Dashboard.badgeMostFree
-            case .exhausted: return L.Dashboard.badgeExhausted
-            }
-        }
+    var animatableData: Double {
+        get { level }
+        set { level = newValue }
     }
 
-    let style: Style
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        guard level > 0 else { return path }
 
-    var body: some View {
-        HStack(spacing: 3) {
-            Image(systemName: style.systemImage)
-                .font(.system(size: 8, weight: .semibold))
-            Text(style.title)
-                .font(.system(size: 9, weight: .semibold))
-                .lineLimit(1)
-        }
-        .foregroundColor(style.tint)
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
-        .background(
-            Capsule().fill(style.tint.opacity(0.13))
+        // Die Welle braucht oben und unten Luft, damit sie bei 0 % und 100 %
+        // nicht über den Rand schwappt.
+        let waveHeight = min(rect.height * 0.035, 3.0)
+        let surfaceY = rect.maxY - (rect.height - waveHeight * 2) * level - waveHeight
+
+        path.move(to: CGPoint(x: rect.minX, y: surfaceY))
+        path.addQuadCurve(
+            to: CGPoint(x: rect.midX, y: surfaceY),
+            control: CGPoint(x: rect.width * 0.25, y: surfaceY - waveHeight)
         )
+        path.addQuadCurve(
+            to: CGPoint(x: rect.maxX, y: surfaceY),
+            control: CGPoint(x: rect.width * 0.75, y: surfaceY + waveHeight)
+        )
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.closeSubpath()
+        return path
     }
 }

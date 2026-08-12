@@ -206,6 +206,10 @@ struct UnifiedLimitRow: View {
     /// `type` 仅用于决定外观（圆角方/斜切方形状与配色的槽位）。用于 popover 展示
     /// 超出前两个槽位的第三个及以后的模型（如同时出现 Fable / Opus / Sonnet）。
     var weeklyModelOverride: UsageData.WeeklyModelLimit? = nil
+    /// Einfärbung nach Auslastung statt nach Limit-Typ. Das Dashboard nutzt die
+    /// vierstufige Skala, damit eine Karte in sich eine Farbsprache spricht;
+    /// das klassische Detailfenster behält seine typbezogenen Farben.
+    var usesUtilizationTint: Bool = false
 
     var body: some View {
         HStack(spacing: 8) {
@@ -278,6 +282,9 @@ struct UnifiedLimitRow: View {
     }
 
     private var iconColor: Color {
+        if usesUtilizationTint {
+            return DashboardPalette.fill(percentageValue ?? 0)
+        }
         switch type {
         case .fiveHour:
             return .green

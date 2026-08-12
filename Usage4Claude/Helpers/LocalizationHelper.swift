@@ -83,9 +83,6 @@ enum L {
         static var showDashboard: String { localized("dashboard.show_dashboard") }
         static var showClassicDetail: String { localized("dashboard.show_classic_detail") }
         static var openWindow: String { localized("dashboard.open_window") }
-        static var badgeActive: String { localized("dashboard.badge_active") }
-        static var badgeMostFree: String { localized("dashboard.badge_most_free") }
-        static var badgeExhausted: String { localized("dashboard.badge_exhausted") }
         static var sortByOrder: String { localized("dashboard.sort_by_order") }
         static var sortByAvailability: String { localized("dashboard.sort_by_availability") }
         static var sortHelp: String { localized("dashboard.sort_help") }
@@ -97,6 +94,7 @@ enum L {
         static var ringExtra: String { localized("dashboard.ring_extra") }
         static var ringOpus: String { localized("dashboard.ring_opus") }
         static var ringSonnet: String { localized("dashboard.ring_sonnet") }
+        static var weeklyLimit: String { localized("dashboard.weekly_limit") }
 
         static func updatedAt(_ time: String) -> String {
             String(format: localized("dashboard.updated_at"), time)

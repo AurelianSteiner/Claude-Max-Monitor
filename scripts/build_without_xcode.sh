@@ -38,8 +38,9 @@ APP_NAME="Usage4Claude"
 PRODUCT_NAME="${U4C_PRODUCT_NAME:-Usage4Claude}"
 BUNDLE_ID="${U4C_BUNDLE_ID:-xyz.fi5h.Usage4Claude}"
 BASE_VERSION="$(grep -m1 -oE 'MARKETING_VERSION = [0-9][^;]*' "$PROJECT_ROOT/$APP_NAME.xcodeproj/project.pbxproj" | awk '{print $3}')"
-# Suffix macht diesen Build in "Über Usage4Claude" von einem offiziellen Release unterscheidbar
-VERSION="${BASE_VERSION}+dashboard"
+# Ohne Vorgabe bekommt der Build ein Suffix, damit er in "Über …" von einem
+# offiziellen Release unterscheidbar bleibt. release.sh setzt U4C_VERSION.
+VERSION="${U4C_VERSION:-${BASE_VERSION}+dashboard}"
 DEPLOYMENT_TARGET="13.0"
 SPARKLE_VERSION="2.9.2"
 # Eigener Appcast (z. B. aus dem eigenen GitHub-Fork). Gesetzt = automatische
@@ -173,7 +174,7 @@ plist = resolve(plist)
 if appcast_url:
     plist["SUFeedURL"] = appcast_url
     plist["SUEnableAutomaticChecks"] = True
-    plist["SUScheduledCheckInterval"] = 86400  # einmal täglich
+    plist["SUScheduledCheckInterval"] = 3600  # stündlich prüfen
 else:
     plist["SUEnableAutomaticChecks"] = False
 

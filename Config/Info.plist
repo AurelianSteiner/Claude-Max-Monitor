@@ -55,9 +55,9 @@
         updates whose signature doesn't match the embedded SUPublicEDKey.
     -->
     <key>SUFeedURL</key>
-    <string>https://raw.githubusercontent.com/f-is-h/Usage4Claude/main/appcast.xml</string>
+    <string>https://raw.githubusercontent.com/AurelianSteiner/Claude-Max-Monitor/main/appcast.xml</string>
     <key>SUPublicEDKey</key>
-    <string>p0CSf0X2mD0Z74yU64g36hGMQKpRE5/GFpaoyhhr6aY=</string>
+    <string>cT/cR7yslmm2uJap/vc9uDLzmYHJgso3dkW16WuXHsU=</string>
     <key>SUEnableAutomaticChecks</key>
     <true/>
 
