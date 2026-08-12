@@ -1,5 +1,24 @@
 # Änderungen
 
+## 1.3
+
+- Fast erschöpfte Konten werden nicht mehr ausgegraut. Stattdessen läuft auf der
+  Karte ein Countdown, der zeigt, wann das Limit wieder frei ist.
+- Der Kopf der Karte trennt Stunden- und Wochenlimit durch einen Strich, beide
+  beschriftet und jeweils mit eigener Restzeit. Die Restzeit des
+  Fünf-Stunden-Fensters fehlte bisher ganz.
+- Wochenlimits einzelner Modelle (Fable, Opus, Sonnet) erscheinen als
+  Prozentbalken ohne Uhrzeit statt als Symbol.
+- Die Ampelpunkte oben folgen einer klareren Regel: grün bis fünf Prozent, blau
+  während der Nutzung, rot ab hundert Prozent, grau ohne Daten.
+- Die Version steht unten in der Übersicht.
+- Das Übersichtsfenster lässt sich in der Größe ziehen und merkt sich Lage und
+  Größe. Es wird breiter, sobald mehr Spalten nötig sind.
+- Zwei Schalter im Menü halten Bildschirm oder Mac wach. Sie überstehen einen
+  Neustart der App und brauchen keine Administratorrechte.
+- Ein Klick auf die App im Dock, im Finder oder über Spotlight öffnet die
+  Übersicht, statt scheinbar nichts zu tun.
+
 ## 1.2
 
 - Nur noch die Gesamtübersicht: Die Einzelansicht ist entfallen, ein Klick auf das
