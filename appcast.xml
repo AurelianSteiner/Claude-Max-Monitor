@@ -3,6 +3,19 @@
     <channel>
         <title>Claude Max Monitor</title>
         <item>
+            <title>1.2</title>
+            <pubDate>Wed, 12 Aug 2026 22:05:41 +0000</pubDate>
+            <sparkle:version>1.2</sparkle:version>
+            <sparkle:shortVersionString>1.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[Nur noch die Gesamtübersicht: ein Klick zeigt alle Konten. Neu ist die Ampelzeile darüber — ein Punkt je Konto, eingefärbt nach dem Wochenlimit. Konten sortieren sich nach freier Kapazität, fast erschöpfte werden gedämpft. Das Fable-Wochenlimit ist jetzt ein eigenständiges Limit mit eigener Farbe und Form. Dazu: größere Restzeiten, deutlich seltener "Zu viele Anfragen", und beim Hinzufügen eines Kontos wird eine frische Anmeldung erzwungen.]]></description>
+            <enclosure
+                url="https://github.com/AurelianSteiner/Claude-Max-Monitor/releases/download/v1.2/Claude-Max-Monitor-1.2.dmg"
+                sparkle:edSignature="K+FEPYOdSYn5Qap9kLwzls3xFq8m07dyoNyNa2nhmZdgOuOw+N2FSE3hIGwrku9B4lV7mxzg6h8gBJCz92unDA=="
+                length="5230683"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>1.1</title>
             <pubDate>Wed, 12 Aug 2026 14:56:31 +0000</pubDate>
             <sparkle:version>1.1</sparkle:version>
