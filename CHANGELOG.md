@@ -1,5 +1,10 @@
 # Änderungen
 
+## 1.1
+
+- Neues App-Symbol: Wasserstand im Ring, passend zur Übersicht. Wird über
+  `scripts/make_icon.swift` gezeichnet, statt als Binärdatei mitzureisen.
+
 ## 1.0
 
 Erste Veröffentlichung dieses Forks.
