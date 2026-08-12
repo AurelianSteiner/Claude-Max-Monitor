@@ -24,6 +24,8 @@ enum L {
         static var quit: String { localized("menu.quit") }
         static var account: String { localized("menu.account") }
         static var accountPrefix: String { localized("menu.account_prefix") }
+        static var keepDisplayAwake: String { localized("menu.keep_display_awake") }
+        static var keepMacAwake: String { localized("menu.keep_mac_awake") }
     }
 
     // MARK: - Account Management
@@ -96,6 +98,9 @@ enum L {
         static var ringSonnet: String { localized("dashboard.ring_sonnet") }
         static var ringFable: String { localized("dashboard.ring_fable") }
         static var weeklyLimit: String { localized("dashboard.weekly_limit") }
+        static var sessionLimit: String { localized("dashboard.session_limit") }
+        /// Überschrift des Countdowns auf praktisch aufgebrauchten Karten
+        static var freeAgain: String { localized("dashboard.free_again") }
 
         static func updatedAt(_ time: String) -> String {
             String(format: localized("dashboard.updated_at"), time)

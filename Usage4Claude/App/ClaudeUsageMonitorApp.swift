@@ -83,6 +83,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         menuBarManager = MenuBarManager()
 
+        // Gemerkte „wach halten“-Schalter erneut anfordern (Power-Assertions
+        // überleben den Prozess nicht)
+        SleepGuard.shared.restoreFromDefaults()
+
         if settings.isFirstLaunch || !settings.hasAnyValidCredentials {
             showWelcomeWindow()
         } else {
@@ -103,8 +107,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             .store(in: &cancellables)
     }
     
+    /// Klick auf das App-Symbol (Dock / Finder / Spotlight) bei bereits
+    /// laufender App.
+    /// Wegen LSUIElement=true gibt es kein dauerhaftes Dock-Icon, ein erneutes
+    /// Starten würde sonst scheinbar nichts tun. Stattdessen die Übersicht
+    /// öffnen. Läuft das Willkommensfenster noch (Erststart), wird dieses
+    /// nach vorn geholt.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        NSApp.activate(ignoringOtherApps: true)
+
+        if let welcomeWindow, welcomeWindow.isVisible {
+            welcomeWindow.makeKeyAndOrderFront(nil)
+            return true
+        }
+
+        // menuBarManager ist erst nach applicationDidFinishLaunching gesetzt —
+        // im Zweifel direkt über den Fenster-Manager öffnen, statt zu crashen.
+        if let menuBarManager {
+            menuBarManager.openDashboardWindow()
+        } else {
+            DashboardWindowManager.shared.show { _ in }
+        }
+
+        return true
+    }
+
     // MARK: - Private Methods
-    
+
     /// 显示欢迎窗口
     /// 在首次启动或未配置认证信息时调用
     private func showWelcomeWindow() {
@@ -155,6 +184,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// 清理定时器和窗口资源
     /// 注意：Combine 订阅会在 cancellables 被释放时自动清理
     func applicationWillTerminate(_ notification: Notification) {
+        // Power-Assertions freigeben (die gemerkten Schalter bleiben erhalten)
+        SleepGuard.shared.releaseAll()
         menuBarManager?.cleanup()
         welcomeWindow?.close()
         welcomeWindow = nil

@@ -18,6 +18,8 @@
 "menu.quit" = "Quit Claude Max Monitor";
 "menu.account" = "Account";
 "menu.account_prefix" = "Account:";
+"menu.keep_display_awake" = "Keep Display Awake";
+"menu.keep_mac_awake" = "Keep Mac Awake";
 
 // MARK: - Usage Detail View
 "usage.title" = "Claude Usage";
@@ -470,3 +472,5 @@
 "weblogin.cookie_login" = "Sign in inside the app";
 "weblogin.cookie_login_help" = "Sign in to claude.ai in the embedded window — the app reads the session cookie itself. Works without a localhost redirect.";
 "dashboard.weekly_limit" = "Weekly limit";
+"dashboard.session_limit" = "Session limit";
+"dashboard.free_again" = "Free again";
