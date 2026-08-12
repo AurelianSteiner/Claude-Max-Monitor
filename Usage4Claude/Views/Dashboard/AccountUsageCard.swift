@@ -60,6 +60,9 @@ struct AccountUsageCard: View {
         )
         .contentShape(RoundedRectangle(cornerRadius: 12))
         .onHover { isHovering = $0 }
+        .saturation(snapshot.isNearExhausted && !isHovering ? 0.3 : 1)
+        .opacity(dimLevel)
+        .animation(.easeInOut(duration: 0.15), value: isHovering)
         .onTapGesture(perform: onSelect)
         .contextMenu {
             Button(action: onRefresh) {
@@ -76,6 +79,14 @@ struct AccountUsageCard: View {
     private var borderColor: Color {
         if isCurrent { return Color.accentColor.opacity(0.55) }
         return Color.primary.opacity(isHovering ? 0.18 : 0.08)
+    }
+
+    /// Fast erschöpfte Konten werden gedämpft dargestellt (man nutzt sie bis zum
+    /// Reset ohnehin nicht). Beim Überfahren mit der Maus kommen sie zum
+    /// Inspizieren wieder nach vorn.
+    private var dimLevel: Double {
+        guard snapshot.isNearExhausted else { return 1 }
+        return isHovering ? 0.85 : 0.45
     }
 
     // MARK: - Kopfbereich
@@ -194,14 +205,14 @@ struct AccountUsageCard: View {
             // Die Zeile zählt selbst herunter, ohne dass die ganze Karte neu gebaut wird
             TimelineView(.periodic(from: .now, by: 60)) { _ in
                 Text(isSoon ? data.formattedCompactRemaining : data.formattedCompactResetDate)
-                    .font(.system(size: 11))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(limit.isExhausted ? DashboardPalette.ink(100) : .secondary)
                     .lineLimit(1)
             }
             .help(fullResetDescription(resetsAt))
         } else {
             Text("–")
-                .font(.system(size: 11))
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(.secondary)
         }
     }
@@ -227,7 +238,7 @@ struct AccountUsageCard: View {
             }
             ForEach(overflowWeeklyModels, id: \.offset) { entry in
                 UnifiedLimitRow(
-                    type: entry.offset % 2 == 0 ? .opusWeekly : .sonnetWeekly,
+                    type: LimitType.weeklyType(forModelName: entry.element.modelName, slot: entry.offset),
                     data: snapshot.usageData,
                     showRemainingMode: showRemainingMode,
                     weeklyModelOverride: entry.element,

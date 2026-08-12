@@ -14,7 +14,7 @@
 "menu.codex_status" = "OpenAI Status";
 "menu.coffee" = "Buy Me A Coffee";
 "menu.github_sponsor" = "GitHub Sponsor";
-"menu.quit" = "Usage4Claude beenden";
+"menu.quit" = "Claude Max Monitor beenden";
 "menu.account" = "Account";
 "menu.account_prefix" = "Account:";
 
@@ -104,7 +104,7 @@
 "settings.about.copyright" = "© 2025 Alle Rechte vorbehalten";
 
 // MARK: - Welcome View
-"welcome.title" = "Willkommen bei Usage4Claude";
+"welcome.title" = "Willkommen bei Claude Max Monitor";
 "welcome.subtitle" = "Bitte vor dem Start die Anmeldedaten konfigurieren";
 "welcome.setup_button" = "Anmeldung konfigurieren";
 "welcome.later_button" = "Später einrichten";
@@ -143,7 +143,7 @@
 "language.german" = "Deutsch";
 
 // MARK: - Window Titles
-"window.settings_title" = "Usage4Claude Einstellungen";
+"window.settings_title" = "Claude Max Monitor Einstellungen";
 "window.welcome_title" = "Willkommen";
 
 // MARK: - Usage Data Formatting
@@ -230,7 +230,7 @@
 "diagnostic.suggestion_configure_auth" = "Bitte Organisations-ID und Session Key in den Feldern oben konfigurieren";
 "diagnostic.suggestion_check_org_id" = "Prüfen, ob das Format der Organisations-ID korrekt ist (sollte eine UUID sein)";
 "diagnostic.suggestion_export_and_share" = "Diesen Diagnosebericht exportieren und über GitHub Issues teilen";
-"diagnostic.suggestion_contact_support" = "Entwickler für Hilfe unter github.com/f-is-h/Usage4Claude/issues kontaktieren";
+"diagnostic.suggestion_contact_support" = "Entwickler für Hilfe unter github.com/AurelianSteiner/Claude-Max-Monitor/issues kontaktieren";
 "diagnostic.open_log_folder" = "Log-Ordner öffnen";
 
 // MARK: - Limit Types (v2.0.0)
@@ -238,6 +238,7 @@
 "seven_day_limit" = "7-Tage-Limit";
 "opus_weekly_limit" = "Opus 7-Tage-Limit";
 "sonnet_weekly_limit" = "Sonnet 7-Tage-Limit";
+"fable_weekly_limit" = "Fable 7-Tage-Limit";
 "extra_usage" = "Zusätzliche Nutzung";
 "codex_primary_limit" = "Codex 5-Stunden-Limit";
 "codex_secondary_limit" = "Codex 7-Tage-Limit";
@@ -248,6 +249,7 @@
 "detail_row.seven_day_limit" = "7-Tage-Limit";
 "detail_row.opus_weekly_limit" = "Opus 7-Tage-Limit";
 "detail_row.sonnet_weekly_limit" = "Sonnet 7-Tage-Limit";
+"detail_row.fable_weekly_limit" = "Fable 7-Tage-Limit";
 "detail_row.extra_usage" = "Zusätzliche Nutzung";
 
 // MARK: - Display Options (v2.0.0)
@@ -438,7 +440,7 @@
 
 /* Dashboard / Mehrkonten-Übersicht */
 "dashboard.title" = "Übersicht";
-"dashboard.window_title" = "Usage4Claude – Übersicht";
+"dashboard.window_title" = "Claude Max Monitor – Übersicht";
 "dashboard.show_dashboard" = "Übersicht anzeigen";
 "dashboard.show_classic_detail" = "Einzelansicht anzeigen";
 "dashboard.open_window" = "Übersicht in Fenster öffnen";
@@ -462,6 +464,7 @@
 "dashboard.ring_extra" = "Extra";
 "dashboard.ring_opus" = "Opus";
 "dashboard.ring_sonnet" = "Sonnet";
+"dashboard.ring_fable" = "Fable";
 "error.http_status" = "HTTP-Fehler %d";
 "weblogin.cookie_login" = "Anmeldung im App-Fenster";
 "weblogin.cookie_login_help" = "Im eingebetteten Fenster bei claude.ai anmelden — die App liest den Session-Cookie selbst aus. Funktioniert ohne localhost-Redirect.";

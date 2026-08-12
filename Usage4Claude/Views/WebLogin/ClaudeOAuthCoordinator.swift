@@ -117,7 +117,11 @@ final class ClaudeOAuthCoordinator: ObservableObject {
             URLQueryItem(name: "scope", value: ClaudeOAuthConfig.scope),
             URLQueryItem(name: "code_challenge", value: pkce.codeChallenge),
             URLQueryItem(name: "code_challenge_method", value: "S256"),
-            URLQueryItem(name: "state", value: pkce.state)
+            URLQueryItem(name: "state", value: pkce.state),
+            // Erzwingt eine frische Anmeldung statt stiller Auto-Autorisierung der
+            // im Browser bereits eingeloggten Sitzung. Ohne das bekam ein zweites
+            // Konto die Identität (E-Mail/Token) des schon angemeldeten Kontos.
+            URLQueryItem(name: "prompt", value: "login")
         ]
         return comps?.url
     }

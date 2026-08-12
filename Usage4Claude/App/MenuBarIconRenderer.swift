@@ -556,14 +556,20 @@ class MenuBarIconRenderer {
             }
 
         case .opusWeekly:
-            let percentage = data.opus?.percentage ?? (showPlaceholder ? 0 : nil)
+            // 按模型名解析后取对应的每周模型数据（而非固定槽位），Fable 抢占槽位时 Opus 仍读到正确条目
+            let percentage = data.weeklyModel(matching: .opusWeekly)?.limit.percentage ?? (showPlaceholder ? 0 : nil)
             guard let percentage = percentage else { return nil }
             return ShapeIconRenderer.createVerticalRectangleIcon(percentage: percentage, isMonochrome: isMonochrome, button: button, removeBackground: removeBackground)
 
         case .sonnetWeekly:
-            let percentage = data.sonnet?.percentage ?? (showPlaceholder ? 0 : nil)
+            let percentage = data.weeklyModel(matching: .sonnetWeekly)?.limit.percentage ?? (showPlaceholder ? 0 : nil)
             guard let percentage = percentage else { return nil }
             return ShapeIconRenderer.createHorizontalRectangleIcon(percentage: percentage, isMonochrome: isMonochrome, button: button, removeBackground: removeBackground)
+
+        case .fableWeekly:
+            let percentage = data.weeklyModel(matching: .fableWeekly)?.limit.percentage ?? (showPlaceholder ? 0 : nil)
+            guard let percentage = percentage else { return nil }
+            return ShapeIconRenderer.createDiamondIcon(percentage: percentage, isMonochrome: isMonochrome, button: button, removeBackground: removeBackground)
 
         case .extraUsage:
             let percentage: Double?

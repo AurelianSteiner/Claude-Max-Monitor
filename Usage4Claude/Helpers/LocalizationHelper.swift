@@ -94,6 +94,7 @@ enum L {
         static var ringExtra: String { localized("dashboard.ring_extra") }
         static var ringOpus: String { localized("dashboard.ring_opus") }
         static var ringSonnet: String { localized("dashboard.ring_sonnet") }
+        static var ringFable: String { localized("dashboard.ring_fable") }
         static var weeklyLimit: String { localized("dashboard.weekly_limit") }
 
         static func updatedAt(_ time: String) -> String {
@@ -277,6 +278,7 @@ enum L {
         static var sevenDay: String { localized("seven_day_limit") }
         static var opusWeekly: String { localized("opus_weekly_limit") }
         static var sonnetWeekly: String { localized("sonnet_weekly_limit") }
+        static var fableWeekly: String { localized("fable_weekly_limit") }
         static var extraUsage: String { localized("extra_usage") }
         static var codexPrimary: String { localized("codex_primary_limit") }
         static var codexSecondary: String { localized("codex_secondary_limit") }
@@ -289,6 +291,7 @@ enum L {
         static var sevenDay: String { localized("detail_row.seven_day_limit") }
         static var opusWeekly: String { localized("detail_row.opus_weekly_limit") }
         static var sonnetWeekly: String { localized("detail_row.sonnet_weekly_limit") }
+        static var fableWeekly: String { localized("detail_row.fable_weekly_limit") }
         static var extraUsage: String { localized("detail_row.extra_usage") }
         static var today: String { localized("usage_data.detail_today") }
 
@@ -420,6 +423,7 @@ enum L {
         static var sevenDay: String { localized("seven_day_limit") }
         static var opusWeekly: String { localized("opus_weekly_limit") }
         static var sonnetWeekly: String { localized("sonnet_weekly_limit") }
+        static var fableWeekly: String { localized("fable_weekly_limit") }
         static var extraUsage: String { localized("extra_usage") }
         static var codexPrimary: String { localized("codex_primary_limit") }
         static var codexSecondary: String { localized("codex_secondary_limit") }

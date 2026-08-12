@@ -84,6 +84,22 @@ struct IconShapePaths {
         }
     }
 
+    /// 创建菱形路径（Fable，四个顶点：上/右/下/左，随 rect 动态缩放）
+    /// - Parameter rect: 绘制区域
+    /// - Returns: 菱形路径
+    static func diamondPath(in rect: CGRect) -> Path {
+        let inset = rect.insetBy(dx: 3, dy: 3)
+        let cx = inset.midX, cy = inset.midY
+        let rx = inset.width / 2, ry = inset.height / 2
+        return Path { path in
+            path.move(to: CGPoint(x: cx, y: cy - ry))       // 顶点（12点）
+            path.addLine(to: CGPoint(x: cx + rx, y: cy))    // 右（3点）
+            path.addLine(to: CGPoint(x: cx, y: cy + ry))    // 底（6点）
+            path.addLine(to: CGPoint(x: cx - rx, y: cy))    // 左（9点）
+            path.closeSubpath()
+        }
+    }
+
     /// 创建平顶六边形路径（Extra Usage，从右上顶点顺时针绘制）
     /// - Parameters:
     ///   - center: 六边形中心点
@@ -126,6 +142,9 @@ struct IconShapePaths {
 
         case .sonnetWeekly:
             return chamferedSquarePath(in: rect)
+
+        case .fableWeekly:
+            return diamondPath(in: rect)
 
         case .extraUsage, .codexExtraUsage:
             return hexagonPath(center: center, radius: hexRadius)
@@ -205,6 +224,22 @@ struct IconShapePaths {
             clockwise: false
         )
 
+        path.close()
+        return path
+    }
+
+    /// 创建菱形 NSBezierPath（Fable，四个顶点：上/右/下/左）
+    /// - Parameters:
+    ///   - center: 中心点
+    ///   - size: 顶点到顶点的对角线长度
+    /// - Returns: NSBezierPath
+    static func diamondNSPath(center: CGPoint, size: CGFloat) -> NSBezierPath {
+        let path = NSBezierPath()
+        let r = size / 2
+        path.move(to: CGPoint(x: center.x, y: center.y + r))    // 上
+        path.line(to: CGPoint(x: center.x + r, y: center.y))    // 右
+        path.line(to: CGPoint(x: center.x, y: center.y - r))    // 下
+        path.line(to: CGPoint(x: center.x - r, y: center.y))    // 左
         path.close()
         return path
     }

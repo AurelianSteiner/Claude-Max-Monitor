@@ -631,11 +631,16 @@ class MenuBarUI {
         if let sevenDay = data.sevenDay {
             key += "_7d\(Int(sevenDay.percentage))"
         }
-        if let opus = data.opus {
-            key += "_opus\(Int(opus.percentage))"
+        // 每周模型限制的前两个槽位：把解析出的类型也编进 key，避免不同模型构成
+        // （如 [Fable, Opus] 与 [Opus, Sonnet]）在百分比相同时命中同一缓存、画错图标
+        if let first = data.weeklyModels.first {
+            let type = LimitType.weeklyType(forModelName: first.modelName, slot: 0)
+            key += "_w0\(type.rawValue)\(Int(first.limit.percentage))"
         }
-        if let sonnet = data.sonnet {
-            key += "_sonnet\(Int(sonnet.percentage))"
+        if data.weeklyModels.count > 1 {
+            let model = data.weeklyModels[1]
+            let type = LimitType.weeklyType(forModelName: model.modelName, slot: 1)
+            key += "_w1\(type.rawValue)\(Int(model.limit.percentage))"
         }
         if let extraUsage = data.extraUsage, extraUsage.enabled, let percentage = extraUsage.percentage {
             key += "_extra\(Int(percentage))"

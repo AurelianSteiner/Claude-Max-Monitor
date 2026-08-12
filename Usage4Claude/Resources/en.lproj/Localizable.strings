@@ -15,7 +15,7 @@
 "menu.codex_status" = "OpenAI Status";
 "menu.coffee" = "Buy Me A Coffee";
 "menu.github_sponsor" = "GitHub Sponsor";
-"menu.quit" = "Quit Usage4Claude";
+"menu.quit" = "Quit Claude Max Monitor";
 "menu.account" = "Account";
 "menu.account_prefix" = "Account:";
 
@@ -105,7 +105,7 @@
 "settings.about.copyright" = "© 2025 All Rights Reserved";
 
 // MARK: - Welcome View
-"welcome.title" = "Welcome to Usage4Claude";
+"welcome.title" = "Welcome to Claude Max Monitor";
 "welcome.subtitle" = "Please configure your authentication information before getting started";
 "welcome.setup_button" = "Configure Authentication";
 "welcome.later_button" = "Set Up Later";
@@ -144,7 +144,7 @@
 "language.german" = "Deutsch";
 
 // MARK: - Window Titles
-"window.settings_title" = "Usage4Claude Settings";
+"window.settings_title" = "Claude Max Monitor Settings";
 "window.welcome_title" = "Welcome";
 
 // MARK: - Usage Data Formatting
@@ -231,7 +231,7 @@
 "diagnostic.suggestion_configure_auth" = "Please configure Organization ID and Session Key in the fields above";
 "diagnostic.suggestion_check_org_id" = "Check if Organization ID format is correct (should be a UUID)";
 "diagnostic.suggestion_export_and_share" = "Export this diagnostic report and share it on GitHub Issues";
-"diagnostic.suggestion_contact_support" = "Contact developer for help at github.com/f-is-h/Usage4Claude/issues";
+"diagnostic.suggestion_contact_support" = "Contact developer for help at github.com/AurelianSteiner/Claude-Max-Monitor/issues";
 "diagnostic.open_log_folder" = "Open Log Folder";
 
 // MARK: - Limit Types (v2.0.0)
@@ -239,6 +239,7 @@
 "seven_day_limit" = "7-Day Limit";
 "opus_weekly_limit" = "7D Opus Limit";
 "sonnet_weekly_limit" = "7D Sonnet Limit";
+"fable_weekly_limit" = "7D Fable Limit";
 "extra_usage" = "Extra Usage";
 "codex_primary_limit" = "Codex 5-Hour Limit";
 "codex_secondary_limit" = "Codex 7-Day Limit";
@@ -249,6 +250,7 @@
 "detail_row.seven_day_limit" = "7-Day Limit";
 "detail_row.opus_weekly_limit" = "7D Opus Limit";
 "detail_row.sonnet_weekly_limit" = "7D Sonnet Limit";
+"detail_row.fable_weekly_limit" = "7D Fable Limit";
 "detail_row.extra_usage" = "Extra Usage";
 
 // MARK: - Display Options (v2.0.0)
@@ -439,7 +441,7 @@
 
 /* Dashboard / multi-account overview */
 "dashboard.title" = "Overview";
-"dashboard.window_title" = "Usage4Claude — Overview";
+"dashboard.window_title" = "Claude Max Monitor — Overview";
 "dashboard.show_dashboard" = "Show overview";
 "dashboard.show_classic_detail" = "Show single account";
 "dashboard.open_window" = "Open overview window";
@@ -463,6 +465,7 @@
 "dashboard.ring_extra" = "Extra";
 "dashboard.ring_opus" = "Opus";
 "dashboard.ring_sonnet" = "Sonnet";
+"dashboard.ring_fable" = "Fable";
 "error.http_status" = "HTTP error %d";
 "weblogin.cookie_login" = "Sign in inside the app";
 "weblogin.cookie_login_help" = "Sign in to claude.ai in the embedded window — the app reads the session cookie itself. Works without a localhost redirect.";

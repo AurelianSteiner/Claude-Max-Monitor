@@ -44,6 +44,39 @@ struct AccountUsageSnapshot: Identifiable {
     /// "welcher Claude ist gerade am Ende"。nil 表示尚无数据。
     var peakUtilization: Double? { criticalLimit?.percentage }
 
+    /// Höchste Auslastung unter den **Wochen**-Limits dieses Kontos (0-100).
+    /// Treibt die Ampelpunkte oben in der Übersicht — bewusst ohne das
+    /// 5-Stunden-Fenster, das sich viel schneller wieder auffüllt.
+    /// Claude: Maximum aus 7-Tage-Limit und allen Wochen-Modelllimits (Opus/Sonnet/Fable).
+    /// Codex: das secondary-Fenster (Wochen-Äquivalent), sonst als Näherung `peakUtilization`.
+    /// nil, solange keine Daten vorliegen bzw. es keine Wochenlimits gibt.
+    var weeklyPeakUtilization: Double? {
+        switch provider {
+        case .claude:
+            guard let data = usageData else { return nil }
+            var values: [Double] = []
+            if let sevenDay = data.sevenDay { values.append(sevenDay.percentage) }
+            values.append(contentsOf: data.weeklyModels.map { $0.limit.percentage })
+            return values.max()
+        case .codex:
+            guard codexUsageData != nil else { return nil }
+            if let secondary = codexUsageData?.secondary { return secondary.percentage }
+            return peakUtilization
+        }
+    }
+
+    /// Schwelle, ab der ein Konto als "praktisch aufgebraucht" gilt: In der
+    /// Übersicht wird es ausgegraut und (im Verfügbarkeits-Sortiermodus) ans
+    /// Ende geschoben, weil man es bis zum Reset ohnehin nicht mehr nutzt.
+    static let nearExhaustionThreshold: Double = 96
+
+    /// True, wenn das knappste Limit dieses Kontos nahezu erschöpft ist.
+    /// Erst ab vorhandenen Daten aussagekräftig (sonst false).
+    var isNearExhausted: Bool {
+        guard let peak = peakUtilization else { return false }
+        return peak >= Self.nearExhaustionThreshold
+    }
+
     /// 圆环要展示的一项限制，标签已解析好
     struct RingLimit {
         let type: LimitType
@@ -71,9 +104,15 @@ struct AccountUsageSnapshot: Identifiable {
                                         resetsAt: sevenDay.resetsAt, label: L.Usage.sevenDayLimitShort))
             }
             for (index, model) in data.weeklyModels.enumerated() {
-                // 槽位仅决定配色，标签优先用 API 返回的真实模型名
-                let type: LimitType = index % 2 == 0 ? .opusWeekly : .sonnetWeekly
-                let fallback = type == .opusWeekly ? L.Dashboard.ringOpus : L.Dashboard.ringSonnet
+                // 类型按模型名解析（Fable/Opus/Sonnet），决定配色与形状；
+                // 标签优先用 API 返回的真实模型名，缺失时按类型回退默认短标签
+                let type = LimitType.weeklyType(forModelName: model.modelName, slot: index)
+                let fallback: String
+                switch type {
+                case .fableWeekly: fallback = L.Dashboard.ringFable
+                case .sonnetWeekly: fallback = L.Dashboard.ringSonnet
+                default: fallback = L.Dashboard.ringOpus
+                }
                 result.append(RingLimit(type: type, percentage: model.limit.percentage,
                                         resetsAt: model.limit.resetsAt, label: model.modelName ?? fallback))
             }

@@ -102,8 +102,8 @@ enum DashboardMetrics {
 
 struct DashboardView: View {
     @ObservedObject var manager: DashboardRefreshManager
-    /// 菜单操作回调，复用详情窗口那套 MenuAction
-    var onMenuAction: ((UsageDetailView.MenuAction) -> Void)?
+    /// 菜单操作回调
+    var onMenuAction: ((MenuAction) -> Void)?
     /// 独立窗口模式：不再提供"在窗口中打开"入口，也不需要退出按钮之外的窗口管理
     var isStandaloneWindow: Bool = false
 
@@ -172,6 +172,7 @@ struct DashboardView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
+            trafficLightRow
             Divider()
             grid
             Divider()
@@ -224,6 +225,56 @@ struct DashboardView: View {
         }
         .padding(.horizontal, DashboardMetrics.outerPadding)
         .frame(height: DashboardMetrics.headerHeight)
+    }
+
+    // MARK: - Ampel (Wochen-Auslastung)
+
+    /// Kompakte Punktreihe direkt unter dem Kopf: ein Punkt je Konto in der
+    /// Reihenfolge von `orderedSnapshots`, eingefärbt nach der Wochen-Auslastung.
+    /// Bei vielen Konten bricht die Reihe in weitere Zeilen um. Bei 0 Konten
+    /// (Leerzustand) bleibt sie ganz aus.
+    @ViewBuilder
+    private var trafficLightRow: some View {
+        if !manager.snapshots.isEmpty {
+            let dots = orderedSnapshots
+            let perRow = trafficDotsPerRow
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(Array(stride(from: 0, to: dots.count, by: perRow)), id: \.self) { start in
+                    HStack(spacing: 6) {
+                        ForEach(dots[start..<min(start + perRow, dots.count)]) { snapshot in
+                            trafficDot(for: snapshot)
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, DashboardMetrics.outerPadding)
+            .padding(.top, 4)
+            .padding(.bottom, 6)
+        }
+    }
+
+    private func trafficDot(for snapshot: AccountUsageSnapshot) -> some View {
+        let weekly = snapshot.weeklyPeakUtilization
+        return Circle()
+            .fill(WeeklyTrafficLight.color(for: weekly))
+            .frame(width: 10, height: 10)
+            .help(trafficDotHelp(for: snapshot, weekly: weekly))
+    }
+
+    /// Tooltip je Punkt: „Name: 87 % · Wochenlimit". Ohne Wochendaten nur der Name.
+    private func trafficDotHelp(for snapshot: AccountUsageSnapshot, weekly: Double?) -> String {
+        let name = snapshot.account.displayName
+        guard let weekly else { return name }
+        return "\(name): \(Int(weekly.rounded()))% · \(L.Dashboard.weeklyLimit)"
+    }
+
+    /// Punkte pro Zeile aus der verfügbaren Breite: Punkt (10) + Abstand (6).
+    /// Für ≤ 8 Konten passt alles in eine Zeile, erst darüber wird umgebrochen.
+    private var trafficDotsPerRow: Int {
+        let available = DashboardMetrics.width(columns: columnCount) - DashboardMetrics.outerPadding * 2
+        let stride: CGFloat = 10 + 6
+        return max(1, Int(available / stride))
     }
 
     private var sortMenu: some View {
@@ -293,9 +344,6 @@ struct DashboardView: View {
                     Label(L.Dashboard.openWindow, systemImage: "macwindow")
                 }
             }
-            Button(action: { onMenuAction?(.showClassicDetail) }) {
-                Label(L.Dashboard.showClassicDetail, systemImage: "chart.pie")
-            }
             Divider()
             Button(action: { onMenuAction?(.generalSettings) }) {
                 Label(L.Menu.generalSettings, systemImage: "gearshape")
@@ -340,23 +388,56 @@ struct DashboardView: View {
 
     // MARK: - Grid
 
+    @ViewBuilder
     private var grid: some View {
-        ScrollView(.vertical, showsIndicators: true) {
-            LazyVGrid(columns: gridColumns, alignment: .leading, spacing: DashboardMetrics.cardSpacing) {
-                ForEach(orderedSnapshots) { snapshot in
-                    AccountUsageCard(
-                        snapshot: snapshot,
-                        isCurrent: isCurrent(snapshot),
-                        showRemainingMode: $showRemainingMode,
-                        onSelect: { select(snapshot) },
-                        onRefresh: { manager.refreshAccount(id: snapshot.id) },
-                        onOpenAuthSettings: { onMenuAction?(.authSettings) }
-                    )
+        if manager.snapshots.isEmpty {
+            emptyState
+                .frame(height: gridHeight + DashboardMetrics.outerPadding * 2)
+        } else {
+            ScrollView(.vertical, showsIndicators: true) {
+                LazyVGrid(columns: gridColumns, alignment: .leading, spacing: DashboardMetrics.cardSpacing) {
+                    ForEach(orderedSnapshots) { snapshot in
+                        AccountUsageCard(
+                            snapshot: snapshot,
+                            isCurrent: isCurrent(snapshot),
+                            showRemainingMode: $showRemainingMode,
+                            onSelect: { select(snapshot) },
+                            onRefresh: { manager.refreshAccount(id: snapshot.id) },
+                            onOpenAuthSettings: { onMenuAction?(.authSettings) }
+                        )
+                    }
                 }
+                .padding(DashboardMetrics.outerPadding)
             }
-            .padding(DashboardMetrics.outerPadding)
+            .frame(height: gridHeight + DashboardMetrics.outerPadding * 2)
         }
-        .frame(height: gridHeight + DashboardMetrics.outerPadding * 2)
+    }
+
+    /// Leerer Zustand: kein Konto hinterlegt. Statt einer leeren Karten-Grid
+    /// ein freundlicher Hinweis mit direktem Weg in die Authentifizierung.
+    private var emptyState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "person.crop.circle.badge.plus")
+                .font(.system(size: 40))
+                .foregroundColor(.secondary)
+
+            Text(L.Welcome.subtitle)
+                .font(.subheadline)
+                .multilineTextAlignment(.center)
+                .foregroundColor(.secondary)
+                .padding(.horizontal, DashboardMetrics.outerPadding * 2)
+
+            Button(action: { onMenuAction?(.authSettings) }) {
+                Label(L.Account.addAccount, systemImage: "plus")
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Footer

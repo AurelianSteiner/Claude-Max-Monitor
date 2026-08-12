@@ -24,7 +24,7 @@ final class DashboardWindowManager {
 
     /// 显示总览窗口（已打开则前置）
     /// - Parameter onMenuAction: 窗口内菜单项的回调，与 popover 共用同一套动作
-    func show(onMenuAction: @escaping (UsageDetailView.MenuAction) -> Void) {
+    func show(onMenuAction: @escaping (MenuAction) -> Void) {
         if let window, window.isVisible {
             NSApp.activate(ignoringOtherApps: true)
             window.makeKeyAndOrderFront(nil)
