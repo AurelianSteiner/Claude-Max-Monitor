@@ -1,0 +1,597 @@
+//
+//  LocalizationHelper.swift
+//  Usage4Claude
+//
+//  Created by f-is-h on 2025-10-15.
+//  Copyright © 2025 f-is-h. All rights reserved.
+//
+
+import Foundation
+
+/// 本地化字符串访问器
+/// 提供类型安全的本地化字符串访问方式
+/// 支持动态语言切换，根据用户设置返回对应语言的字符串
+enum L {
+    
+    // MARK: - Menu Items
+    enum Menu {
+        static var generalSettings: String { localized("menu.general_settings") }
+        static var authSettings: String { localized("menu.auth_settings") }
+        static var checkUpdates: String { localized("menu.check_updates") }
+        static var about: String { localized("menu.about") }
+        static var claudeStatus: String { localized("menu.claude_status") }
+        static var codexStatus: String { localized("menu.codex_status") }
+        static var quit: String { localized("menu.quit") }
+        static var account: String { localized("menu.account") }
+        static var accountPrefix: String { localized("menu.account_prefix") }
+    }
+
+    // MARK: - Account Management
+    enum Account {
+        static var listTitle: String { localized("account.list_title") }
+        static var noAccounts: String { localized("account.no_accounts") }
+        static var addAccount: String { localized("account.add_account") }
+        static var addNewAccount: String { localized("account.add_new_account") }
+        static var currentAccount: String { localized("account.current_account") }
+        static var alias: String { localized("account.alias") }
+        static var aliasOptional: String { localized("account.alias_optional") }
+        static var aliasPlaceholder: String { localized("account.alias_placeholder") }
+        static var clearAlias: String { localized("account.clear_alias") }
+        static var organizationId: String { localized("account.organization_id") }
+        static var copyOrgId: String { localized("account.copy_org_id") }
+        static var deleteAccount: String { localized("account.delete_account") }
+        static var deleteConfirmTitle: String { localized("account.delete_confirm_title") }
+        static var deleteConfirmMessage: String { localized("account.delete_confirm_message") }
+        static var delete: String { localized("account.delete") }
+        static var cancel: String { localized("account.cancel") }
+        static var validateAndAdd: String { localized("account.validate_and_add") }
+        static var multiOrgAdded: String { localized("account.multi_org_added") }
+        static var claudeAccounts: String { localized("account.claude_accounts") }
+        static var codexAccounts: String { localized("account.codex_accounts") }
+        static var addCodexAccount: String { localized("account.add_codex_account") }
+        static var codexCurrentAccount: String { localized("account.codex_current_account") }
+    }
+    
+    // MARK: - Usage Detail View
+    enum Usage {
+        static var title: String { localized("usage.title") }
+        static var notStarted: String { localized("usage.not_started") }
+        static var resetIn: String { localized("usage.reset_in") }
+        static var remaining: String { localized("usage.remaining") }
+        static var available: String { localized("usage.available") }
+        static var loading: String { localized("usage.loading") }
+        static var notConfigured: String { localized("usage.not_configured") }
+        static var goToSettings: String { localized("usage.go_to_settings") }
+        static var resetTime: String { localized("usage.reset_time") }
+        static var used: String { localized("usage.used") }
+        static var fiveHourLimit: String { localized("usage.five_hour_limit") }
+        static var sevenDayLimit: String { localized("usage.seven_day_limit") }
+        static var fiveHourLimitShort: String { localized("usage.five_hour_limit_short") }
+        static var sevenDayLimitShort: String { localized("usage.seven_day_limit_short") }
+        static var resetDate: String { localized("usage.reset_date") }
+        static var refresh: String { localized("usage.refresh") }
+        static var refreshCooldown: String { localized("usage.refresh_cooldown") }
+        static var runDiagnostic: String { localized("usage.run_diagnostic") }
+        static var codexTitle: String { localized("usage.codex_title") }
+        static var codexRelogin: String { localized("usage.codex_relogin") }
+    }
+    
+    // MARK: - Dashboard（多账户总览）
+    enum Dashboard {
+        static var title: String { localized("dashboard.title") }
+        static var windowTitle: String { localized("dashboard.window_title") }
+        static var showDashboard: String { localized("dashboard.show_dashboard") }
+        static var showClassicDetail: String { localized("dashboard.show_classic_detail") }
+        static var openWindow: String { localized("dashboard.open_window") }
+        static var badgeActive: String { localized("dashboard.badge_active") }
+        static var badgeMostFree: String { localized("dashboard.badge_most_free") }
+        static var badgeExhausted: String { localized("dashboard.badge_exhausted") }
+        static var sortByOrder: String { localized("dashboard.sort_by_order") }
+        static var sortByAvailability: String { localized("dashboard.sort_by_availability") }
+        static var sortHelp: String { localized("dashboard.sort_help") }
+        static var refreshAccount: String { localized("dashboard.refresh_account") }
+        static var makeActive: String { localized("dashboard.make_active") }
+        static var retry: String { localized("dashboard.retry") }
+        static var tapHint: String { localized("dashboard.tap_hint") }
+        // Kurzlabels im Ringzentrum
+        static var ringExtra: String { localized("dashboard.ring_extra") }
+        static var ringOpus: String { localized("dashboard.ring_opus") }
+        static var ringSonnet: String { localized("dashboard.ring_sonnet") }
+
+        static func updatedAt(_ time: String) -> String {
+            String(format: localized("dashboard.updated_at"), time)
+        }
+
+        /// 列数选项。单数形态在德/法/英等语言里与复数不同，因此单列走独立的键。
+        static func columns(_ count: Int) -> String {
+            count == 1
+                ? localized("dashboard.columns_one")
+                : String(format: localized("dashboard.columns_other"), count)
+        }
+    }
+
+    // MARK: - Settings Dashboard
+    enum SettingsDashboard {
+        static var section: String { localized("settings.dashboard.section") }
+        static var hint: String { localized("settings.dashboard.hint") }
+        static var enable: String { localized("settings.dashboard.enable") }
+        static var description: String { localized("settings.dashboard.description") }
+        static var sortLabel: String { localized("settings.dashboard.sort_label") }
+        static var columnsLabel: String { localized("settings.dashboard.columns_label") }
+        static var needsMoreAccounts: String { localized("settings.dashboard.needs_more_accounts") }
+    }
+
+    // MARK: - Settings Tabs
+    enum SettingsTab {
+        static var general: String { localized("settings.tab.general") }
+        static var auth: String { localized("settings.tab.auth") }
+        static var about: String { localized("settings.tab.about") }
+    }
+    
+    // MARK: - Settings General
+    enum SettingsGeneral {
+        static var launchSection: String { localized("settings.general.launch_section") }
+        static var launchAtLogin: String { localized("settings.general.launch_at_login") }
+        static var launchHint: String { localized("settings.general.launch_hint") }
+        static var displaySection: String { localized("settings.general.display_section") }
+        static var menubarIcon: String { localized("settings.general.menubar_icon") }
+        static var menubarHint: String { localized("settings.general.menubar_hint") }
+        static var menubarTheme: String { localized("settings.general.menubar_theme") }
+        static var displayContent: String { localized("settings.general.display_content") }
+        static var monochromeNoIconHint: String { localized("settings.general.monochrome_no_icon_hint") }
+        static var refreshSection: String { localized("settings.general.refresh_section") }
+        static var refreshMode: String { localized("settings.general.refresh_mode") }
+        static var refreshInterval: String { localized("settings.general.refresh_interval") }
+        static var refreshHintSmart: String { localized("settings.general.refresh_hint_smart") }
+        static var refreshHintFixed: String { localized("settings.general.refresh_hint_fixed") }
+        static var languageSection: String { localized("settings.general.language_section") }
+        static var interfaceLanguage: String { localized("settings.general.interface_language") }
+        static var languageHint: String { localized("settings.general.language_hint") }
+        static var resetButton: String { localized("settings.general.reset_button") }
+    }
+    
+    // MARK: - Settings Authentication
+    enum SettingsAuth {
+        static var howToTitle: String { localized("settings.auth.how_to_title") }
+        static var step1: String { localized("settings.auth.step1") }
+        static var step2: String { localized("settings.auth.step2") }
+        static var step3: String { localized("settings.auth.step3") }
+        static var step4: String { localized("settings.auth.step4") }
+        static var step5: String { localized("settings.auth.step5") }
+        static var step6: String { localized("settings.auth.step6") }
+        static var openBrowser: String { localized("settings.auth.open_browser") }
+        static var sessionKeyLabel: String { localized("settings.auth.session_key_label") }
+        static var sessionKeyPlaceholder: String { localized("settings.auth.session_key_placeholder") }
+        static var sessionKeyHint: String { localized("settings.auth.session_key_hint") }
+        static var configured: String { localized("settings.auth.configured") }
+        static var notConfigured: String { localized("settings.auth.not_configured") }
+        static var credentialsTitle: String { localized("settings.auth.credentials_title") }
+        static var readyToUse: String { localized("settings.auth.ready_to_use") }
+        static var needCredentials: String { localized("settings.auth.need_credentials") }
+        static var showPassword: String { localized("settings.auth.show_password") }
+        static var hidePassword: String { localized("settings.auth.hide_password") }
+        static var manualInputClaudeOnlyHelp: String { localized("settings.auth.manual_input_claude_only_help") }
+    }
+    
+    // MARK: - Settings About
+    enum SettingsAbout {
+        static func version(_ version: String) -> String {
+            String(format: localized("settings.about.version"), version)
+        }
+        static var description: String { localized("settings.about.description") }
+        static var developer: String { localized("settings.about.developer") }
+        static var license: String { localized("settings.about.license") }
+        static var licenseValue: String { localized("settings.about.license_value") }
+        static var github: String { localized("settings.about.github") }
+        static var copyright: String { localized("settings.about.copyright") }
+    }
+    
+    // MARK: - Welcome View
+    enum Welcome {
+        static var title: String { localized("welcome.title") }
+        static var subtitle: String { localized("welcome.subtitle") }
+        static var setupButton: String { localized("welcome.setup_button") }
+        static var laterButton: String { localized("welcome.later_button") }
+
+        // v2.0.0 Welcome Flow
+        static var credentialsTitle: String { localized("welcome_credentials_title") }
+        static var credentialsSubtitle: String { localized("welcome_credentials_subtitle") }
+        static var displayTitle: String { localized("welcome.display_title") }
+        static var displaySubtitle: String { localized("welcome.display_subtitle") }
+        static var preview: String { localized("welcome.preview") }
+        static var back: String { localized("welcome.back") }
+        static var continue_: String { localized("welcome.continue") }
+        static var skip: String { localized("welcome.skip") }
+        static var finish: String { localized("welcome.finish") }
+        static var authenticationSetup: String { localized("welcome.authentication_setup") }
+        static var sessionKey: String { localized("welcome.session_key") }
+        static var sessionKeyPlaceholder: String { localized("welcome.session_key_placeholder") }
+        static var sessionKeyHint: String { localized("welcome.session_key_hint") }
+        static var validFormat: String { localized("welcome.valid_format") }
+        static var howToGetSessionKey: String { localized("welcome.how_to_get_session_key") }
+        static var invalidFormat: String { localized("welcome.invalid_format") }
+        static var selectLimits: String { localized("welcome.select_limits") }
+        static var smartModeRecommended: String { localized("welcome.smart_mode_recommended") }
+        static var customSelection: String { localized("welcome.custom_selection") }
+        static var configuring: String { localized("welcome.configuring") }
+        static var fetchOrgIdFailed: String { localized("welcome.fetch_org_id_failed") }
+        static var menubarIconNotVisible: String { localized("welcome.menubar_icon_not_visible") }
+        static var multiAccountHint: String { localized("welcome.multi_account_hint") }
+    }
+    
+    // MARK: - Update
+    enum Update {
+        /// 通用“好”按钮，被诊断 / 设置等多处复用
+        static var okButton: String { localized("update.ok_button") }
+        // 更新提示：菜单栏徽章 / 彩虹文字 / 弹窗横幅
+        enum Notification {
+            static var available: String { localized("update.notification.available") }
+            static var badgeMenu: String { localized("update.notification.badge_menu") }
+            static var badgeShort: String { localized("update.notification.badge_short") }
+        }
+    }
+    
+    // MARK: - Icon Display Mode
+    enum Display {
+        static var percentageOnly: String { localized("display.percentage_only") }
+        static var iconOnly: String { localized("display.icon_only") }
+        static var both: String { localized("display.both") }
+        static var none: String { localized("display.none") }
+        static var showIcon: String { localized("display.show_icon") }
+        static var showPercentage: String { localized("display.show_percentage") }
+    }
+    
+    // MARK: - Icon Style Mode
+    enum IconStyle {
+        static var colorTranslucent: String { localized("icon_style.color_translucent") }
+        static var colorWithBackground: String { localized("icon_style.color_with_background") }
+        static var monochrome: String { localized("icon_style.monochrome") }
+        static var colorTranslucentDesc: String { localized("icon_style.color_translucent_desc") }
+        static var colorWithBackgroundDesc: String { localized("icon_style.color_with_background_desc") }
+        static var monochromeDesc: String { localized("icon_style.monochrome_desc") }
+    }
+    
+    // MARK: - Refresh Interval
+    enum Refresh {
+        static var smartMode: String { localized("refresh.smart_mode") }
+        static var fixedMode: String { localized("refresh.fixed_mode") }
+        static var oneMinute: String { localized("refresh.1_minute") }
+        static var threeMinutes: String { localized("refresh.3_minutes") }
+        static var fiveMinutes: String { localized("refresh.5_minutes") }
+        static var tenMinutes: String { localized("refresh.10_minutes") }
+    }
+    
+    // MARK: - Language Names
+    enum Language {
+        static var english: String { localized("language.english") }
+        static var german: String { localized("language.german") }
+    }
+    
+    // MARK: - Window Titles
+    enum Window {
+        static var settingsTitle: String { localized("window.settings_title") }
+        static var welcomeTitle: String { localized("window.welcome_title") }
+    }
+
+    // MARK: - Limit Types
+    enum Limit {
+        static var fiveHour: String { localized("five_hour_limit") }
+        static var sevenDay: String { localized("seven_day_limit") }
+        static var opusWeekly: String { localized("opus_weekly_limit") }
+        static var sonnetWeekly: String { localized("sonnet_weekly_limit") }
+        static var extraUsage: String { localized("extra_usage") }
+        static var codexPrimary: String { localized("codex_primary_limit") }
+        static var codexSecondary: String { localized("codex_secondary_limit") }
+        static var codexExtraUsage: String { localized("codex_extra_usage") }
+    }
+
+    // MARK: - Detail Rows
+    enum DetailRow {
+        static var fiveHour: String { localized("detail_row.five_hour_limit") }
+        static var sevenDay: String { localized("detail_row.seven_day_limit") }
+        static var opusWeekly: String { localized("detail_row.opus_weekly_limit") }
+        static var sonnetWeekly: String { localized("detail_row.sonnet_weekly_limit") }
+        static var extraUsage: String { localized("detail_row.extra_usage") }
+        static var today: String { localized("usage_data.detail_today") }
+
+        static func creditsBalance(_ balance: Double) -> String {
+            return String(format: localized("extra_usage.detail_credits_balance"), displayCredits(balance))
+        }
+
+        static func creditsRemaining(_ balance: Double) -> String {
+            return String(format: localized("extra_usage.detail_credits_remaining"), displayCredits(balance))
+        }
+
+        private static func displayCredits(_ balance: Double) -> Int {
+            max(0, Int(balance.rounded(.down)))
+        }
+    }
+
+    // MARK: - Usage Data Formatting
+    enum UsageData {
+        static var notStartedReset: String { localized("usage_data.not_started_reset") }
+        static var resettingSoon: String { localized("usage_data.resetting_soon") }
+        static func resetsInHours(_ hours: Int, _ minutes: Int) -> String {
+            String(format: localized("usage_data.resets_in_hours"), hours, minutes)
+        }
+        static func resetsInMinutes(_ minutes: Int) -> String {
+            String(format: localized("usage_data.resets_in_minutes"), minutes)
+        }
+        static func resetsInDays(_ days: Int, _ hours: Int) -> String {
+            String(format: localized("usage_data.resets_in_days"), days, hours)
+        }
+        static var unknown: String { localized("usage_data.unknown") }
+        static var today: String { localized("usage_data.today") }
+        static var tomorrow: String { localized("usage_data.tomorrow") }
+
+        // Compact remaining formats
+        static var compactResettingSoon: String { localized("usage_data.compact_resetting_soon") }
+        static func compactRemainingMinutes(_ minutes: Int) -> String {
+            String(format: localized("usage_data.compact_remaining_minutes"), minutes)
+        }
+        static func compactRemainingHours(_ hours: Int, _ minutes: Int) -> String {
+            String(format: localized("usage_data.compact_remaining_hours"), hours, minutes)
+        }
+        static func compactRemainingDays(_ days: Int, _ hours: Int) -> String {
+            String(format: localized("usage_data.compact_remaining_days"), days, hours)
+        }
+        static func compactRemainingDaysWithMinutes(_ days: Int, _ hours: Int, _ minutes: Int) -> String {
+            String(format: localized("usage_data.compact_remaining_days_with_minutes"), days, hours, minutes)
+        }
+    }
+    
+    // MARK: - Error Messages
+    enum Error {
+        static var invalidUrl: String { localized("error.invalid_url") }
+        static var noData: String { localized("error.no_data") }
+        static var sessionExpired: String { localized("error.session_expired") }
+        static var cloudflareBlocked: String { localized("error.cloudflare_blocked") }
+        static var noCredentials: String { localized("error.no_credentials") }
+        static var networkFailed: String { localized("error.network_failed") }
+        static var decodingFailed: String { localized("error.decoding_failed") }
+        static var noOrganizationsFound: String { localized("error.no_organizations_found") }
+        static var unauthorized: String { localized("error.unauthorized") }
+        static var rateLimited: String { localized("error.rate_limited") }
+        static func httpStatus(_ code: Int) -> String {
+            String(format: localized("error.http_status"), code)
+        }
+    }
+
+    // MARK: - Diagnostics
+    enum Diagnostic {
+        static var sectionTitle: String { localized("diagnostic.section_title") }
+        static var sectionDescription: String { localized("diagnostic.section_description") }
+        static var testButton: String { localized("diagnostic.test_button") }
+        static var viewDetailsButton: String { localized("diagnostic.view_details_button") }
+        static var exportButton: String { localized("diagnostic.export_button") }
+        static var testingConnection: String { localized("diagnostic.testing_connection") }
+        static var testCompleted: String { localized("diagnostic.test_completed") }
+        static var testSuccess: String { localized("diagnostic.test_success") }
+        static var testFailed: String { localized("diagnostic.test_failed") }
+        static var resultSuccess: String { localized("diagnostic.result_success") }
+        static var resultFailed: String { localized("diagnostic.result_failed") }
+        static var httpStatus: String { localized("diagnostic.http_status") }
+        static var responseTime: String { localized("diagnostic.response_time") }
+        static var responseType: String { localized("diagnostic.response_type") }
+        static var cloudflareDetected: String { localized("diagnostic.cloudflare_detected") }
+        static var diagnosis: String { localized("diagnostic.diagnosis") }
+        static var suggestions: String { localized("diagnostic.suggestions") }
+        static var privacyNotice: String { localized("diagnostic.privacy_notice") }
+        static var detailedReportTitle: String { localized("diagnostic.detailed_report_title") }
+        static var noReportAvailable: String { localized("diagnostic.no_report_available") }
+        static var copyToClipboard: String { localized("diagnostic.copy_to_clipboard") }
+        static var exportTitle: String { localized("diagnostic.export_title") }
+        static var exportMessage: String { localized("diagnostic.export_message") }
+        static var exportSuccessTitle: String { localized("diagnostic.export_success_title") }
+        static var exportSuccessMessage: String { localized("diagnostic.export_success_message") }
+        static var exportErrorTitle: String { localized("diagnostic.export_error_title") }
+
+        // Diagnosis messages
+        static var diagnosisSuccess: String { localized("diagnostic.diagnosis_success") }
+        static var diagnosisCloudflare: String { localized("diagnostic.diagnosis_cloudflare") }
+        static var diagnosisDecoding: String { localized("diagnostic.diagnosis_decoding") }
+        static var diagnosisNetwork: String { localized("diagnostic.diagnosis_network") }
+        static var diagnosisNoCredentials: String { localized("diagnostic.diagnosis_no_credentials") }
+        static var diagnosisInvalidUrl: String { localized("diagnostic.diagnosis_invalid_url") }
+        static var diagnosisUnknown: String { localized("diagnostic.diagnosis_unknown") }
+
+        // Suggestion messages
+        static var suggestionSuccess: String { localized("diagnostic.suggestion_success") }
+        static var suggestionVisitBrowser: String { localized("diagnostic.suggestion_visit_browser") }
+        static var suggestionWaitAndRetry: String { localized("diagnostic.suggestion_wait_and_retry") }
+        static var suggestionCheckVPN: String { localized("diagnostic.suggestion_check_vpn") }
+        static var suggestionUseSmartMode: String { localized("diagnostic.suggestion_use_smart_mode") }
+        static var suggestionVerifyCredentials: String { localized("diagnostic.suggestion_verify_credentials") }
+        static var suggestionUpdateSessionKey: String { localized("diagnostic.suggestion_update_session_key") }
+        static var suggestionCheckBrowser: String { localized("diagnostic.suggestion_check_browser") }
+        static var suggestionCheckInternet: String { localized("diagnostic.suggestion_check_internet") }
+        static var suggestionCheckFirewall: String { localized("diagnostic.suggestion_check_firewall") }
+        static var suggestionRetryLater: String { localized("diagnostic.suggestion_retry_later") }
+        static var suggestionConfigureAuth: String { localized("diagnostic.suggestion_configure_auth") }
+        static var suggestionCheckOrgId: String { localized("diagnostic.suggestion_check_org_id") }
+        static var suggestionExportAndShare: String { localized("diagnostic.suggestion_export_and_share") }
+        static var suggestionContactSupport: String { localized("diagnostic.suggestion_contact_support") }
+
+        // Log folder access
+        static var openLogFolder: String { localized("diagnostic.open_log_folder") }
+    }
+
+    // MARK: - Limit Types (v2.0.0)
+    enum LimitTypes {
+        static var fiveHour: String { localized("five_hour_limit") }
+        static var sevenDay: String { localized("seven_day_limit") }
+        static var opusWeekly: String { localized("opus_weekly_limit") }
+        static var sonnetWeekly: String { localized("sonnet_weekly_limit") }
+        static var extraUsage: String { localized("extra_usage") }
+        static var codexPrimary: String { localized("codex_primary_limit") }
+        static var codexSecondary: String { localized("codex_secondary_limit") }
+        static var codexExtraUsage: String { localized("codex_extra_usage") }
+    }
+
+    // MARK: - Display Options (v2.0.0)
+    enum DisplayOptions {
+        static var title: String { localized("display_options") }
+        static var smartDisplay: String { localized("smart_display") }
+        static var smartDisplayDescription: String { localized("smart_display_description") }
+        static var customDisplay: String { localized("custom_display") }
+        static var customDisplayDescription: String { localized("custom_display_description") }
+        static var displayModeLabel: String { localized("display_mode_label") }
+        static var selectLimitTypes: String { localized("select_limit_types") }
+        static var circularIconConstraint: String { localized("circular_icon_constraint") }
+        static var coloredThemeUnavailable: String { localized("colored_theme_unavailable") }
+        static var menuBarOnlyToggle: String { localized("custom_display.menu_bar_only_toggle") }
+        static var menuBarOnlyDescription: String { localized("custom_display.menu_bar_only_description") }
+    }
+
+    // MARK: - Launch at Login
+    enum LaunchAtLogin {
+        static var statusEnabled: String { localized("launch.status.enabled") }
+        static var statusDisabled: String { localized("launch.status.disabled") }
+        static var statusRequiresApproval: String { localized("launch.status.requires_approval") }
+        static var statusNotFound: String { localized("launch.status.not_found") }
+        static var errorTitle: String { localized("launch.error.title") }
+        static var errorEnable: String { localized("launch.error.enable") }
+        static var errorDisable: String { localized("launch.error.disable") }
+    }
+
+    // MARK: - Extra Usage
+    enum ExtraUsage {
+        static var notEnabled: String { localized("extra_usage.not_enabled") }
+        static var unlimited: String { localized("extra_usage.unlimited") }
+        static var limitReached: String { localized("extra_usage.limit_reached") }
+        static func usageAmount(_ used: Double, _ limit: Double, symbol: String = "$") -> String {
+            String(format: localized("extra_usage.usage_amount"), symbol, used, symbol, limit)
+        }
+        static func remainingAmount(_ remaining: Double, symbol: String = "$") -> String {
+            String(format: localized("extra_usage.remaining_amount"), symbol, remaining)
+        }
+        static func creditsBalance(_ balance: Double) -> String {
+            return String(format: localized("extra_usage.credits_balance"), displayCredits(balance))
+        }
+        static func creditsRemaining(_ balance: Double) -> String {
+            return String(format: localized("extra_usage.credits_remaining"), displayCredits(balance))
+        }
+
+        private static func displayCredits(_ balance: Double) -> Int {
+            max(0, Int(balance.rounded(.down)))
+        }
+    }
+
+    // MARK: - Loading Animation
+    enum LoadingAnimation {
+        static var rainbow: String { localized("loading_animation.rainbow") }
+        static var dashed: String { localized("loading_animation.dashed") }
+        static var pulse: String { localized("loading_animation.pulse") }
+        static func current(_ name: String) -> String {
+            String(format: localized("loading_animation.current"), name)
+        }
+    }
+
+    // MARK: - Time Format
+    enum TimeFormat {
+        static var system: String { localized("time_format.system") }
+        static var twelveHour: String { localized("time_format.twelve_hour") }
+        static var twentyFourHour: String { localized("time_format.twenty_four_hour") }
+    }
+
+    // MARK: - Appearance
+    enum Appearance {
+        static var system: String { localized("appearance.system") }
+        static var light: String { localized("appearance.light") }
+        static var dark: String { localized("appearance.dark") }
+    }
+
+    // MARK: - Settings General (Appearance)
+    enum SettingsGeneralAppearance {
+        static var section: String { localized("settings.general.appearance_section") }
+        static var hint: String { localized("settings.general.appearance_hint") }
+    }
+
+    // MARK: - Web Login
+    enum WebLogin {
+        static var windowTitle: String { localized("weblogin.window_title") }
+        static var codexWindowTitle: String { localized("weblogin.codex_window_title") }
+        static var browserLogin: String { localized("weblogin.browser_login") }
+        static var browserLoginRecommended: String { localized("weblogin.browser_login_recommended") }
+        static var manualInput: String { localized("weblogin.manual_input") }
+        static var cookieLogin: String { localized("weblogin.cookie_login") }
+        static var cookieLoginHelp: String { localized("weblogin.cookie_login_help") }
+        static var orManualInput: String { localized("weblogin.or_manual_input") }
+        static var loading: String { localized("weblogin.loading") }
+        static var waitingForLogin: String { localized("weblogin.waiting_for_login") }
+        static var codexWaitingForLogin: String { localized("weblogin.codex_waiting_for_login") }
+        static var validating: String { localized("weblogin.validating") }
+        static func success(_ name: String) -> String {
+            String(format: localized("weblogin.success"), name)
+        }
+        static var cloudflareBlocked: String { localized("weblogin.cloudflare_blocked") }
+        static var privacyNotice: String { localized("weblogin.privacy_notice") }
+
+        // MARK: Claude OAuth 登录（系统浏览器）
+        static var claudeOAuthPortBusy: String { localized("weblogin.claude_oauth_port_busy") }
+        static var claudeOAuthManualHint: String { localized("weblogin.claude_oauth_manual_hint") }
+        static var claudeOAuthManualPrompt: String { localized("weblogin.claude_oauth_manual_prompt") }
+        static var claudeOAuthManualSubmit: String { localized("weblogin.claude_oauth_manual_submit") }
+        static var claudeOAuthManualInvalid: String { localized("weblogin.claude_oauth_manual_invalid") }
+
+        // MARK: Codex OAuth 登录（系统浏览器）
+        static var codexOAuthPreparing: String { localized("weblogin.codex_oauth_preparing") }
+        static var codexOAuthWaitingBrowser: String { localized("weblogin.codex_oauth_waiting_browser") }
+        static var codexOAuthWaitingHint: String { localized("weblogin.codex_oauth_waiting_hint") }
+        static var codexOAuthExchanging: String { localized("weblogin.codex_oauth_exchanging") }
+        static var codexOAuthFailed: String { localized("weblogin.codex_oauth_failed") }
+        static var codexOAuthTimeout: String { localized("weblogin.codex_oauth_timeout") }
+        static var codexOAuthPortBusy: String { localized("weblogin.codex_oauth_port_busy") }
+        static var codexOAuthReopenBrowser: String { localized("weblogin.codex_oauth_reopen_browser") }
+        static var codexOAuthRetry: String { localized("weblogin.codex_oauth_retry") }
+    }
+
+    // MARK: - Settings Notification
+    enum SettingsNotification {
+        static var section: String { localized("notification.section") }
+        static var hint: String { localized("notification.hint") }
+        static var enable: String { localized("notification.enable") }
+        static var description: String { localized("notification.description") }
+    }
+
+    // MARK: - Usage Notification
+    enum UsageNotification {
+        static var warningTitle: String { localized("notification.warning_title") }
+        static func warningBody(_ type: String, _ percentage: Int) -> String {
+            String(format: localized("notification.warning_body"), type, percentage)
+        }
+        static var resetTitle: String { localized("notification.reset_title") }
+        static func resetBody(_ type: String) -> String {
+            String(format: localized("notification.reset_body"), type)
+        }
+        static var codexSessionExpiredTitle: String { localized("notification.codex_session_expired_title") }
+        static var codexSessionExpiredBody: String { localized("notification.codex_session_expired_body") }
+    }
+
+    // MARK: - Settings General (Time Format)
+    enum SettingsGeneralTimeFormat {
+        static var section: String { localized("settings.general.time_format_section") }
+        static var hint: String { localized("settings.general.time_format_hint") }
+        static var preview: String { localized("settings.general.time_format_preview") }
+    }
+
+    // MARK: - Helper Methods
+    
+    /// 本地化字符串辅助方法
+    /// 根据用户设置的语言返回对应的本地化字符串
+    /// - Parameter key: 本地化字符串的键名
+    /// - Returns: 对应语言的本地化字符串
+    private static func localized(_ key: String) -> String {
+        // 从UserSettings获取用户选择的语言
+        let language = UserSettings.shared.language.rawValue
+        
+        // 获取对应语言的bundle
+        guard let path = Bundle.main.path(forResource: language, ofType: "lproj"),
+              let bundle = Bundle(path: path) else {
+            // 如果找不到对应语言，使用系统默认
+            return NSLocalizedString(key, comment: "")
+        }
+        
+        return NSLocalizedString(key, bundle: bundle, comment: "")
+    }
+}

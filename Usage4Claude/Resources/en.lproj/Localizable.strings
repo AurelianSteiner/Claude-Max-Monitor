@@ -1,0 +1,471 @@
+/* 
+  Localizable.strings (English)
+  Usage4Claude
+ 
+  Created by f-is-h on 2025-10-15.
+  Copyright © 2025 f-is-h. All rights reserved.
+*/
+
+// MARK: - Menu Items
+"menu.general_settings" = "General Settings";
+"menu.auth_settings" = "Authentication Settings";
+"menu.check_updates" = "Check for Updates";
+"menu.about" = "About";
+"menu.claude_status" = "Claude Status";
+"menu.codex_status" = "OpenAI Status";
+"menu.coffee" = "Buy Me A Coffee";
+"menu.github_sponsor" = "GitHub Sponsor";
+"menu.quit" = "Quit Usage4Claude";
+"menu.account" = "Account";
+"menu.account_prefix" = "Account:";
+
+// MARK: - Usage Detail View
+"usage.title" = "Claude Usage";
+"usage.not_started" = "Display after usage starts";
+"usage.reset_in" = "Resets in";
+"usage.remaining" = "Remaining";
+"usage.available" = "Available";
+"usage.loading" = "Loading...";
+"usage.not_configured" = "Authentication not configured";
+"usage.go_to_settings" = "Go to Settings";
+"usage.reset_time" = "Reset Time";
+"usage.used" = "Used";
+"usage.five_hour_limit" = "5-Hour Limit";
+"usage.seven_day_limit" = "7-Day Limit";
+"usage.five_hour_limit_short" = "5h";
+"usage.seven_day_limit_short" = "7d";
+"usage.reset_date" = "Reset Date";
+"usage.refresh" = "Refresh";
+"usage.refresh_cooldown" = "Please wait a moment";
+"usage.run_diagnostic" = "Run Diagnostic";
+"usage.codex_title" = "Codex Usage";
+"usage.codex_relogin" = "Sign In Again";
+
+// MARK: - Settings - Tabs
+"settings.tab.general" = "General";
+"settings.tab.auth" = "Authentication Settings";
+"settings.tab.about" = "About";
+
+// MARK: - Settings - General
+"settings.general.launch_section" = "Launch at Login";
+"settings.general.launch_at_login" = "Start automatically at login";
+"settings.general.launch_hint" = "When enabled, the app will launch automatically when you log in to your system";
+"settings.general.display_section" = "Display Settings";
+"settings.general.menubar_icon" = "Menu Bar Icon";
+"settings.general.menubar_hint" = "Choose what to display in the menu bar";
+"settings.general.menubar_theme" = "Menu Bar Theme";
+"settings.general.display_content" = "Display Content";
+"settings.general.monochrome_no_icon_hint" = "Icon display is not supported in Monochrome theme";
+"settings.general.refresh_section" = "Refresh Settings";
+"settings.general.refresh_mode" = "Refresh Mode";
+"settings.general.refresh_interval" = "Fixed Refresh Interval";
+"settings.general.refresh_hint_smart" = "Automatically adjust refresh frequency based on usage (1 min when active, up to 10 min when idle)";
+"settings.general.refresh_hint_fixed" = "Refresh data at fixed time intervals";
+"settings.general.language_section" = "Language Settings";
+"settings.general.interface_language" = "Interface Language";
+"settings.general.language_hint" = "Change the interface display language";
+"settings.general.reset_button" = "Reset to Defaults";
+"icon_style.color_translucent" = "Color Translucent";
+"icon_style.color_with_background" = "Color with Background";
+"icon_style.monochrome" = "Monochrome";
+"icon_style.color_translucent_desc" = "Colored rings with transparent background, suitable for most menu bar styles";
+"icon_style.color_with_background_desc" = "Colored rings with translucent white background, ideal when Color Translucent performs poorly on dark wallpapers";
+"icon_style.monochrome_desc" = "Automatically adapts to system menu bar style, clean and elegant";
+
+// MARK: - Settings - Authentication
+"settings.auth.how_to_title" = "How to Get Claude Authentication Info";
+"settings.auth.step1" = "1. Visit claude.ai in your browser and log in";
+"settings.auth.step2" = "2. Open browser developer tools (F12 or Cmd+Option+I)";
+"settings.auth.step3" = "3. Switch to the Network tab";
+"settings.auth.step4" = "4. Refresh the page and find the usage request";
+"settings.auth.step5" = "5. Find sessionKey in Cookie under Headers";
+"settings.auth.step6" = "6. Copy the sessionKey value and paste it above";
+"settings.auth.open_browser" = "Open Claude Usage Page in Browser";
+"settings.auth.session_key_label" = "Session Key";
+"settings.auth.session_key_placeholder" = "Paste Session Key";
+"settings.auth.session_key_hint" = "Paste the full sessionKey cookie value (usually starts with sk-ant-sid)";
+"settings.auth.configured" = "Authentication configured";
+"settings.auth.not_configured" = "Please enter Session Key";
+"settings.auth.credentials_title" = "Authentication Credentials";
+"settings.auth.ready_to_use" = "Ready to use the app";
+"settings.auth.need_credentials" = "Please enter Session Key";
+"settings.auth.show_password" = "Show";
+"settings.auth.hide_password" = "Hide";
+"settings.auth.manual_input_claude_only_help" = "Claude only: manual Session Key input is not supported for Codex.";
+
+// MARK: - Settings - About
+"settings.about.version" = "Version %@";
+"settings.about.description" = "Monitor Claude AI 5-hour usage limit";
+"settings.about.developer" = "Developer";
+"settings.about.license" = "License";
+"settings.about.license_value" = "MIT License";
+"settings.about.github" = "Visit GitHub Repository";
+"settings.about.coffee" = "Buy Me A Coffee";
+"settings.about.github_sponsor" = "GitHub Sponsor";
+"settings.about.copyright" = "© 2025 All Rights Reserved";
+
+// MARK: - Welcome View
+"welcome.title" = "Welcome to Usage4Claude";
+"welcome.subtitle" = "Please configure your authentication information before getting started";
+"welcome.setup_button" = "Configure Authentication";
+"welcome.later_button" = "Set Up Later";
+
+// MARK: - Update
+"update.ok_button" = "OK";
+
+// MARK: - Update Notification
+"update.notification.available" = "New Version Available!";
+"update.notification.badge_menu" = "🎉 New Version Available!";
+"update.notification.badge_short" = "🎉 New!";
+
+// MARK: - Icon Display Mode
+"display.percentage_only" = "Percentage Only";
+"display.icon_only" = "Icon Only";
+"display.both" = "Icon and Percentage";
+"display.none" = "No Display";
+"display.show_icon" = "Show Icon";
+"display.show_percentage" = "Show Percentage";
+
+// MARK: - Refresh Interval
+"refresh.smart_mode" = "Smart Frequency";
+"refresh.fixed_mode" = "Fixed Frequency";
+"refresh.1_minute" = "1 minute";
+"refresh.3_minutes" = "3 minutes";
+"refresh.5_minutes" = "5 minutes";
+"refresh.10_minutes" = "10 minutes";
+
+// MARK: - Language Names
+"language.english" = "English";
+"language.japanese" = "日本語";
+"language.chinese" = "中文（简体）";
+"language.chinese_traditional" = "中文（繁體）";
+"language.korean" = "한국어";
+"language.french" = "Français";
+"language.german" = "Deutsch";
+
+// MARK: - Window Titles
+"window.settings_title" = "Usage4Claude Settings";
+"window.welcome_title" = "Welcome";
+
+// MARK: - Usage Data Formatting
+"usage_data.not_started_reset" = "Reset time shown after usage begins";
+"usage_data.resetting_soon" = "Resetting soon";
+"usage_data.resets_in_hours" = "About %dh %dm left";
+"usage_data.resets_in_minutes" = "About %dm left";
+"usage_data.resets_in_days" = "About %dd %dh left";
+"usage_data.unknown" = "Unknown";
+"usage_data.today" = "Today";
+"usage_data.detail_today" = "Today";
+"usage_data.tomorrow" = "Tomorrow";
+
+// MARK: - Error Messages
+"error.invalid_url" = "Invalid URL";
+"error.no_data" = "No data received";
+"error.session_expired" = "Session expired, please reconfigure in settings";
+"error.cloudflare_blocked" = "Request blocked by security system. Please visit claude.ai in browser to confirm you're not a robot, then try again.";
+"error.no_credentials" = "Please configure authentication information in settings first";
+"error.network_failed" = "Network request failed. Please check your internet connection.";
+"error.decoding_failed" = "Failed to parse response data. Please check if your credentials are correct.";
+"error.no_organizations_found" = "No organizations found";
+"error.unauthorized" = "Authentication failed, please check your credentials";
+"error.rate_limited" = "Too many requests, please try again later";
+
+// MARK: - Launch at Login
+"launch.status.enabled" = "Enabled";
+"launch.status.disabled" = "Disabled";
+"launch.status.requires_approval" = "Awaiting Authorization";
+"launch.status.not_found" = "Not Found";
+"launch.error.title" = "Launch at Login Error";
+"launch.error.enable" = "Failed to enable launch at login";
+"launch.error.disable" = "Failed to disable launch at login";
+
+// MARK: - Diagnostics
+"diagnostic.section_title" = "Connection Diagnostics";
+"diagnostic.section_description" = "Test your API connections and diagnose issues. All sensitive information is automatically redacted in reports.";
+"diagnostic.test_button" = "Test Connection";
+"diagnostic.view_details_button" = "View Details";
+"diagnostic.export_button" = "Export Report";
+"diagnostic.testing_connection" = "Testing connection...";
+"diagnostic.test_completed" = "Test completed";
+"diagnostic.test_success" = "Connection test successful";
+"diagnostic.test_failed" = "Connection test failed";
+"diagnostic.result_success" = "Connection Successful";
+"diagnostic.result_failed" = "Connection Failed";
+"diagnostic.http_status" = "HTTP Status";
+"diagnostic.response_time" = "Response Time";
+"diagnostic.response_type" = "Response Type";
+"diagnostic.cloudflare_detected" = "Cloudflare challenge detected";
+"diagnostic.diagnosis" = "Diagnosis";
+"diagnostic.suggestions" = "Suggestions";
+"diagnostic.privacy_notice" = "All sensitive data is automatically redacted for privacy";
+"diagnostic.detailed_report_title" = "Detailed Diagnostic Report";
+"diagnostic.no_report_available" = "No report available. Please run a test first.";
+"diagnostic.copy_to_clipboard" = "Copy to Clipboard";
+"diagnostic.export_title" = "Export Diagnostic Report";
+"diagnostic.export_message" = "This report contains no sensitive information and is safe to share.";
+"diagnostic.export_success_title" = "Export Successful";
+"diagnostic.export_success_message" = "Diagnostic report has been saved to:";
+"diagnostic.export_error_title" = "Export Failed";
+
+// Diagnosis messages
+"diagnostic.diagnosis_success" = "Connection is working properly. API returned valid usage data.";
+"diagnostic.diagnosis_cloudflare" = "Request was blocked by Cloudflare security system. This may be due to IP reputation or network configuration.";
+"diagnostic.diagnosis_decoding" = "Server returned data but it couldn't be parsed. This usually means credentials are incorrect or don't match.";
+"diagnostic.diagnosis_network" = "Network connection failed. Please check your internet connection.";
+"diagnostic.diagnosis_no_credentials" = "Authentication credentials are not configured.";
+"diagnostic.diagnosis_invalid_url" = "Invalid Organization ID format.";
+"diagnostic.diagnosis_unknown" = "Unknown error occurred. Please export and share this report with developers.";
+
+// Suggestion messages
+"diagnostic.suggestion_success" = "Everything is working correctly. No action needed.";
+"diagnostic.suggestion_visit_browser" = "Visit claude.ai in your browser and complete any security challenges";
+"diagnostic.suggestion_wait_and_retry" = "Wait 5-10 minutes and try again";
+"diagnostic.suggestion_check_vpn" = "Check if VPN or proxy is affecting the connection";
+"diagnostic.suggestion_use_smart_mode" = "Use Smart Refresh mode to reduce request frequency";
+"diagnostic.suggestion_verify_credentials" = "Verify that Organization ID and Session Key are correct";
+"diagnostic.suggestion_update_session_key" = "Your Session Key may have expired. Please update it from browser";
+"diagnostic.suggestion_check_browser" = "Verify you can access claude.ai/settings/usage in browser";
+"diagnostic.suggestion_check_internet" = "Check your internet connection";
+"diagnostic.suggestion_check_firewall" = "Check firewall or antivirus settings";
+"diagnostic.suggestion_retry_later" = "Try again later";
+"diagnostic.suggestion_configure_auth" = "Please configure Organization ID and Session Key in the fields above";
+"diagnostic.suggestion_check_org_id" = "Check if Organization ID format is correct (should be a UUID)";
+"diagnostic.suggestion_export_and_share" = "Export this diagnostic report and share it on GitHub Issues";
+"diagnostic.suggestion_contact_support" = "Contact developer for help at github.com/f-is-h/Usage4Claude/issues";
+"diagnostic.open_log_folder" = "Open Log Folder";
+
+// MARK: - Limit Types (v2.0.0)
+"five_hour_limit" = "5-Hour Limit";
+"seven_day_limit" = "7-Day Limit";
+"opus_weekly_limit" = "7D Opus Limit";
+"sonnet_weekly_limit" = "7D Sonnet Limit";
+"extra_usage" = "Extra Usage";
+"codex_primary_limit" = "Codex 5-Hour Limit";
+"codex_secondary_limit" = "Codex 7-Day Limit";
+"codex_extra_usage" = "Codex Extra Usage";
+
+// MARK: - Detail Row Labels
+"detail_row.five_hour_limit" = "5-Hour Limit";
+"detail_row.seven_day_limit" = "7-Day Limit";
+"detail_row.opus_weekly_limit" = "7D Opus Limit";
+"detail_row.sonnet_weekly_limit" = "7D Sonnet Limit";
+"detail_row.extra_usage" = "Extra Usage";
+
+// MARK: - Display Options (v2.0.0)
+"display_options" = "Display Options";
+"smart_display" = "Smart Display";
+"smart_display_description" = "Automatically display all limit types with data";
+"custom_display" = "Custom Display";
+"custom_display_description" = "Manually select which limits to display";
+"display_mode_label" = "Display Mode";
+"select_limit_types" = "Select Limit Types to Display";
+"circular_icon_constraint" = "At least one circular limit must be selected";
+"colored_theme_unavailable" = "Colored themes are only available when showing 1-2 circular icons without other types";
+"custom_display.menu_bar_only_toggle" = "Apply only to menu bar";
+"custom_display.menu_bar_only_description" = "When on, the popover ignores this selection and shows all available limits.";
+
+// MARK: - Theme Selection (v2.0.0)
+"theme_selection" = "Theme";
+"monochrome_theme" = "Monochrome Theme";
+"colored_theme" = "Colored Theme";
+"colored_theme_unavailable_reason" = "Unavailable: Only supported when displaying 2 or fewer circular indicators";
+
+// MARK: - Credentials Configuration (v2.0.0)
+"credentials" = "Credentials";
+"session_key_hint" = "Find in browser DevTools → Application → Cookies → claude.ai";
+"session_key_help" = "Your session key will be securely stored in macOS Keychain";
+"session_key_required" = "Session Key is required";
+"fetching" = "Fetching...";
+"refetch" = "Refetch";
+"configuring" = "Configuring...";
+"credentials_saved" = "Credentials saved successfully";
+"save" = "Save";
+"back" = "Back";
+"continue" = "Continue";
+
+// MARK: - Welcome Flow (v2.0.0)
+"welcome_credentials_title" = "Configure Claude Access";
+"welcome_credentials_subtitle" = "Enter your Session Key - we'll automatically fetch your Organization ID";
+"welcome_display_title" = "Choose Display Options";
+"welcome_display_subtitle" = "Select which usage limits to show in the menu bar";
+"preview" = "Preview";
+"welcome.skip" = "Skip";
+"welcome.finish" = "Finish";
+"welcome.authentication_setup" = "Authentication Setup";
+"welcome.session_key" = "Session Key";
+"welcome.session_key_placeholder" = "Paste your Session Key here";
+"welcome.session_key_hint" = "Paste the full sessionKey cookie value";
+"welcome.valid_format" = "Valid format";
+"welcome.invalid_format" = "Session Key should be 20-500 characters";
+"welcome.select_limits" = "Select Limits";
+"welcome.smart_mode_recommended" = "Smart Mode (Recommended)";
+"welcome.custom_selection" = "Custom Selection";
+"welcome.display_title" = "Display Options";
+"welcome.display_subtitle" = "Choose which limit types to display";
+"welcome.preview" = "Preview";
+"welcome.back" = "Back";
+"welcome.continue" = "Continue";
+"welcome.how_to_get_session_key" = "How to get Session Key?";
+"welcome.configuring" = "Configuring...";
+"welcome.fetch_org_id_failed" = "Unable to fetch Organization ID, please retry in Settings later";
+"welcome.menubar_icon_not_visible" = "Menu bar icon not visible?";
+"welcome.multi_account_hint" = "Need multiple accounts? You can add more in Settings after setup.";
+
+// MARK: - Detail Window - Date/Time Formats (v2.0.0)
+"today" = "Today";
+"today_time" = "Today %@";
+"month_day" = "%d/%d";
+"extra_usage_format" = "$%d/$%d";
+
+// MARK: - Detail Window - Remaining Time (v2.0.0)
+"extra_usage_remaining" = "Remaining $%@";
+"remaining_days_hours" = "%d days %d hours remaining";
+"remaining_hours_minutes" = "%d hours %d minutes remaining";
+"remaining_minutes" = "%d minutes remaining";
+
+// MARK: - Settings Window (v2.0.0)
+"settings" = "Settings";
+
+// MARK: - General (v2.0.0)
+"unknown" = "Unknown";
+
+// MARK: - Usage Data - Compact Remaining Formats
+"usage_data.compact_resetting_soon" = "Resetting soon";
+"usage_data.compact_remaining_minutes" = "%dm left";
+"usage_data.compact_remaining_hours" = "%dh %dm left";
+"usage_data.compact_remaining_days" = "%dd %dh left";
+"usage_data.compact_remaining_days_with_minutes" = "%dd %dh %dm left";
+
+// MARK: - Extra Usage
+"extra_usage.not_enabled" = "Not Enabled";
+"extra_usage.unlimited" = "Unlimited";
+"extra_usage.limit_reached" = "Limit reached";
+"extra_usage.usage_amount" = "%@%.2f/%@%.0f";
+"extra_usage.remaining_amount" = "%@%.2f remaining";
+"extra_usage.credits_balance" = "Balance %d credits";
+"extra_usage.credits_remaining" = "%d credits remaining";
+"extra_usage.detail_credits_balance" = "%d credits";
+"extra_usage.detail_credits_remaining" = "%d credits remaining";
+
+// MARK: - Loading Animation
+"loading_animation.rainbow" = "Rainbow Gradient";
+"loading_animation.dashed" = "Dashed Rotation";
+"loading_animation.pulse" = "Pulse Effect";
+"loading_animation.current" = "Loading Animation: %@";
+
+// MARK: - Time Format
+"time_format.system" = "Follow System";
+"time_format.twelve_hour" = "12-Hour (2:30 PM)";
+"time_format.twenty_four_hour" = "24-Hour (14:30)";
+"settings.general.time_format_section" = "Time Format";
+"settings.general.time_format_hint" = "Choose how time is displayed throughout the app";
+"settings.general.time_format_preview" = "Preview";
+
+// MARK: - Appearance
+"appearance.system" = "System";
+"appearance.light" = "Light";
+"appearance.dark" = "Dark";
+"settings.general.appearance_section" = "Appearance";
+"settings.general.appearance_hint" = "Choose the app's color scheme, or follow system settings";
+
+// MARK: - Account Management (v2.1.0)
+"account.list_title" = "Accounts";
+"account.no_accounts" = "No accounts configured. Add an account to get started.";
+"account.add_account" = "Add Account";
+"account.add_new_account" = "Add New Account";
+"account.current_account" = "Current Claude Account";
+"account.alias" = "Alias";
+"account.alias_optional" = "Alias (Optional)";
+"account.alias_placeholder" = "e.g., Personal Pro, Work Team";
+"account.clear_alias" = "Clear Alias";
+"account.organization_id" = "Organization ID";
+"account.copy_org_id" = "Copy Organization ID";
+"account.delete_account" = "Delete This Account";
+"account.delete_confirm_title" = "Delete Account";
+"account.delete_confirm_message" = "Are you sure you want to delete this account? This action cannot be undone.";
+"account.delete" = "Delete";
+"account.cancel" = "Cancel";
+"account.validate_and_add" = "Validate & Add";
+"account.multi_org_added" = "Found %d organizations. Accounts have been created for each. You can set aliases in account details.";
+
+// MARK: - Usage Notifications
+"notification.section" = "Notifications";
+"notification.hint" = "Get notified when usage reaches threshold or resets";
+"notification.enable" = "Enable Usage Notifications";
+"notification.description" = "Receive a notification when any limit reaches 90%%, or when usage resets.";
+"notification.warning_title" = "Usage Warning";
+"notification.warning_body" = "%@ has reached %d%% usage";
+"notification.reset_title" = "Usage Reset";
+"notification.reset_body" = "%@ usage has been reset";
+"notification.codex_session_expired_title" = "Codex Session Expired";
+"notification.codex_session_expired_body" = "Please sign in again to continue monitoring your Codex usage.";
+
+// MARK: - Web Login (v2.2.0)
+"weblogin.window_title" = "Sign in to Claude";
+"weblogin.browser_login" = "Browser Login";
+"weblogin.browser_login_recommended" = "Sign in via Browser (Recommended)";
+"weblogin.manual_input" = "Manual Input";
+"weblogin.or_manual_input" = "or enter Session Key manually";
+"weblogin.loading" = "Loading login page...";
+"weblogin.waiting_for_login" = "Please sign in to your Claude account";
+"weblogin.validating" = "Verifying credentials...";
+"weblogin.success" = "Successfully added account: %@";
+"weblogin.cloudflare_blocked" = "If the page won't load, please use manual input instead.";
+"weblogin.privacy_notice" = "Your credentials are only used locally and stored securely in the system Keychain.";
+"weblogin.codex_window_title" = "Sign in to Codex";
+"weblogin.codex_waiting_for_login" = "Please sign in to your ChatGPT account";
+
+// MARK: - Codex Account (v2.7.0)
+"account.claude_accounts" = "Claude Accounts";
+"account.codex_accounts" = "Codex Accounts";
+"account.add_codex_account" = "Add Codex Account";
+"account.codex_current_account" = "Current Codex Account";
+
+/* Codex OAuth Login (system browser) */
+"weblogin.codex_oauth_preparing" = "Preparing sign-in…";
+"weblogin.codex_oauth_waiting_browser" = "Continue in your browser";
+"weblogin.codex_oauth_waiting_hint" = "Complete the ChatGPT sign-in in your browser (Google, Microsoft, enterprise SSO and passkeys all work). You'll return here automatically.";
+"weblogin.codex_oauth_exchanging" = "Completing sign-in…";
+"weblogin.codex_oauth_failed" = "Sign-in failed. Please try again.";
+"weblogin.codex_oauth_timeout" = "Sign-in timed out. Please try again.";
+"weblogin.codex_oauth_port_busy" = "Local port 1455/1457 is in use, so the sign-in callback can't be received. Close the app using it and try again.";
+"weblogin.codex_oauth_reopen_browser" = "Reopen browser";
+"weblogin.codex_oauth_retry" = "Try again";
+"weblogin.claude_oauth_port_busy" = "Unable to start the local sign-in callback server. Please try again in a moment.";
+"weblogin.claude_oauth_manual_hint" = "Didn't come back automatically?";
+"weblogin.claude_oauth_manual_prompt" = "Paste the link from your browser's address bar (starts with http://localhost)";
+"weblogin.claude_oauth_manual_submit" = "Sign in with this link";
+"weblogin.claude_oauth_manual_invalid" = "No authorization code found. Copy the full link from your browser's address bar and try again.";
+
+/* Dashboard / multi-account overview */
+"dashboard.title" = "Overview";
+"dashboard.window_title" = "Usage4Claude — Overview";
+"dashboard.show_dashboard" = "Show overview";
+"dashboard.show_classic_detail" = "Show single account";
+"dashboard.open_window" = "Open overview window";
+"dashboard.badge_active" = "Active";
+"dashboard.badge_most_free" = "Most free";
+"dashboard.badge_exhausted" = "Almost used up";
+"dashboard.sort_by_order" = "Account order";
+"dashboard.sort_by_availability" = "Most free first";
+"dashboard.sort_help" = "Sorting and columns";
+"dashboard.refresh_account" = "Refresh this account";
+"dashboard.make_active" = "Make active account";
+"dashboard.retry" = "Retry";
+"dashboard.tap_hint" = "Click a card to switch the active account";
+"dashboard.updated_at" = "Updated %@";
+"dashboard.columns_one" = "1 column";
+"dashboard.columns_other" = "%d columns";
+"settings.dashboard.section" = "Overview (multiple accounts)";
+"settings.dashboard.hint" = "The overview shows every account you added side by side, so you can tell at a glance which one still has room.";
+"settings.dashboard.enable" = "Open the overview when clicking the menu bar icon";
+"settings.dashboard.description" = "With only one account the classic detail window is always shown.";
+"settings.dashboard.sort_label" = "Sorting";
+"settings.dashboard.columns_label" = "Columns";
+"settings.dashboard.needs_more_accounts" = "Add a second account to use the overview.";
+"dashboard.ring_extra" = "Extra";
+"dashboard.ring_opus" = "Opus";
+"dashboard.ring_sonnet" = "Sonnet";
+"error.http_status" = "HTTP error %d";
+"weblogin.cookie_login" = "Sign in inside the app";
+"weblogin.cookie_login_help" = "Sign in to claude.ai in the embedded window — the app reads the session cookie itself. Works without a localhost redirect.";
