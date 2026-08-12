@@ -126,7 +126,17 @@ done
 # Icons: ohne actool kein Assets.car — die vier benötigten Bilder kommen als
 # lose Dateien ins Bundle, NSImage(named:) findet sie dort ebenfalls.
 ASSETS="$PROJECT_ROOT/$APP_NAME/Resources/Assets.xcassets"
-cp "$PROJECT_ROOT/docs/images/AppIcon.icns"                            "$CONTENTS/Resources/AppIcon.icns"
+# AppIcon.icns aus den PNGs des Asset-Katalogs erzeugen, statt eine vorgebaute
+# .icns mitzuschleppen: iconutil gehört zu macOS, und damit ist der Asset-Katalog
+# die einzige Quelle für das Symbol — ein Austausch dort wirkt sofort.
+ICONSET="$BUILD_DIR/AppIcon.iconset"
+rm -rf "$ICONSET"; mkdir -p "$ICONSET"
+for spec in "16:16x16" "32:16x16@2x" "32:32x32" "64:32x32@2x" "128:128x128" "256:128x128@2x" "256:256x256" "512:256x256@2x" "512:512x512" "1024:512x512@2x"; do
+    src="${spec%%:*}"; name="${spec#*:}"
+    cp "$ASSETS/AppIcon.appiconset/$src.png" "$ICONSET/icon_$name.png"
+done
+iconutil -c icns "$ICONSET" -o "$CONTENTS/Resources/AppIcon.icns" || fail "AppIcon.icns konnte nicht erzeugt werden"
+rm -rf "$ICONSET"
 cp "$ASSETS/AppIconReverse.imageset/icon.reverse@2x.png"               "$CONTENTS/Resources/AppIconReverse@2x.png"
 cp "$ASSETS/CodexIcon.imageset/icon.codex@2x.png"                      "$CONTENTS/Resources/CodexIcon@2x.png"
 cp "$ASSETS/CodexIconReverse.imageset/icon.codex.reverse@2x.png"       "$CONTENTS/Resources/CodexIconReverse@2x.png"
