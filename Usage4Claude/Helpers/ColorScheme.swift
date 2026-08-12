@@ -215,6 +215,33 @@ enum UsageColorScheme {
         }
     }
 
+    // MARK: - Fable Weekly 配色（青色，菱形）
+
+    /// 根据Fable Weekly使用百分比返回 NSColor
+    /// - Parameter percentage: 使用百分比 (0-100)
+    /// - Returns: 对应的状态颜色
+    /// - Note: 使用青色系，明确区分于 Opus(橙) / Sonnet(蓝) / 7天(紫) / Extra(粉)。
+    ///         0-70% 亮青(安全), 70-90% 深青(警告), 90-100% 最深青(危险)
+    static func fableWeeklyColor(_ percentage: Double) -> NSColor {
+        if percentage < 70 {
+            return NSColor(red: 34/255.0, green: 211/255.0, blue: 238/255.0, alpha: 1.0)  // 亮青 #22D3EE
+        } else if percentage < 90 {
+            return NSColor(red: 8/255.0, green: 145/255.0, blue: 178/255.0, alpha: 1.0)    // 深青 #0891B2
+        } else {
+            return NSColor(red: 21/255.0, green: 94/255.0, blue: 117/255.0, alpha: 1.0)    // 最深青 #155E75
+        }
+    }
+
+    /// 根据Fable Weekly使用百分比返回自适应 NSColor
+    static func fableWeeklyColorAdaptive(_ percentage: Double, for statusButton: NSStatusBarButton? = nil) -> NSColor {
+        let baseColor = fableWeeklyColor(percentage)
+        if isDarkMode(for: statusButton) {
+            return baseColor.adjustedForDarkMode()
+        } else {
+            return baseColor
+        }
+    }
+
     // MARK: - Codex Primary 配色（亮松石 → 深松石 → 最深松石，圆形）
 
     /// 根据 Codex primary 使用百分比返回 NSColor

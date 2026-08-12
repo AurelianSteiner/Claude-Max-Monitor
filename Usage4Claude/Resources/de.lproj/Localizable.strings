@@ -238,6 +238,7 @@
 "seven_day_limit" = "7-Tage-Limit";
 "opus_weekly_limit" = "Opus 7-Tage-Limit";
 "sonnet_weekly_limit" = "Sonnet 7-Tage-Limit";
+"fable_weekly_limit" = "Fable 7-Tage-Limit";
 "extra_usage" = "Zusätzliche Nutzung";
 "codex_primary_limit" = "Codex 5-Stunden-Limit";
 "codex_secondary_limit" = "Codex 7-Tage-Limit";
@@ -248,6 +249,7 @@
 "detail_row.seven_day_limit" = "7-Tage-Limit";
 "detail_row.opus_weekly_limit" = "Opus 7-Tage-Limit";
 "detail_row.sonnet_weekly_limit" = "Sonnet 7-Tage-Limit";
+"detail_row.fable_weekly_limit" = "Fable 7-Tage-Limit";
 "detail_row.extra_usage" = "Zusätzliche Nutzung";
 
 // MARK: - Display Options (v2.0.0)
@@ -462,6 +464,7 @@
 "dashboard.ring_extra" = "Extra";
 "dashboard.ring_opus" = "Opus";
 "dashboard.ring_sonnet" = "Sonnet";
+"dashboard.ring_fable" = "Fable";
 "error.http_status" = "HTTP-Fehler %d";
 "weblogin.cookie_login" = "Anmeldung im App-Fenster";
 "weblogin.cookie_login_help" = "Im eingebetteten Fenster bei claude.ai anmelden — die App liest den Session-Cookie selbst aus. Funktioniert ohne localhost-Redirect.";

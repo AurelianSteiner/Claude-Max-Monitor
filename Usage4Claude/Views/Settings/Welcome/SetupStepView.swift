@@ -368,6 +368,14 @@ struct SetupStepView: View {
                                                     toggleLimitType(.sonnetWeekly)
                                                 }
 
+                                                LimitTypeCheckbox(
+                                                    limitType: .fableWeekly,
+                                                    isSelected: settings.customDisplayTypes.contains(.fableWeekly),
+                                                    isDisabled: shouldDisableCheckbox(for: .fableWeekly)
+                                                ) {
+                                                    toggleLimitType(.fableWeekly)
+                                                }
+
                                                 Spacer()
                                             }
                                         }

@@ -104,9 +104,15 @@ struct AccountUsageSnapshot: Identifiable {
                                         resetsAt: sevenDay.resetsAt, label: L.Usage.sevenDayLimitShort))
             }
             for (index, model) in data.weeklyModels.enumerated() {
-                // 槽位仅决定配色，标签优先用 API 返回的真实模型名
-                let type: LimitType = index % 2 == 0 ? .opusWeekly : .sonnetWeekly
-                let fallback = type == .opusWeekly ? L.Dashboard.ringOpus : L.Dashboard.ringSonnet
+                // 类型按模型名解析（Fable/Opus/Sonnet），决定配色与形状；
+                // 标签优先用 API 返回的真实模型名，缺失时按类型回退默认短标签
+                let type = LimitType.weeklyType(forModelName: model.modelName, slot: index)
+                let fallback: String
+                switch type {
+                case .fableWeekly: fallback = L.Dashboard.ringFable
+                case .sonnetWeekly: fallback = L.Dashboard.ringSonnet
+                default: fallback = L.Dashboard.ringOpus
+                }
                 result.append(RingLimit(type: type, percentage: model.limit.percentage,
                                         resetsAt: model.limit.resetsAt, label: model.modelName ?? fallback))
             }

@@ -263,7 +263,7 @@ struct UnifiedLimitRow: View {
 
     private var limitName: String {
         if let override = weeklyModelOverride {
-            return override.modelName ?? L.DetailRow.opusWeekly
+            return override.modelName ?? weeklyDefaultLabel
         }
         switch type {
         case .fiveHour, .codexPrimary:
@@ -271,13 +271,24 @@ struct UnifiedLimitRow: View {
         case .sevenDay, .codexSecondary:
             return L.DetailRow.sevenDay
         case .opusWeekly:
-            // Claude 5 时代：此槽位可能承载来自 limits 数组的具体模型每周限制（如 Fable）。
-            // 有真实模型名则优先展示，否则回退到默认的 “Opus Weekly” 文案。
-            return data?.opusModelName ?? L.DetailRow.opusWeekly
+            // Claude 5 时代：每周模型限制按模型名解析，读到对应条目的真实模型名；
+            // 无名称时回退到默认的 “Opus Weekly” 文案。
+            return data?.weeklyModel(matching: .opusWeekly)?.modelName ?? L.DetailRow.opusWeekly
         case .sonnetWeekly:
-            return data?.sonnetModelName ?? L.DetailRow.sonnetWeekly
+            return data?.weeklyModel(matching: .sonnetWeekly)?.modelName ?? L.DetailRow.sonnetWeekly
+        case .fableWeekly:
+            return data?.weeklyModel(matching: .fableWeekly)?.modelName ?? L.DetailRow.fableWeekly
         case .extraUsage, .codexExtraUsage:
             return L.DetailRow.extraUsage
+        }
+    }
+
+    /// 溢出模型行（weeklyModelOverride）在缺少模型名时的回退标签，按外观槽位类型取默认文案
+    private var weeklyDefaultLabel: String {
+        switch type {
+        case .fableWeekly: return L.DetailRow.fableWeekly
+        case .sonnetWeekly: return L.DetailRow.sonnetWeekly
+        default: return L.DetailRow.opusWeekly
         }
     }
 
@@ -294,6 +305,8 @@ struct UnifiedLimitRow: View {
             return .orange
         case .sonnetWeekly:
             return .blue
+        case .fableWeekly:
+            return .cyan
         case .extraUsage:
             return .pink
         case .codexPrimary:
@@ -312,8 +325,9 @@ struct UnifiedLimitRow: View {
         switch type {
         case .fiveHour:       return data?.fiveHour?.percentage
         case .sevenDay:       return data?.sevenDay?.percentage
-        case .opusWeekly:     return data?.opus?.percentage
-        case .sonnetWeekly:   return data?.sonnet?.percentage
+        case .opusWeekly:     return data?.weeklyModel(matching: .opusWeekly)?.limit.percentage
+        case .sonnetWeekly:   return data?.weeklyModel(matching: .sonnetWeekly)?.limit.percentage
+        case .fableWeekly:    return data?.weeklyModel(matching: .fableWeekly)?.limit.percentage
         case .extraUsage:     return data?.extraUsage?.percentage
         case .codexPrimary:   return codexData?.primary?.percentage
         case .codexSecondary: return codexData?.secondary?.percentage
@@ -337,12 +351,16 @@ struct UnifiedLimitRow: View {
             return effectiveRemainingMode ? sevenDay.formattedCompactRemaining : sevenDay.formattedCompactResetDate
 
         case .opusWeekly:
-            guard let opus = data?.opus else { return "-" }
-            return effectiveRemainingMode ? opus.formattedCompactRemaining : opus.formattedCompactResetDate
+            guard let limit = data?.weeklyModel(matching: .opusWeekly)?.limit else { return "-" }
+            return effectiveRemainingMode ? limit.formattedCompactRemaining : limit.formattedCompactResetDate
 
         case .sonnetWeekly:
-            guard let sonnet = data?.sonnet else { return "-" }
-            return effectiveRemainingMode ? sonnet.formattedCompactRemaining : sonnet.formattedCompactResetDate
+            guard let limit = data?.weeklyModel(matching: .sonnetWeekly)?.limit else { return "-" }
+            return effectiveRemainingMode ? limit.formattedCompactRemaining : limit.formattedCompactResetDate
+
+        case .fableWeekly:
+            guard let limit = data?.weeklyModel(matching: .fableWeekly)?.limit else { return "-" }
+            return effectiveRemainingMode ? limit.formattedCompactRemaining : limit.formattedCompactResetDate
 
         case .extraUsage:
             guard let extra = data?.extraUsage else { return "-" }

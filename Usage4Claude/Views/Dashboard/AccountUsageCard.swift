@@ -238,7 +238,7 @@ struct AccountUsageCard: View {
             }
             ForEach(overflowWeeklyModels, id: \.offset) { entry in
                 UnifiedLimitRow(
-                    type: entry.offset % 2 == 0 ? .opusWeekly : .sonnetWeekly,
+                    type: LimitType.weeklyType(forModelName: entry.element.modelName, slot: entry.offset),
                     data: snapshot.usageData,
                     showRemainingMode: showRemainingMode,
                     weeklyModelOverride: entry.element,

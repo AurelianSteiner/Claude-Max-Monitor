@@ -466,6 +466,93 @@ class ShapeIconRenderer {
         percentageText.draw(in: textRect, withAttributes: attributes)
     }
 
+    /// 绘制菱形进度环和百分比（用于 Fable）
+    /// 采用与六边形一致的“顶点连线 + dash pattern”方式绘制进度，几何清晰、易于验证。
+    /// - Parameters:
+    ///   - center: 中心点
+    ///   - size: 顶点到顶点的对角线长度
+    ///   - percentage: 使用百分比
+    ///   - isMonochrome: 是否为单色模式
+    ///   - button: 状态栏按钮（用于获取颜色）
+    ///   - removeBackground: 是否移除背景填充
+    static func drawDiamondFableWithPercentage(center: NSPoint, size: CGFloat, percentage: Double, isMonochrome: Bool, button: NSStatusBarButton?, removeBackground: Bool = false) {
+        let radius = size / 2
+        let borderWidth: CGFloat = 1.5
+        let progressWidth: CGFloat = 2.5
+
+        // 四个顶点（AppKit 坐标系 y 向上）
+        let top = NSPoint(x: center.x, y: center.y + radius)      // 12点
+        let right = NSPoint(x: center.x + radius, y: center.y)    // 3点
+        let bottom = NSPoint(x: center.x, y: center.y - radius)   // 6点
+        let left = NSPoint(x: center.x - radius, y: center.y)     // 9点
+
+        // 背景菱形
+        let diamondPath = NSBezierPath()
+        diamondPath.move(to: top)
+        diamondPath.line(to: right)
+        diamondPath.line(to: bottom)
+        diamondPath.line(to: left)
+        diamondPath.close()
+
+        // 1. 绘制背景填充（彩色背景模式）
+        if !removeBackground && !isMonochrome {
+            NSColor.white.withAlphaComponent(0.5).setFill()
+            diamondPath.fill()
+        }
+
+        // 2. 绘制背景边框
+        if isMonochrome {
+            NSColor.controlTextColor.withAlphaComponent(0.3).setStroke()
+        } else {
+            NSColor.gray.withAlphaComponent(0.5).setStroke()
+        }
+        diamondPath.lineWidth = borderWidth
+        diamondPath.lineJoinStyle = .round
+        diamondPath.stroke()
+
+        // 3. 绘制进度边框（从12点顺时针：12 → 3 → 6 → 9 → 回到12）
+        if percentage > 0 {
+            let edge = radius * CGFloat(2).squareRoot()  // 单条边长 = R·√2
+            let perimeter = edge * 4
+
+            let baseProgressLength = perimeter * CGFloat(percentage / 100.0)
+            let progressLength = percentage >= 100 ? baseProgressLength : (baseProgressLength - progressWidth * min(1.0, CGFloat(percentage / 50.0)))
+
+            let progressPath = NSBezierPath()
+            progressPath.move(to: top)
+            progressPath.line(to: right)
+            progressPath.line(to: bottom)
+            progressPath.line(to: left)
+            progressPath.line(to: top)
+
+            let phase: CGFloat = percentage >= 100 ? 0 : -progressWidth / 2
+            let pattern: [CGFloat] = [progressLength, perimeter - progressLength]
+            progressPath.setLineDash(pattern, count: 2, phase: phase)
+            progressPath.lineWidth = progressWidth
+            progressPath.lineCapStyle = percentage >= 100 ? .butt : .round
+            progressPath.lineJoinStyle = .round
+
+            if isMonochrome {
+                let opacity = monochromeOpacity(for: percentage)
+                NSColor.controlTextColor.withAlphaComponent(opacity).setStroke()
+            } else {
+                UsageColorScheme.fableWeeklyColorAdaptive(percentage, for: button).setStroke()
+            }
+            progressPath.stroke()
+        }
+
+        // 4. 绘制百分比文字
+        let percentageText = "\(Int(percentage))"
+        let percentageFontSize: CGFloat = percentage >= 100 ? 5.0 : 7.2
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: percentageFontSize, weight: percentage >= 100 ? .bold : .semibold),
+            .foregroundColor: NSColor.black
+        ]
+        let textSize = percentageText.size(withAttributes: attributes)
+        let textRect = NSRect(x: center.x - textSize.width / 2, y: center.y - textSize.height / 2, width: textSize.width, height: textSize.height)
+        percentageText.draw(in: textRect, withAttributes: attributes)
+    }
+
     // MARK: - Icon Creation Methods
 
     /// 创建圆角正方形图标（Opus）
@@ -522,6 +609,26 @@ class ShapeIconRenderer {
 
         let center = NSPoint(x: size.width / 2, y: size.height / 2)
         drawHexagonWithPercentage(center: center, size: 16, percentage: percentage, isMonochrome: isMonochrome, button: button, removeBackground: removeBackground, colorOverride: colorOverride)
+
+        image.unlockFocus()
+        image.isTemplate = isMonochrome
+        return image
+    }
+
+    /// 创建菱形图标（Fable）
+    /// - Parameters:
+    ///   - percentage: 使用百分比
+    ///   - isMonochrome: 是否为单色模式
+    ///   - button: 状态栏按钮
+    ///   - removeBackground: 是否移除背景填充
+    /// - Returns: 图标图像 (18×18)
+    static func createDiamondIcon(percentage: Double, isMonochrome: Bool, button: NSStatusBarButton?, removeBackground: Bool = false) -> NSImage {
+        let size = NSSize(width: 18, height: 18)
+        let image = NSImage(size: size)
+        image.lockFocus()
+
+        let center = NSPoint(x: size.width / 2, y: size.height / 2)
+        drawDiamondFableWithPercentage(center: center, size: 15, percentage: percentage, isMonochrome: isMonochrome, button: button, removeBackground: removeBackground)
 
         image.unlockFocus()
         image.isTemplate = isMonochrome

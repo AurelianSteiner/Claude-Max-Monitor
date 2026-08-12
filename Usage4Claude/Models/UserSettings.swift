@@ -129,6 +129,8 @@ enum LimitType: String, CaseIterable, Codable {
     case opusWeekly = "seven_day_opus"
     /// Sonnet 每周限制
     case sonnetWeekly = "seven_day_sonnet"
+    /// Fable 每周限制（Claude 5 时代的 per-model weekly，按模型名解析出的独立限制）
+    case fableWeekly = "seven_day_fable"
     /// Codex 5小时窗口（primary）
     case codexPrimary = "codex_primary"
     /// Codex 7天窗口（secondary）
@@ -139,7 +141,7 @@ enum LimitType: String, CaseIterable, Codable {
     /// 所属 Provider
     var provider: ProviderType {
         switch self {
-        case .fiveHour, .sevenDay, .extraUsage, .opusWeekly, .sonnetWeekly:
+        case .fiveHour, .sevenDay, .extraUsage, .opusWeekly, .sonnetWeekly, .fableWeekly:
             return .claude
         case .codexPrimary, .codexSecondary, .codexExtraUsage:
             return .codex
@@ -151,9 +153,9 @@ enum LimitType: String, CaseIterable, Codable {
         return self == .fiveHour || self == .sevenDay || self == .codexPrimary || self == .codexSecondary
     }
 
-    /// 是否为矩形图标（Opus和Sonnet）
+    /// 是否为矩形/带角图标（Opus、Sonnet 和 Fable 这几个每周模型限制）
     var isRectangular: Bool {
-        return self == .opusWeekly || self == .sonnetWeekly
+        return self == .opusWeekly || self == .sonnetWeekly || self == .fableWeekly
     }
 
     /// 是否为六边形图标（Extra Usage）
@@ -177,6 +179,8 @@ enum LimitType: String, CaseIterable, Codable {
             return L.LimitTypes.opusWeekly
         case .sonnetWeekly:
             return L.LimitTypes.sonnetWeekly
+        case .fableWeekly:
+            return L.LimitTypes.fableWeekly
         case .extraUsage:
             return L.LimitTypes.extraUsage
         case .codexPrimary:
@@ -186,6 +190,37 @@ enum LimitType: String, CaseIterable, Codable {
         case .codexExtraUsage:
             return L.LimitTypes.codexExtraUsage
         }
+    }
+
+    /// 把一个每周模型限制（来自 `UsageData.weeklyModels`）解析为对应的限制类型。
+    /// 优先按 API 返回的模型显示名（大小写不敏感）匹配 Fable / Opus / Sonnet；
+    /// 名称缺失或无法识别时，退回旧的按槽位奇偶判定（slot % 2 == 0 → Opus，否则 Sonnet），
+    /// 以保持旧版 seven_day_opus / seven_day_sonnet 独立字段的历史行为不变。
+    /// - Parameters:
+    ///   - name: 模型显示名（如 "Fable"、"Claude Opus 4.6"），可为 nil
+    ///   - slot: 该模型在 weeklyModels 中的索引，用于名称缺失时的回退
+    /// - Returns: 解析出的每周限制类型（.fableWeekly / .opusWeekly / .sonnetWeekly）
+    static func weeklyType(forModelName name: String?, slot: Int) -> LimitType {
+        if let lowered = name?.lowercased() {
+            if lowered.contains("fable") { return .fableWeekly }
+            if lowered.contains("opus") { return .opusWeekly }
+            if lowered.contains("sonnet") { return .sonnetWeekly }
+        }
+        return slot % 2 == 0 ? .opusWeekly : .sonnetWeekly
+    }
+}
+
+extension UsageData {
+    /// 槽位无关的按类型查找：返回名称解析后与 `type` 匹配的第一条每周模型限制。
+    /// 让 Fable / Opus / Sonnet 各自读到正确的模型数据，而不再依赖固定槽位（opus=0, sonnet=1）。
+    /// 对旧版无名称的数据，解析退回按槽位奇偶，行为与之前一致。
+    func weeklyModel(matching type: LimitType) -> WeeklyModelLimit? {
+        for (index, model) in weeklyModels.enumerated() {
+            if LimitType.weeklyType(forModelName: model.modelName, slot: index) == type {
+                return model
+            }
+        }
+        return nil
     }
 }
 
@@ -1119,11 +1154,14 @@ class UserSettings: ObservableObject {
                 if data.extraUsage?.enabled == true {
                     types.append(.extraUsage)
                 }
-                if data.opus != nil {
-                    types.append(.opusWeekly)
+                // 每周模型限制（菜单栏受空间所限只呈现前两个槽位）：按模型名解析类型
+                // （Fable/Opus/Sonnet），让 Fable 作为一等类型独立出现，而不再被槽位奇偶
+                // 强行归为 Opus/Sonnet。名称缺失时 weeklyType 会退回旧的按槽位奇偶判定。
+                if let first = data.weeklyModels.first {
+                    types.append(LimitType.weeklyType(forModelName: first.modelName, slot: 0))
                 }
-                if data.sonnet != nil {
-                    types.append(.sonnetWeekly)
+                if data.weeklyModels.count > 1 {
+                    types.append(LimitType.weeklyType(forModelName: data.weeklyModels[1].modelName, slot: 1))
                 }
             }
 
@@ -1147,7 +1185,7 @@ class UserSettings: ObservableObject {
         case .custom:
             // 自定义模式：按用户选择排序，无论数据是否存在都显示
             // Codex 类型仅在有 Codex 账号时纳入候选；Debug mock 模式例外
-            var orderedTypes: [LimitType] = [.fiveHour, .sevenDay, .extraUsage, .opusWeekly, .sonnetWeekly]
+            var orderedTypes: [LimitType] = [.fiveHour, .sevenDay, .extraUsage, .opusWeekly, .sonnetWeekly, .fableWeekly]
             var shouldIncludeCodexTypes = !codexAccounts.isEmpty
             #if DEBUG
             if debugModeEnabled {
