@@ -36,7 +36,11 @@ BUNDLE_ID="${U4C_BUNDLE_ID:-xyz.fi5h.Usage4Claude}"
 REPO="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
 APPCAST_URL="https://raw.githubusercontent.com/$REPO/main/appcast.xml"
 TAG="v$VERSION"
-DMG_NAME="$PRODUCT_NAME-$VERSION.dmg"
+# GitHub ersetzt Leerzeichen in Asset-Namen durch Punkte. Der Name im Appcast
+# muss exakt zum Asset passen, sonst lädt Sparkle ins Leere — deshalb von
+# vornherein ein Name ohne Leerzeichen.
+PRODUCT_SLUG="$(echo "$PRODUCT_NAME" | tr ' ' '-')"
+DMG_NAME="$PRODUCT_SLUG-$VERSION.dmg"
 BUILD_DIR="$PROJECT_ROOT/build/no-xcode"
 DMG_PATH="$PROJECT_ROOT/build/$DMG_NAME"
 SIGN_UPDATE="$PROJECT_ROOT/build/vendor/sparkle-tools/sign_update"
@@ -94,7 +98,7 @@ success "Signatur erzeugt"
 
 # ------------------------------------------------------------------ appcast
 info "Schreibe appcast.xml fort…"
-DOWNLOAD_URL="https://github.com/$REPO/releases/download/$TAG/$(echo "$DMG_NAME" | sed 's/ /%20/g')"
+DOWNLOAD_URL="https://github.com/$REPO/releases/download/$TAG/$DMG_NAME"
 PUB_DATE="$(LC_ALL=en_US.UTF-8 date -u '+%a, %d %b %Y %H:%M:%S +0000')"
 DESCRIPTION="${NOTES:-Version $VERSION}"
 

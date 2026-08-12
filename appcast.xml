@@ -13,7 +13,7 @@
             <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
             <description><![CDATA[Mehrkonten-Übersicht mit Wasserstand-Anzeige, Wochenlimit als Leitzahl, konfigurierbare Limit-Zeilen.]]></description>
             <enclosure
-                url="https://github.com/AurelianSteiner/Claude-Max-Monitor/releases/download/v3.4.0/Claude%20Max%20Monitor-3.4.0.dmg"
+                url="https://github.com/AurelianSteiner/Claude-Max-Monitor/releases/download/v3.4.0/Claude-Max-Monitor-3.4.0.dmg"
                 sparkle:edSignature="Kn2byUQRCT5m/UFxzrwTuNNbXY59OruE9lPTJxWR8Z33dXlBjWnyLprQBS1aEa9j0xfbfGcjfwxiB/20PMMTBw=="
                 length="6043581"
                 type="application/octet-stream"/>
