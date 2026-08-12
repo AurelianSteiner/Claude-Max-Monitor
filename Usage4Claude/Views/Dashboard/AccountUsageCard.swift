@@ -205,14 +205,14 @@ struct AccountUsageCard: View {
             // Die Zeile zählt selbst herunter, ohne dass die ganze Karte neu gebaut wird
             TimelineView(.periodic(from: .now, by: 60)) { _ in
                 Text(isSoon ? data.formattedCompactRemaining : data.formattedCompactResetDate)
-                    .font(.system(size: 11))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(limit.isExhausted ? DashboardPalette.ink(100) : .secondary)
                     .lineLimit(1)
             }
             .help(fullResetDescription(resetsAt))
         } else {
             Text("–")
-                .font(.system(size: 11))
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(.secondary)
         }
     }

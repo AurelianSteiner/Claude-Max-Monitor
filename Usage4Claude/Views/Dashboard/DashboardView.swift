@@ -172,6 +172,7 @@ struct DashboardView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
+            trafficLightRow
             Divider()
             grid
             Divider()
@@ -224,6 +225,56 @@ struct DashboardView: View {
         }
         .padding(.horizontal, DashboardMetrics.outerPadding)
         .frame(height: DashboardMetrics.headerHeight)
+    }
+
+    // MARK: - Ampel (Wochen-Auslastung)
+
+    /// Kompakte Punktreihe direkt unter dem Kopf: ein Punkt je Konto in der
+    /// Reihenfolge von `orderedSnapshots`, eingefärbt nach der Wochen-Auslastung.
+    /// Bei vielen Konten bricht die Reihe in weitere Zeilen um. Bei 0 Konten
+    /// (Leerzustand) bleibt sie ganz aus.
+    @ViewBuilder
+    private var trafficLightRow: some View {
+        if !manager.snapshots.isEmpty {
+            let dots = orderedSnapshots
+            let perRow = trafficDotsPerRow
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(Array(stride(from: 0, to: dots.count, by: perRow)), id: \.self) { start in
+                    HStack(spacing: 6) {
+                        ForEach(dots[start..<min(start + perRow, dots.count)]) { snapshot in
+                            trafficDot(for: snapshot)
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, DashboardMetrics.outerPadding)
+            .padding(.top, 4)
+            .padding(.bottom, 6)
+        }
+    }
+
+    private func trafficDot(for snapshot: AccountUsageSnapshot) -> some View {
+        let weekly = snapshot.weeklyPeakUtilization
+        return Circle()
+            .fill(WeeklyTrafficLight.color(for: weekly))
+            .frame(width: 10, height: 10)
+            .help(trafficDotHelp(for: snapshot, weekly: weekly))
+    }
+
+    /// Tooltip je Punkt: „Name: 87 % · Wochenlimit". Ohne Wochendaten nur der Name.
+    private func trafficDotHelp(for snapshot: AccountUsageSnapshot, weekly: Double?) -> String {
+        let name = snapshot.account.displayName
+        guard let weekly else { return name }
+        return "\(name): \(Int(weekly.rounded()))% · \(L.Dashboard.weeklyLimit)"
+    }
+
+    /// Punkte pro Zeile aus der verfügbaren Breite: Punkt (10) + Abstand (6).
+    /// Für ≤ 8 Konten passt alles in eine Zeile, erst darüber wird umgebrochen.
+    private var trafficDotsPerRow: Int {
+        let available = DashboardMetrics.width(columns: columnCount) - DashboardMetrics.outerPadding * 2
+        let stride: CGFloat = 10 + 6
+        return max(1, Int(available / stride))
     }
 
     private var sortMenu: some View {

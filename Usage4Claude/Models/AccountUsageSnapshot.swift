@@ -44,6 +44,27 @@ struct AccountUsageSnapshot: Identifiable {
     /// "welcher Claude ist gerade am Ende"。nil 表示尚无数据。
     var peakUtilization: Double? { criticalLimit?.percentage }
 
+    /// Höchste Auslastung unter den **Wochen**-Limits dieses Kontos (0-100).
+    /// Treibt die Ampelpunkte oben in der Übersicht — bewusst ohne das
+    /// 5-Stunden-Fenster, das sich viel schneller wieder auffüllt.
+    /// Claude: Maximum aus 7-Tage-Limit und allen Wochen-Modelllimits (Opus/Sonnet/Fable).
+    /// Codex: das secondary-Fenster (Wochen-Äquivalent), sonst als Näherung `peakUtilization`.
+    /// nil, solange keine Daten vorliegen bzw. es keine Wochenlimits gibt.
+    var weeklyPeakUtilization: Double? {
+        switch provider {
+        case .claude:
+            guard let data = usageData else { return nil }
+            var values: [Double] = []
+            if let sevenDay = data.sevenDay { values.append(sevenDay.percentage) }
+            values.append(contentsOf: data.weeklyModels.map { $0.limit.percentage })
+            return values.max()
+        case .codex:
+            guard codexUsageData != nil else { return nil }
+            if let secondary = codexUsageData?.secondary { return secondary.percentage }
+            return peakUtilization
+        }
+    }
+
     /// Schwelle, ab der ein Konto als "praktisch aufgebraucht" gilt: In der
     /// Übersicht wird es ausgegraut und (im Verfügbarkeits-Sortiermodus) ans
     /// Ende geschoben, weil man es bis zum Reset ohnehin nicht mehr nutzt.

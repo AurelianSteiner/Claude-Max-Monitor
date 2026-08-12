@@ -80,6 +80,28 @@ enum DashboardPalette {
     }
 }
 
+// MARK: - Ampel (Wochen-Auslastung)
+
+/// Klassische Ampelskala für die Punktreihe ganz oben in der Übersicht.
+/// Bewusst nicht die blaue Kartenskala von `DashboardPalette`, sondern
+/// grün → gelb → orange → rot, damit die Zeile auf einen Blick „grün = frei,
+/// rot = voll" liest. `nil` (noch keine Wochendaten) → neutrales Grau.
+///
+/// Schwellen: <70 grün · 70–89 gelb · 90–99 orange · ab 100 rot. Ein fast
+/// erschöpftes Konto (96–99 %) steht damit klar auf Orange, erst der volle
+/// Anschlag ist Rot.
+enum WeeklyTrafficLight {
+    static func color(for utilization: Double?) -> Color {
+        guard let value = utilization else { return Color.secondary.opacity(0.35) }
+        switch value {
+        case ..<70:  return .green
+        case ..<90:  return .yellow
+        case ..<100: return .orange
+        default:     return .red
+        }
+    }
+}
+
 // MARK: - Wasserstand
 
 /// Kreis, der sich wie ein Gefäß füllt — der Pegel ist die Auslastung des
