@@ -293,9 +293,6 @@ struct DashboardView: View {
                     Label(L.Dashboard.openWindow, systemImage: "macwindow")
                 }
             }
-            Button(action: { onMenuAction?(.showClassicDetail) }) {
-                Label(L.Dashboard.showClassicDetail, systemImage: "chart.pie")
-            }
             Divider()
             Button(action: { onMenuAction?(.generalSettings) }) {
                 Label(L.Menu.generalSettings, systemImage: "gearshape")

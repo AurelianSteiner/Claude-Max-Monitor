@@ -507,6 +507,10 @@ class UserSettings: ObservableObject {
         dashboardAccounts.count > 1
     }
 
+    /// Ab dem ersten Konto wird immer die Gesamtübersicht gezeigt (die frühere
+    /// Einzelansicht entfällt). Ohne Konten bleibt der Willkommens-/Einrichtungs-Screen.
+    var hasAnyDashboardAccount: Bool { !dashboardAccounts.isEmpty }
+
     /// 同一个 Provider 下是否存在多个账户。
     /// 只有这种情况下「点菜单栏图标默认进总览」才有意义——Claude 一个 + Codex 一个时，
     /// 经典详情窗口本来就是双列并排，信息比卡片更丰富，不该被总览顶掉。
@@ -800,7 +804,8 @@ class UserSettings: ObservableObject {
            let sortMode = DashboardSortMode(rawValue: sortRaw) {
             self.dashboardSortMode = sortMode
         } else {
-            self.dashboardSortMode = .accountOrder
+            // Standard: nach Verfügbarkeit — freie Konten oben, fast erschöpfte unten.
+            self.dashboardSortMode = .availability
         }
         let savedColumns = defaults.integer(forKey: "dashboardColumns")
         self.dashboardColumns = (1...3).contains(savedColumns) ? savedColumns : 2
@@ -924,7 +929,7 @@ class UserSettings: ObservableObject {
         customDisplayMenuBarOnly = false
         notificationsEnabled = true
         dashboardEnabled = true
-        dashboardSortMode = .accountOrder
+        dashboardSortMode = .availability
         dashboardColumns = 2
 
         // 重置智能模式状态

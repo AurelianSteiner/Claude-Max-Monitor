@@ -26,6 +26,34 @@ jobs:
       - name: Run swift test
         run: swift test
 
+  build-app:
+    name: Build App (compile check)
+    runs-on: macos-26
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "26.6"
+
+      # Compiles the full app target (App/, Views/, Services/, …) that `swift test`
+      # does not cover. No signing — this is a compile check, not a release build.
+      - name: Build app (Debug, no signing)
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Usage4Claude.xcodeproj \
+            -scheme Usage4Claude \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
   python-script-tests:
     name: Python Script Tests
     runs-on: ubuntu-latest

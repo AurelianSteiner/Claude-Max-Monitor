@@ -44,6 +44,18 @@ struct AccountUsageSnapshot: Identifiable {
     /// "welcher Claude ist gerade am Ende"。nil 表示尚无数据。
     var peakUtilization: Double? { criticalLimit?.percentage }
 
+    /// Schwelle, ab der ein Konto als "praktisch aufgebraucht" gilt: In der
+    /// Übersicht wird es ausgegraut und (im Verfügbarkeits-Sortiermodus) ans
+    /// Ende geschoben, weil man es bis zum Reset ohnehin nicht mehr nutzt.
+    static let nearExhaustionThreshold: Double = 96
+
+    /// True, wenn das knappste Limit dieses Kontos nahezu erschöpft ist.
+    /// Erst ab vorhandenen Daten aussagekräftig (sonst false).
+    var isNearExhausted: Bool {
+        guard let peak = peakUtilization else { return false }
+        return peak >= Self.nearExhaustionThreshold
+    }
+
     /// 圆环要展示的一项限制，标签已解析好
     struct RingLimit {
         let type: LimitType

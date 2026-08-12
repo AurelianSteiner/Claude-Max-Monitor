@@ -60,6 +60,9 @@ struct AccountUsageCard: View {
         )
         .contentShape(RoundedRectangle(cornerRadius: 12))
         .onHover { isHovering = $0 }
+        .saturation(snapshot.isNearExhausted && !isHovering ? 0.3 : 1)
+        .opacity(dimLevel)
+        .animation(.easeInOut(duration: 0.15), value: isHovering)
         .onTapGesture(perform: onSelect)
         .contextMenu {
             Button(action: onRefresh) {
@@ -76,6 +79,14 @@ struct AccountUsageCard: View {
     private var borderColor: Color {
         if isCurrent { return Color.accentColor.opacity(0.55) }
         return Color.primary.opacity(isHovering ? 0.18 : 0.08)
+    }
+
+    /// Fast erschöpfte Konten werden gedämpft dargestellt (man nutzt sie bis zum
+    /// Reset ohnehin nicht). Beim Überfahren mit der Maus kommen sie zum
+    /// Inspizieren wieder nach vorn.
+    private var dimLevel: Double {
+        guard snapshot.isNearExhausted else { return 1 }
+        return isHovering ? 0.85 : 0.45
     }
 
     // MARK: - Kopfbereich

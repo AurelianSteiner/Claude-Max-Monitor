@@ -59,8 +59,10 @@ final class DashboardRefreshManager: ObservableObject {
     private static let freshnessWindow: TimeInterval = 30
     /// 手动刷新防抖，与详情窗口的刷新按钮保持一致
     private static let manualRefreshCooldown: TimeInterval = 10
-    /// 账户之间的请求错峰间隔，避免同一时刻打出一串请求
-    private static let requestStagger: TimeInterval = 0.25
+    /// 账户之间的请求错峰间隔，避免同一时刻打出一串请求。
+    /// Bewusst großzügig (0.7s): jeder Claude-Account löst zusätzlich einen
+    /// OAuth-Token-Refresh aus — mehrere Konten gleichzeitig ergaben sonst 429.
+    private static let requestStagger: TimeInterval = 0.7
 
     // MARK: - Initialization
 
@@ -248,9 +250,22 @@ final class DashboardRefreshManager: ObservableObject {
             snapshots[index].errorMessage = nil
             snapshots[index].updatedAt = Date()
         case .failure(let error):
-            snapshots[index].errorMessage = error.localizedDescription
+            // 429 auf einem Konto, das schon Daten hat: letzte Daten stehen lassen
+            // und die alarmierende "Zu viele Anfragen"-Meldung unterdrücken. Der
+            // nächste (entzerrte) Refresh holt die Aktualisierung nach.
+            if isRateLimit(error), snapshots[index].usageData != nil {
+                snapshots[index].errorMessage = nil
+            } else {
+                snapshots[index].errorMessage = error.localizedDescription
+            }
             Logger.menuBar.info("Dashboard: Claude 账户拉取失败（\(error.localizedDescription)）")
         }
+    }
+
+    /// 429（请求过于频繁）判定：用于在已有数据时静默处理限流，而不是弹出错误。
+    private func isRateLimit(_ error: Error) -> Bool {
+        if let usageError = error as? UsageError, case .rateLimited = usageError { return true }
+        return false
     }
 
     private func applyCodex(_ result: Result<CodexUsageData, Error>, for id: UUID) {
@@ -262,7 +277,11 @@ final class DashboardRefreshManager: ObservableObject {
             snapshots[index].errorMessage = nil
             snapshots[index].updatedAt = Date()
         case .failure(let error):
-            snapshots[index].errorMessage = error.localizedDescription
+            if isRateLimit(error), snapshots[index].codexUsageData != nil {
+                snapshots[index].errorMessage = nil
+            } else {
+                snapshots[index].errorMessage = error.localizedDescription
+            }
             Logger.menuBar.info("Dashboard: Codex 账户拉取失败（\(error.localizedDescription)）")
         }
     }

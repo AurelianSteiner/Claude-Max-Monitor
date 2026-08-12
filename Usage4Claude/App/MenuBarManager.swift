@@ -223,9 +223,9 @@ class MenuBarManager: ObservableObject {
     /// Ein Claude + ein Codex bleibt beim klassischen Detailfenster — dessen
     /// Zweispaltenansicht zeigt dort schlicht mehr.
     private var shouldShowDashboard: Bool {
-        settings.dashboardEnabled
-            && settings.canShowDashboard
-            && (settings.hasMultipleAccountsPerProvider || forceDashboardInPopover)
+        // Sobald mindestens ein Konto existiert, immer die Gesamtübersicht zeigen —
+        // es gibt keine Einzelansicht mehr. Ohne Konten bleibt der Willkommens-Screen.
+        settings.hasAnyDashboardAccount
     }
 
     /// Zwischen Übersicht und klassischem Detail umschalten (Einstellung wird gemerkt).
