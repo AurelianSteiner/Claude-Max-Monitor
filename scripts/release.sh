@@ -8,7 +8,6 @@
 #
 # Voraussetzungen:
 #   - gh (GitHub CLI), angemeldet
-#   - create-dmg  (brew install create-dmg)
 #   - Sparkle-Werkzeuge unter build/vendor/sparkle-tools/ (legt build_without_xcode.sh an)
 #   - privater EdDSA-Schlüssel im Anmeldeschlüsselbund (einmalig via generate_keys)
 #
@@ -43,7 +42,6 @@ DMG_PATH="$PROJECT_ROOT/build/$DMG_NAME"
 SIGN_UPDATE="$PROJECT_ROOT/build/vendor/sparkle-tools/sign_update"
 
 command -v gh >/dev/null || fail "gh nicht gefunden"
-command -v create-dmg >/dev/null || fail "create-dmg nicht gefunden (brew install create-dmg)"
 [[ -x "$SIGN_UPDATE" ]] || fail "sign_update nicht gefunden unter $SIGN_UPDATE"
 
 # Ein sauberer Arbeitsbaum verhindert, dass ungetestete Änderungen mitgehen
@@ -69,20 +67,19 @@ APP_BUNDLE="$BUILD_DIR/$PRODUCT_NAME.app"
 success "App gebaut"
 
 # ------------------------------------------------------------------ DMG
+# Bewusst mit hdiutil statt create-dmg: hdiutil gehört zu macOS, damit hat der
+# Release-Weg keine Homebrew-Abhängigkeit. Das Ergebnis ist ein gewöhnliches
+# Laufwerk mit App und Verknüpfung nach /Programme — mehr braucht es nicht.
 info "Packe DMG…"
 rm -f "$DMG_PATH"
 STAGING="$(mktemp -d)"
 cp -R "$APP_BUNDLE" "$STAGING/"
-create-dmg \
-    --volname "$PRODUCT_NAME" \
-    --window-pos 200 120 \
-    --window-size 600 400 \
-    --icon-size 128 \
-    --icon "$PRODUCT_NAME.app" 150 180 \
-    --hide-extension "$PRODUCT_NAME.app" \
-    --app-drop-link 450 180 \
-    "$DMG_PATH" \
-    "$STAGING" >/dev/null 2>&1 || true
+ln -s /Applications "$STAGING/Programme"
+hdiutil create \
+    -volname "$PRODUCT_NAME" \
+    -srcfolder "$STAGING" \
+    -ov -format UDZO \
+    "$DMG_PATH" >/dev/null || fail "DMG konnte nicht erzeugt werden"
 rm -rf "$STAGING"
 [[ -f "$DMG_PATH" ]] || fail "DMG wurde nicht erzeugt"
 success "DMG: $(du -h "$DMG_PATH" | awk '{print $1}')"
