@@ -20,6 +20,10 @@ import SwiftUI
 enum DashboardMetrics {
     static let cardWidth: CGFloat = 372
     static let ringSlotWidth: CGFloat = 68
+    /// Höhe des Kopfblocks einer Karte (Stundenlimit | Wochenlimit).
+    /// Label (13) + Wasserstand (ringSlotWidth) + Reset-Zeile (17) + Abstände.
+    /// `AccountUsageCard.headline` pinnt sich auf genau diesen Wert.
+    static let headlineHeight: CGFloat = 104
     static let cardSpacing: CGFloat = 10
     static let outerPadding: CGFloat = 12
     static let headerHeight: CGFloat = 36
@@ -72,7 +76,7 @@ enum DashboardMetrics {
         if snapshot.errorMessage != nil {
             rowsHeight += 16  // Hinweiszeile "Daten möglicherweise veraltet"
         }
-        return cardChromeHeight + ringSlotWidth + rowsHeight
+        return cardChromeHeight + headlineHeight + rowsHeight
     }
 
     static func gridHeight(for snapshots: [AccountUsageSnapshot], columns: Int) -> CGFloat {
@@ -88,6 +92,12 @@ enum DashboardMetrics {
             if index < snapshots.count { total += cardSpacing }
         }
         return total
+    }
+
+    /// Spaltenzahl der Übersicht — nie mehr Spalten als Karten.
+    /// Auch das Fenster braucht sie, um seine Mindestbreite zu bestimmen.
+    static func columnCount(for snapshotCount: Int, setting: Int) -> Int {
+        min(max(1, setting), max(1, snapshotCount))
     }
 
     static func width(columns: Int) -> CGFloat {
@@ -143,7 +153,7 @@ struct DashboardView: View {
     }
 
     private var columnCount: Int {
-        min(max(1, settings.dashboardColumns), max(1, orderedSnapshots.count))
+        DashboardMetrics.columnCount(for: orderedSnapshots.count, setting: settings.dashboardColumns)
     }
 
     private var gridColumns: [GridItem] {
@@ -158,6 +168,21 @@ struct DashboardView: View {
             DashboardMetrics.gridHeight(for: orderedSnapshots, columns: columnCount),
             DashboardMetrics.maxGridHeight
         )
+    }
+
+    /// Breite, die der Inhalt mindestens braucht (= exakte Breite im popover).
+    private var contentWidth: CGFloat {
+        DashboardMetrics.width(columns: columnCount)
+    }
+
+    /// Im eigenen Fenster darf der Inhalt mitwachsen, im popover nicht:
+    /// dort liefert die Idealgröße die feste popover-Größe.
+    private var stretchWidth: CGFloat? {
+        isStandaloneWindow ? .infinity : contentWidth
+    }
+
+    private var stretchHeight: CGFloat? {
+        isStandaloneWindow ? .infinity : nil
     }
 
     private func isCurrent(_ snapshot: AccountUsageSnapshot) -> Bool {
@@ -178,7 +203,15 @@ struct DashboardView: View {
             Divider()
             footer
         }
-        .frame(width: DashboardMetrics.width(columns: columnCount))
+        // popover: min = ideal = max, also exakt so breit wie früher.
+        // Eigenes Fenster: Ideal bleibt die Inhaltsbreite (davon leitet sich die
+        // Startgröße ab), nach oben darf der Inhalt aber mitwachsen.
+        .frame(
+            minWidth: contentWidth,
+            idealWidth: contentWidth,
+            maxWidth: stretchWidth,
+            maxHeight: stretchHeight
+        )
         .id(localization.updateTrigger)  // 语言变化时重新创建视图
         .onAppear {
             var transaction = Transaction(animation: nil)
@@ -390,12 +423,19 @@ struct DashboardView: View {
 
     @ViewBuilder
     private var grid: some View {
+        let boxHeight = gridHeight + DashboardMetrics.outerPadding * 2
         if manager.snapshots.isEmpty {
             emptyState
-                .frame(height: gridHeight + DashboardMetrics.outerPadding * 2)
+                .frame(
+                    minHeight: isStandaloneWindow ? min(boxHeight, 160) : boxHeight,
+                    idealHeight: boxHeight,
+                    maxHeight: isStandaloneWindow ? .infinity : boxHeight
+                )
         } else {
             ScrollView(.vertical, showsIndicators: true) {
-                LazyVGrid(columns: gridColumns, alignment: .leading, spacing: DashboardMetrics.cardSpacing) {
+                // Im eigenen Fenster mittig, damit der Rest der Breite links und
+                // rechts gleichmäßig verteilt wird; im popover deckungsgleich.
+                LazyVGrid(columns: gridColumns, alignment: isStandaloneWindow ? .center : .leading, spacing: DashboardMetrics.cardSpacing) {
                     ForEach(orderedSnapshots) { snapshot in
                         AccountUsageCard(
                             snapshot: snapshot,
@@ -408,8 +448,13 @@ struct DashboardView: View {
                     }
                 }
                 .padding(DashboardMetrics.outerPadding)
+                .frame(maxWidth: .infinity, alignment: .center)
             }
-            .frame(height: gridHeight + DashboardMetrics.outerPadding * 2)
+            .frame(
+                minHeight: isStandaloneWindow ? min(boxHeight, 160) : boxHeight,
+                idealHeight: boxHeight,
+                maxHeight: isStandaloneWindow ? .infinity : boxHeight
+            )
         }
     }
 
@@ -457,9 +502,29 @@ struct DashboardView: View {
                     .foregroundColor(.secondary)
                     .lineLimit(1)
             }
+
+            // Laufende Version, damit man ohne Umweg über „Über" sieht,
+            // welcher Stand gerade läuft. Reine Ziffernfolge, daher kein
+            // eigener Sprachschlüssel — der Tooltip nutzt den vorhandenen.
+            if let version = appVersion {
+                Text(verbatim: "v\(version)")
+                    .font(.system(size: 10).monospacedDigit())
+                    .foregroundColor(.secondary)
+                    .opacity(0.7)
+                    .lineLimit(1)
+                    .fixedSize()
+                    .help(L.SettingsAbout.version(version))
+            }
         }
         .padding(.horizontal, DashboardMetrics.outerPadding)
         .frame(height: DashboardMetrics.footerHeight)
+    }
+
+    /// CFBundleShortVersionString, z. B. „1.3"
+    private var appVersion: String? {
+        let value = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+        guard let value, !value.isEmpty else { return nil }
+        return value
     }
 
     // MARK: - Actions

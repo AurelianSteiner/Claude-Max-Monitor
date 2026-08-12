@@ -212,6 +212,21 @@ struct UnifiedLimitRow: View {
     var usesUtilizationTint: Bool = false
 
     var body: some View {
+        Group {
+            if isWeeklyModelRow {
+                weeklyModelRow
+            } else {
+                standardRow
+            }
+        }
+        .padding(.vertical, 2)
+        .padding(.horizontal, 12)
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(8)
+    }
+
+    /// 5h / 7d / Codex：图标 + 名称 + 重置时间（或剩余额度）
+    private var standardRow: some View {
         HStack(spacing: 8) {
             // 图标（含百分比数字和进度弧）
             MiniProgressIcon(type: type, color: iconColor, percentage: percentageValue ?? 0)
@@ -242,13 +257,56 @@ struct UnifiedLimitRow: View {
                     ))
             }
         }
-        .padding(.vertical, 2)
-        .padding(.horizontal, 12)
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(8)
+    }
+
+    /// Wochen-Modelllimits (Fable / Opus / Sonnet) zeigen nur noch, wie voll sie
+    /// sind: ein füllender Balken plus Prozentzahl. Die Reset-Zeit entfällt hier
+    /// bewusst — das Fenster ist ohnehin immer die Woche, die Uhrzeit stand nur
+    /// im Weg. Die Zeilenhöhe bleibt die der Symbolzeilen, damit die Übersicht
+    /// ihre Kartenhöhe weiter vorausrechnen kann.
+    private var weeklyModelRow: some View {
+        let percentage = UsageRingDisplay.clampedPercentage(percentageValue ?? 0)
+
+        return HStack(spacing: 8) {
+            Text(limitName)
+                .font(.system(size: 12))
+                .foregroundColor(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .frame(width: Self.weeklyModelNameWidth, alignment: .leading)
+
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.gray.opacity(0.25))
+                    Capsule()
+                        .fill(iconColor)
+                        .frame(width: max(3, geometry.size.width * CGFloat(percentage) / 100))
+                }
+            }
+            .frame(height: 6)
+            .animation(.easeInOut(duration: 0.35), value: percentage)
+
+            Text("\(Int(percentage.rounded()))%")
+                .font(.system(size: 12, weight: .medium).monospacedDigit())
+                .foregroundColor(isExhausted ? .red : .primary)
+                .frame(width: Self.weeklyModelValueWidth, alignment: .trailing)
+        }
+        .frame(height: 22)
     }
 
     // MARK: - Computed Properties
+
+    private static let weeklyModelNameWidth: CGFloat = 96
+    private static let weeklyModelValueWidth: CGFloat = 38
+
+    /// Wochen-Modelllimits werden als Balken gezeichnet, alles andere als Symbolzeile.
+    private var isWeeklyModelRow: Bool {
+        switch type {
+        case .fableWeekly, .opusWeekly, .sonnetWeekly: return true
+        default: return false
+        }
+    }
 
     /// Limit ist ausgeschöpft. Ab hier ist die einzig nützliche Information,
     /// *wann* es wieder freigeschaltet wird — nicht der Reset-Zeitpunkt als Datum.

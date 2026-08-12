@@ -368,6 +368,33 @@ class MenuBarUI {
 
         menu.addItem(NSMenuItem.separator())
 
+        // Wach halten (IOKit-Power-Assertions, kein sudo / kein Helper-Tool nötig).
+        // Deckel-zu (Clamshell) bleibt bewusst außen vor — das ginge nur mit
+        // `sudo pmset disablesleep`, siehe Kommentar in SleepGuard.swift.
+        let sleepGuard = SleepGuard.shared
+
+        let displayAwakeItem = NSMenuItem(
+            title: L.Menu.keepDisplayAwake,
+            action: #selector(MenuBarManager.toggleKeepDisplayAwake),
+            keyEquivalent: ""
+        )
+        displayAwakeItem.target = target
+        displayAwakeItem.state = sleepGuard.isDisplayAwake ? .on : .off
+        setMenuItemIcon(displayAwakeItem, systemName: "display")
+        menu.addItem(displayAwakeItem)
+
+        let systemAwakeItem = NSMenuItem(
+            title: L.Menu.keepMacAwake,
+            action: #selector(MenuBarManager.toggleKeepMacAwake),
+            keyEquivalent: ""
+        )
+        systemAwakeItem.target = target
+        systemAwakeItem.state = sleepGuard.isSystemAwake ? .on : .off
+        setMenuItemIcon(systemAwakeItem, systemName: "cup.and.saucer")
+        menu.addItem(systemAwakeItem)
+
+        menu.addItem(NSMenuItem.separator())
+
         if !settings.accounts.isEmpty {
             let claudeStatusItem = NSMenuItem(
                 title: L.Menu.claudeStatus,

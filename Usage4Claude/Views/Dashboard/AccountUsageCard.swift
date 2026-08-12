@@ -4,10 +4,12 @@
 //
 //  Eine Konto-Karte der Übersicht.
 //
-//  Aufbau: links der Wasserstand für das Sitzungsfenster, rechts groß das
-//  Wochenlimit — die Zahl, an der die Planung hängt. Darunter die frei
-//  konfigurierbaren übrigen Limits als Balken (Anzeigeoptionen gelten hier
-//  genauso wie im klassischen Fenster).
+//  Aufbau: links der Wasserstand für das Stundenlimit, durch eine senkrechte
+//  Linie getrennt rechts groß das Wochenlimit — die Zahl, an der die Planung
+//  hängt. Beide Seiten tragen ihr eigenes Label und ihre eigene Reset-Zeit.
+//  Ist ein Konto praktisch aufgebraucht, steht daneben ein mitlaufender
+//  Countdown bis zur Freischaltung. Darunter die frei konfigurierbaren
+//  übrigen Limits als Zeilen.
 //
 //  Klick auf die Karte macht das Konto zum aktiven, dem die Menüleiste folgt.
 //  Copyright © 2025 f-is-h. All rights reserved.
@@ -29,6 +31,15 @@ struct AccountUsageCard: View {
 
     /// Unterhalb dieser Restzeit zeigt die Karte einen Countdown statt eines Datums.
     private static let countdownWindow: TimeInterval = 3 * 24 * 3600
+
+    /// Feste Maße des Kopfblocks. Die Übersicht rechnet ihre Fensterhöhe aus den
+    /// Kartenhöhen vor (DashboardMetrics.cardHeight) — der Block muss deshalb
+    /// eine bekannte Höhe haben und darf nicht mit dem Inhalt wachsen. Der Wert
+    /// steht in DashboardMetrics, damit Vorausrechnung und Darstellung nicht
+    /// auseinanderlaufen können.
+    private static let headlineHeight = DashboardMetrics.headlineHeight
+    private static let sessionColumnWidth: CGFloat = 96
+    private static let weeklyColumnWidth: CGFloat = 92
 
     /// Limits für die Zeilen unter dem Kopfbereich. Sitzungs- und Wochenfenster
     /// sind oben schon prominent vertreten und werden hier nicht wiederholt.
@@ -60,8 +71,6 @@ struct AccountUsageCard: View {
         )
         .contentShape(RoundedRectangle(cornerRadius: 12))
         .onHover { isHovering = $0 }
-        .saturation(snapshot.isNearExhausted && !isHovering ? 0.3 : 1)
-        .opacity(dimLevel)
         .animation(.easeInOut(duration: 0.15), value: isHovering)
         .onTapGesture(perform: onSelect)
         .contextMenu {
@@ -79,14 +88,6 @@ struct AccountUsageCard: View {
     private var borderColor: Color {
         if isCurrent { return Color.accentColor.opacity(0.55) }
         return Color.primary.opacity(isHovering ? 0.18 : 0.08)
-    }
-
-    /// Fast erschöpfte Konten werden gedämpft dargestellt (man nutzt sie bis zum
-    /// Reset ohnehin nicht). Beim Überfahren mit der Maus kommen sie zum
-    /// Inspizieren wieder nach vorn.
-    private var dimLevel: Double {
-        guard snapshot.isNearExhausted else { return 1 }
-        return isHovering ? 0.85 : 0.45
     }
 
     // MARK: - Kopfbereich
@@ -165,32 +166,110 @@ struct AccountUsageCard: View {
         }
     }
 
-    /// Wasserstand plus große Wochenzahl
+    /// Stundenlimit (Wasserstand) und Wochenlimit nebeneinander, getrennt durch
+    /// eine senkrechte Linie. Beide Seiten: Label oben, Wert in der Mitte,
+    /// Reset-Zeit darunter — sonst ist nicht erkennbar, welche Zahl zu welchem
+    /// Fenster gehört. Rechts außen der Countdown fast erschöpfter Konten.
     private var headline: some View {
-        HStack(alignment: .center, spacing: 14) {
+        HStack(alignment: .center, spacing: 8) {
+            sessionColumn
+            ProviderDivider(height: Self.headlineHeight - 12)
+            weeklyColumn
+
+            Spacer(minLength: 4)
+
+            if snapshot.isNearExhausted {
+                exhaustionCountdown
+            }
+        }
+        .frame(height: Self.headlineHeight)
+    }
+
+    /// Linke Spalte: Sitzungsfenster (5 Stunden bzw. Codex primary)
+    private var sessionColumn: some View {
+        let session = snapshot.sessionLimit
+        return VStack(spacing: 2) {
+            columnLabel(L.Dashboard.sessionLimit)
+
             WaterLevelGauge(
-                percentage: snapshot.sessionLimit?.percentage ?? 0,
-                caption: snapshot.sessionLimit?.label ?? L.Usage.fiveHourLimitShort,
+                percentage: session?.percentage ?? 0,
+                caption: session?.label ?? L.Usage.fiveHourLimitShort,
                 diameter: DashboardMetrics.ringSlotWidth
             )
 
-            VStack(alignment: .leading, spacing: 2) {
-                let weekly = snapshot.weeklyLimit
-                let percentage = weekly?.percentage ?? 0
+            resetLine(for: session)
+        }
+        .frame(width: Self.sessionColumnWidth)
+    }
 
-                Text("\(Int(percentage.rounded()))%")
-                    .font(.system(size: 30, weight: .semibold).monospacedDigit())
-                    .foregroundColor(DashboardPalette.ink(percentage))
+    /// Rechte Spalte: Wochenfenster — die große Zahl der Karte
+    private var weeklyColumn: some View {
+        let weekly = snapshot.weeklyLimit
+        let percentage = weekly?.percentage ?? 0
 
-                Text(L.Dashboard.weeklyLimit)
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+        return VStack(alignment: .leading, spacing: 2) {
+            columnLabel(L.Dashboard.weeklyLimit)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                resetLine(for: weekly)
+            Text("\(Int(percentage.rounded()))%")
+                .font(.system(size: 30, weight: .semibold).monospacedDigit())
+                .foregroundColor(DashboardPalette.ink(percentage))
+                .lineLimit(1)
+
+            resetLine(for: weekly)
+        }
+        .frame(width: Self.weeklyColumnWidth, alignment: .leading)
+    }
+
+    private func columnLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 10, weight: .medium))
+            .foregroundColor(.secondary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+    }
+
+    /// Ersetzt das frühere Ausgrauen: Statt die Karte zu dämpfen, sagt ein
+    /// mitlaufender Countdown, wie lange das knappste Limit noch blockiert.
+    private var exhaustionCountdown: some View {
+        let resetsAt = snapshot.criticalLimit?.resetsAt
+
+        return VStack(alignment: .leading, spacing: 1) {
+            HStack(spacing: 3) {
+                Image(systemName: "hourglass")
+                    .font(.system(size: 9, weight: .semibold))
+                Text(L.Dashboard.freeAgain)
+                    .font(.system(size: 10, weight: .medium))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
 
-            Spacer(minLength: 0)
+            // Eigene Zeitachse: der Countdown läuft weiter, ohne dass die
+            // ganze Übersicht neu gebaut wird.
+            TimelineView(.periodic(from: .now, by: 60)) { _ in
+                Text(countdownText(for: resetsAt))
+                    .font(.system(size: 14, weight: .bold).monospacedDigit())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
         }
+        .foregroundColor(DashboardPalette.ink(100))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(DashboardPalette.fill(100).opacity(0.14))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(DashboardPalette.fill(100).opacity(0.45), lineWidth: 1)
+        )
+        .help(resetsAt.map(fullResetDescription) ?? "")
+    }
+
+    private func countdownText(for resetsAt: Date?) -> String {
+        guard let resetsAt else { return "–" }
+        return UsageData.LimitData(percentage: 100, resetsAt: resetsAt).formattedCompactRemaining
     }
 
     /// Dritte Zeile: Countdown, wenn die Freischaltung in weniger als drei Tagen
@@ -208,6 +287,7 @@ struct AccountUsageCard: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(limit.isExhausted ? DashboardPalette.ink(100) : .secondary)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.75)
             }
             .help(fullResetDescription(resetsAt))
         } else {

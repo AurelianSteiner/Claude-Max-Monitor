@@ -167,6 +167,18 @@ class MenuBarManager: ObservableObject {
     @objc func quitApp() {
         NSApplication.shared.terminate(nil)
     }
+
+    // MARK: - Wach halten
+
+    /// Bildschirm-Schlaf verhindern (IOKit-Power-Assertion, kein sudo nötig)
+    @objc func toggleKeepDisplayAwake() {
+        SleepGuard.shared.toggleDisplayAwake()
+    }
+
+    /// System-Schlaf bei Untätigkeit verhindern (IOKit-Power-Assertion)
+    @objc func toggleKeepMacAwake() {
+        SleepGuard.shared.toggleSystemAwake()
+    }
     
     /// 处理菜单操作
     /// 关闭弹出窗口并执行相应的操作
