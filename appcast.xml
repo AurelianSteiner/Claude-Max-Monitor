@@ -3,6 +3,19 @@
     <channel>
         <title>Claude Max Monitor</title>
         <item>
+            <title>1.7</title>
+            <pubDate>Thu, 13 Aug 2026 09:31:01 +0000</pubDate>
+            <sparkle:version>1.7</sparkle:version>
+            <sparkle:shortVersionString>1.7</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[Die Karte kennt nur noch zwei Sperrzustände: Eine gesperrte Woche schließt das Sitzungsfenster ohnehin ein, deshalb entfällt 'Alles gesperrt'. Neben den beiden Symbolen zum Wachhalten steht jetzt ein kurzes Wort, sodass auch ohne Mauszeiger klar ist, was sie bewirken. Und Accounts lassen sich als Firma oder privat markieren und zeigen ein passendes Symbol neben dem Namen.]]></description>
+            <enclosure
+                url="https://github.com/AurelianSteiner/Claude-Max-Monitor/releases/download/v1.7/Claude-Max-Monitor-1.7.dmg"
+                sparkle:edSignature="d2p6Y5571ujUAc2lr8y8nHSyNaiWXxpSPyPa/FM7qz12F2gaca2tpWH6C8ToszvaEBFeq3z6AmthF3+ZSy0GDA=="
+                length="5173874"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>1.6</title>
             <pubDate>Thu, 13 Aug 2026 01:42:30 +0000</pubDate>
             <sparkle:version>1.6</sparkle:version>
