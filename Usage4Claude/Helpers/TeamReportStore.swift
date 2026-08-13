@@ -2,12 +2,20 @@
 //  TeamReportStore.swift
 //  Usage4Claude
 //
-//  Team-Übersicht — Teil 4: die Meldungen aus dem geteilten Ordner.
+//  Team-Übersicht — Teil 4: die Meldungen. EINE Quelle der Wahrheit für
+//  alle Ansichten, mit zwei möglichen Wegen dahinter:
 //
-//  Liest alle JSON-Dateien des Ordners, wirft alles weg, was nicht zum
-//  eigenen Team gehört oder kaputt ist, und veröffentlicht den Rest als
-//  `[TeamReport]` — neueste Meldung zuerst. Rein lesend: Die App schreibt
-//  nur, wenn jemand eine Meldung von Hand einfügt (`importPasted(_:)`).
+//    • Server: Besteht eine Verbindung zum Team-Relay
+//      (`TeamServerConnection`), holt `refresh()` GET /reports — Super und
+//      Admin bekommen alle Meldungen, Mitglieder nur die eigene. Welcher
+//      Weg gerade gilt, sagt `source` (Server / Ordner / keiner).
+//    • Ordner (Rückfallweg): Liest alle JSON-Dateien des geteilten
+//      Ordners, wirft alles weg, was nicht zum eigenen Team gehört oder
+//      kaputt ist. Rein lesend — geschrieben wird nur, wenn jemand eine
+//      Meldung von Hand einfügt (`importPasted(_:)`, Ordner-Weg).
+//
+//  Veröffentlicht wird in beiden Fällen dasselbe: `[TeamReport]`,
+//  neueste Meldung zuerst, eine pro Person.
 //
 //  Aktualisiert wird sparsam — der Ordner liegt in iCloud/Dropbox, und
 //  ständiges Nachsehen kostet dort mehr als hier: alle zwei Minuten, beim
@@ -43,6 +51,19 @@ enum TeamImportError: Error, Equatable {
     case writeFailed
 }
 
+// MARK: - Datenquelle
+
+/// Woher die Meldungen gerade kommen — die Oberfläche zeigt das als
+/// Verbindungszustand an („Server", „Ordner", nichts eingerichtet).
+enum TeamReportSource: Equatable {
+    /// Verbindung zum Team-Relay (`TeamServerConnection`)
+    case server
+    /// Geteilter Ordner (Team + Ordner eingerichtet, keine Server-Verbindung)
+    case folder
+    /// Weder noch — die Übersicht ist nicht eingerichtet
+    case none
+}
+
 final class TeamReportStore: ObservableObject {
 
     /// Gemeinsame Instanz — Menü, Übersicht und Einstellungen teilen sich die Daten
@@ -58,6 +79,9 @@ final class TeamReportStore: ObservableObject {
     @Published private(set) var isRefreshing = false
     /// Ordner ist eingerichtet, war beim letzten Versuch aber nicht lesbar
     @Published private(set) var folderUnavailable = false
+    /// Server-Verbindung besteht, der letzte Abruf schlug aber fehl
+    /// (Netz weg, Token abgelehnt, Serverfehler)
+    @Published private(set) var serverUnavailable = false
 
     // MARK: - Konfiguration
 
@@ -73,6 +97,13 @@ final class TeamReportStore: ObservableObject {
     private let io = DispatchQueue(label: "xyz.fi5h.Usage4Claude.team-reports", qos: .utility)
     private var timer: Timer?
     private var cancellables = Set<AnyCancellable>()
+
+    /// Zählt Konfigurationswechsel (Server verbunden/getrennt, Team oder
+    /// Ordner geändert). Jeder Lesevorgang merkt sich den Stand beim Start
+    /// und verwirft sein Ergebnis, wenn er inzwischen nicht mehr stimmt —
+    /// sonst könnte ein noch laufender Server-Abruf nach dem Trennen
+    /// Server-Meldungen in die Ordner-Ansicht schieben (oder umgekehrt).
+    private var configurationGeneration = 0
 
     /// Wie viele Ansichten die Meldungen gerade zeigen (Team-Fenster,
     /// Einstellungskarte). Der geteilte Ordner liegt in iCloud oder Dropbox —
@@ -99,6 +130,11 @@ final class TeamReportStore: ObservableObject {
             .sink { [weak self] _ in self?.handleConfigurationChange() }
             .store(in: &cancellables)
 
+        NotificationCenter.default.publisher(for: .teamServerChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.handleConfigurationChange() }
+            .store(in: &cancellables)
+
         // Beim Erzeugen wird noch nichts gelesen: Erzeugt wird dieser Speicher
         // von der ersten Ansicht, die ihn zeigt, und die ruft gleich darauf
         // `activate()` auf.
@@ -106,9 +142,17 @@ final class TeamReportStore: ObservableObject {
 
     // MARK: - Abfragen
 
-    /// Ist die Team-Übersicht überhaupt eingerichtet?
+    /// Woher die Meldungen gerade kommen. Die Server-Verbindung hat Vorrang;
+    /// der Ordner bleibt der Rückfallweg, wenn keine besteht.
+    var source: TeamReportSource {
+        if TeamServerConnection.shared.isConnected { return .server }
+        if TeamStore.shared.hasTeam && TeamFolderAccess.shared.hasFolder { return .folder }
+        return .none
+    }
+
+    /// Ist die Team-Übersicht überhaupt eingerichtet (egal auf welchem Weg)?
     var isConfigured: Bool {
-        TeamStore.shared.hasTeam && TeamFolderAccess.shared.hasFolder
+        source != .none
     }
 
     /// Meldungen, die älter als 24 Stunden sind
@@ -134,14 +178,17 @@ final class TeamReportStore: ObservableObject {
         updateTimer()
     }
 
-    /// Liest den Ordner neu ein.
+    /// Holt die Meldungen neu — vom Server, wenn eine Verbindung besteht,
+    /// sonst aus dem geteilten Ordner.
     /// - Parameter force: Ignoriert den Mindestabstand (z. B. Knopf „Aktualisieren").
     func refresh(force: Bool = false) {
         dispatchPrecondition(condition: .onQueue(.main))
 
-        guard isConfigured, let teamId = TeamStore.shared.teamId else {
+        let source = self.source
+        guard source != .none else {
             reports = []
             folderUnavailable = false
+            serverUnavailable = false
             return
         }
         guard !isRefreshing else { return }
@@ -149,11 +196,64 @@ final class TeamReportStore: ObservableObject {
             return
         }
 
+        switch source {
+        case .server: refreshFromServer()
+        case .folder: refreshFromFolder()
+        case .none:   break
+        }
+    }
+
+    /// Server-Weg: GET /reports über den Client der Verbindung. Super und
+    /// Admin bekommen alle Meldungen, Mitglieder nur die eigene — das
+    /// entscheidet der Server, hier wird nur veröffentlicht.
+    private func refreshFromServer() {
+        guard let client = TeamServerConnection.shared.client else {
+            serverUnavailable = true
+            return
+        }
+
         isRefreshing = true
+        folderUnavailable = false
+        let generation = configurationGeneration
+        Task { [weak self] in
+            do {
+                let fetched = try await client.reports()
+                await MainActor.run {
+                    guard let self, generation == self.configurationGeneration else { return }
+                    self.isRefreshing = false
+                    self.lastRefreshAt = Date()
+                    self.serverUnavailable = false
+                    // Wie beim Ordner: pro Person nur die jüngste Meldung.
+                    let cleaned = TeamReport.deduplicatedByPerson(fetched)
+                    guard self.reports != cleaned else { return }
+                    self.reports = cleaned
+                }
+            } catch {
+                await MainActor.run {
+                    guard let self, generation == self.configurationGeneration else { return }
+                    // Alte Karten stehen lassen und das Problem melden,
+                    // statt die Übersicht leer zu räumen.
+                    self.isRefreshing = false
+                    self.lastRefreshAt = Date()
+                    self.serverUnavailable = true
+                    Logger.team.error("Server-Meldungen nicht ladbar: \(error.localizedDescription, privacy: .public)")
+                }
+            }
+        }
+    }
+
+    /// Ordner-Weg (Rückfall): alle JSON-Dateien des geteilten Ordners lesen.
+    private func refreshFromFolder() {
+        guard let teamId = TeamStore.shared.teamId else { return }
+
+        isRefreshing = true
+        serverUnavailable = false
+        let generation = configurationGeneration
         io.async { [weak self] in
             guard let self else { return }
             let loaded = Self.readReports(teamId: teamId)
             DispatchQueue.main.async {
+                guard generation == self.configurationGeneration else { return }
                 self.isRefreshing = false
                 self.lastRefreshAt = Date()
                 if let loaded {
@@ -307,18 +407,26 @@ final class TeamReportStore: ObservableObject {
     // MARK: - Zeitgeber
 
     private func handleConfigurationChange() {
+        // Laufende Lesevorgänge gehören zur alten Konfiguration: Ihr Ergebnis
+        // wird verworfen (Generation stimmt nicht mehr), und `isRefreshing`
+        // wird hier zurückgesetzt, damit es den erzwungenen Neuabruf der
+        // neuen Quelle nicht blockiert.
+        configurationGeneration += 1
+        isRefreshing = false
+
         updateTimer()
         if isConfigured {
             refresh(force: true)
         } else {
             reports = []
             folderUnavailable = false
+            serverUnavailable = false
             lastRefreshAt = nil
         }
     }
 
-    /// Der Zeitgeber läuft nur, solange Team und Ordner eingerichtet sind
-    /// **und** jemand die Meldungen ansieht.
+    /// Der Zeitgeber läuft nur, solange eine Quelle eingerichtet ist (Server
+    /// oder Team + Ordner) **und** jemand die Meldungen ansieht.
     private func updateTimer() {
         dispatchPrecondition(condition: .onQueue(.main))
 

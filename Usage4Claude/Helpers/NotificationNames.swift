@@ -39,6 +39,10 @@ extension Notification.Name {
     /// Der geteilte Ordner wurde gewählt oder entfernt
     static let teamFolderChanged = Notification.Name("teamFolderChanged")
 
+    /// Server-Verbindung des Teams hergestellt, getrennt oder Rolle geändert.
+    /// `TeamReportStore` lädt daraufhin neu, `TeamAutoReporter` startet/stoppt.
+    static let teamServerChanged = Notification.Name("teamServerChanged")
+
     // MARK: - Window Related
 
     /// 打开设置窗口通知

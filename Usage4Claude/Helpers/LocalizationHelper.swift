@@ -688,6 +688,70 @@ enum L {
         static var emptyNoReportsStep: String { localized("team.empty.no_reports_step") }
         static var emptyUnreachable: String { localized("team.empty.unreachable") }
         static var emptyUnreachableStep: String { localized("team.empty.unreachable_step") }
+
+        // MARK: Server-Verbindung
+
+        /// Fehlertexte des Team-Servers (`TeamServerError`)
+        static var serverNotConnected: String { localized("team.server.not_connected") }
+        static var serverInvalidTeamId: String { localized("team.server.invalid_team_id") }
+        static var serverInvalidToken: String { localized("team.server.invalid_token") }
+        static var serverUnreachable: String { localized("team.server.unreachable") }
+        static var serverBadResponse: String { localized("team.server.bad_response") }
+
+        /// Beschriftung der Datenquelle („Server" / „Ordner"), vgl. `TeamReportSource`
+        static var sourceServer: String { localized("team.source.server") }
+        static var sourceFolder: String { localized("team.source.folder") }
+
+        // MARK: Server-Verbindung — Karte in den Einstellungen
+
+        static var serverSection: String { localized("team.server.section") }
+        static var serverTokenLabel: String { localized("team.server.token_label") }
+        static var serverConnect: String { localized("team.server.connect") }
+        static var serverDisconnect: String { localized("team.server.disconnect") }
+        static var serverChange: String { localized("team.server.change") }
+        static var serverURLLabel: String { localized("team.server.url_label") }
+        static var roleSuper: String { localized("team.server.role_super") }
+        static var roleAdmin: String { localized("team.server.role_admin") }
+        static var roleMember: String { localized("team.server.role_member") }
+        /// Überschrift über dem gedimmten Ordner-Teil, sobald der Server verbunden ist
+        static var folderFallback: String { localized("team.server.folder_fallback") }
+
+        // MARK: Mitgliederverwaltung (nur Inhaber)
+
+        static var membersTitle: String { localized("team.members.title") }
+        static var membersNamePlaceholder: String { localized("team.members.name_placeholder") }
+        static var membersAdd: String { localized("team.members.add") }
+        static var membersRemove: String { localized("team.members.remove") }
+        static var membersCopyToken: String { localized("team.members.copy_token") }
+        static var membersCopyInvite: String { localized("team.members.copy_invite") }
+        static var membersDeleteConfirmTitle: String { localized("team.members.delete_confirm_title") }
+
+        /// „Til kann danach nicht mehr melden; das Token wird ungültig."
+        static func membersDeleteConfirmMessage(_ name: String) -> String {
+            String(format: localized("team.members.delete_confirm_message"), name)
+        }
+
+        /// „Dieses Token bekommt Til — es wird nur einmal angezeigt."
+        static func membersTokenHint(_ name: String) -> String {
+            String(format: localized("team.members.token_hint"), name)
+        }
+
+        /// Fertige Einladung für ein Mitglied — Download-Link, Fundort des
+        /// Feldes, Team-ID und das Token dieser Person
+        static func invitation(teamId: String, token: String) -> String {
+            String(format: localized("team.invite.template"), teamId, token)
+        }
+
+        // MARK: Übersicht — Quelle und Server-Zustände
+
+        /// „Server · verbunden als Admin"
+        static func sourceServerLine(_ role: String) -> String {
+            String(format: localized("team.view.source_server"), role)
+        }
+        static var sourceFolderLine: String { localized("team.view.source_folder") }
+        static var membersOwnOnly: String { localized("team.view.members_own_only") }
+        static var emptyServerNoReportsStep: String { localized("team.empty.server_no_reports_step") }
+        static var emptyServerUnreachableStep: String { localized("team.empty.server_unreachable_step") }
     }
 
     // MARK: - Helper Methods

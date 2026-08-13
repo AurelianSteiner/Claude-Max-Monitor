@@ -486,7 +486,7 @@
 
 /* Team setup — card at the bottom of the Accounts tab */
 "team.settings.title" = "Team";
-"team.settings.intro" = "Every Claude account in the team at a glance — the reports travel through a shared folder.";
+"team.settings.intro" = "No server needed either: the reports can travel through a shared folder instead.";
 "team.settings.name_placeholder" = "Team name";
 "team.settings.create" = "Create team";
 "team.settings.join_hint" = "Already got a team ID? Enter it here instead of creating your own team.";
@@ -521,7 +521,7 @@
 
 /* Empty states — each one names the next step */
 "team.empty.no_team" = "No team yet.";
-"team.empty.no_team_step" = "Create a team in Settings, under Accounts.";
+"team.empty.no_team_step" = "Enter your team ID and token in Settings, under Accounts — or create a team with a shared folder.";
 "team.empty.open_settings" = "Open settings";
 "team.empty.no_folder" = "No shared folder.";
 "team.empty.no_folder_step" = "Pick a folder everyone in the team can see — in iCloud, Dropbox or on a server.";
@@ -529,3 +529,45 @@
 "team.empty.no_reports_step" = "Copy the instructions and send them to the team.";
 "team.empty.unreachable" = "Folder not reachable.";
 "team.empty.unreachable_step" = "Is the share mounted? Otherwise pick the folder again.";
+
+/* Team overview — server connection */
+"team.server.not_connected" = "Not connected to the server.";
+"team.server.invalid_team_id" = "Invalid team ID.";
+"team.server.invalid_token" = "Invalid token.";
+"team.server.unreachable" = "Server not reachable.";
+"team.server.bad_response" = "Unexpected server response.";
+"team.source.server" = "Server";
+"team.source.folder" = "Folder";
+
+/* Team — server connection (card in Settings) */
+"team.server.section" = "Connect to server";
+"team.server.token_label" = "Token";
+"team.server.connect" = "Connect";
+"team.server.disconnect" = "Disconnect";
+"team.server.change" = "Change server";
+"team.server.url_label" = "Server URL";
+"team.server.role_super" = "Owner";
+"team.server.role_admin" = "Admin";
+"team.server.role_member" = "Member";
+"team.server.folder_fallback" = "Shared folder (fallback)";
+
+/* Team — member management (owner only) */
+"team.members.title" = "Members";
+"team.members.name_placeholder" = "Name";
+"team.members.add" = "Create";
+"team.members.remove" = "Remove";
+"team.members.copy_token" = "Copy token";
+"team.members.copy_invite" = "Copy invitation";
+"team.members.token_hint" = "Hand this token to %@ — it is shown only once.";
+"team.members.delete_confirm_title" = "Remove member?";
+"team.members.delete_confirm_message" = "%@ can no longer report afterwards; the token becomes invalid.";
+
+/* Ready-made invitation — goes to the clipboard */
+"team.invite.template" = "Share your Claude usage with the team\n\n1. Get the app: https://github.com/AurelianSteiner/Claude-Max-Monitor/releases/latest\n2. In the app: Settings → Accounts → Team → Connect to server\n3. Team ID: %@\n4. Token: %@\n\nOnly percentages and reset times are shared — no keys, no content.";
+
+/* Team overview — source and server states */
+"team.view.source_server" = "Server · connected as %@";
+"team.view.source_folder" = "Shared folder";
+"team.view.members_own_only" = "Members only see their own report.";
+"team.empty.server_no_reports_step" = "The app reports on its own once connected. Colleagues only need the team ID and a token.";
+"team.empty.server_unreachable_step" = "Check the network and try again.";

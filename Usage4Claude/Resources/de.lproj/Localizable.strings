@@ -485,7 +485,7 @@
 
 /* Team einrichten — Karte unten im Reiter Konten */
 "team.settings.title" = "Team";
-"team.settings.intro" = "Alle Claude-Konten im Team auf einen Blick — die Meldungen laufen über einen geteilten Ordner.";
+"team.settings.intro" = "Ohne Server geht es auch: Die Meldungen laufen dann über einen geteilten Ordner.";
 "team.settings.name_placeholder" = "Teamname";
 "team.settings.create" = "Team anlegen";
 "team.settings.join_hint" = "Schon eine Team-ID bekommen? Dann hier eintragen statt ein eigenes Team anzulegen.";
@@ -520,7 +520,7 @@
 
 /* Leere Zustände — jeder nennt den nächsten Schritt */
 "team.empty.no_team" = "Noch kein Team.";
-"team.empty.no_team_step" = "In den Einstellungen bei den Konten ein Team anlegen.";
+"team.empty.no_team_step" = "In den Einstellungen unter Konten Team-ID und Token eintragen — oder ein Team mit geteiltem Ordner anlegen.";
 "team.empty.open_settings" = "Einstellungen öffnen";
 "team.empty.no_folder" = "Kein geteilter Ordner.";
 "team.empty.no_folder_step" = "Einen Ordner wählen, den alle im Team sehen — etwa in iCloud, Dropbox oder auf dem Server.";
@@ -528,3 +528,45 @@
 "team.empty.no_reports_step" = "Anleitung kopieren und an das Team schicken.";
 "team.empty.unreachable" = "Ordner nicht erreichbar.";
 "team.empty.unreachable_step" = "Ist die Freigabe eingehängt? Sonst den Ordner neu wählen.";
+
+/* Team-Übersicht — Server-Verbindung */
+"team.server.not_connected" = "Nicht mit dem Server verbunden.";
+"team.server.invalid_team_id" = "Team-ID ungültig.";
+"team.server.invalid_token" = "Token ungültig.";
+"team.server.unreachable" = "Server nicht erreichbar.";
+"team.server.bad_response" = "Unerwartete Antwort vom Server.";
+"team.source.server" = "Server";
+"team.source.folder" = "Ordner";
+
+/* Team — Server-Verbindung (Karte in den Einstellungen) */
+"team.server.section" = "Mit Server verbinden";
+"team.server.token_label" = "Token";
+"team.server.connect" = "Verbinden";
+"team.server.disconnect" = "Trennen";
+"team.server.change" = "Server ändern";
+"team.server.url_label" = "Server-URL";
+"team.server.role_super" = "Inhaber";
+"team.server.role_admin" = "Admin";
+"team.server.role_member" = "Mitglied";
+"team.server.folder_fallback" = "Geteilter Ordner (Rückfallweg)";
+
+/* Team — Mitgliederverwaltung (nur Inhaber) */
+"team.members.title" = "Mitglieder";
+"team.members.name_placeholder" = "Name";
+"team.members.add" = "Anlegen";
+"team.members.remove" = "Entfernen";
+"team.members.copy_token" = "Token kopieren";
+"team.members.copy_invite" = "Einladung kopieren";
+"team.members.token_hint" = "Dieses Token bekommt %@ — es wird nur einmal angezeigt.";
+"team.members.delete_confirm_title" = "Mitglied entfernen?";
+"team.members.delete_confirm_message" = "%@ kann danach nicht mehr melden; das Token wird ungültig.";
+
+/* Fertige Einladung — kommt in die Zwischenablage */
+"team.invite.template" = "Claude-Auslastung im Team teilen\n\n1. App laden: https://github.com/AurelianSteiner/Claude-Max-Monitor/releases/latest\n2. In der App: Einstellungen → Konten → Team → Mit Server verbinden\n3. Team-ID: %@\n4. Token: %@\n\nGeteilt werden nur Prozentwerte und Reset-Zeiten — keine Schlüssel, keine Inhalte.";
+
+/* Team-Übersicht — Quelle und Server-Zustände */
+"team.view.source_server" = "Server · verbunden als %@";
+"team.view.source_folder" = "Geteilter Ordner";
+"team.view.members_own_only" = "Mitglieder sehen nur die eigene Meldung.";
+"team.empty.server_no_reports_step" = "Die App meldet von selbst, sobald sie verbunden ist. Kollegen brauchen nur Team-ID und Token.";
+"team.empty.server_unreachable_step" = "Netzwerk prüfen und erneut versuchen.";

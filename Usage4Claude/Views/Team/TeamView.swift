@@ -10,10 +10,10 @@
 //  (eingefügte Meldung in den Einstellungen), und der geteilte Ordner selbst
 //  bleibt unangetastet.
 //
-//  Die vier leeren Zustände (kein Team / kein Ordner / Ordner weg / keine
-//  Meldungen) sind absichtlich unterschieden: Jeder braucht einen anderen
-//  nächsten Schritt, und „nichts da" ohne Grund ist die nutzloseste aller
-//  Meldungen.
+//  Die leeren Zustände (Server nicht erreichbar / keine Meldungen bzw. auf
+//  dem Ordner-Weg: kein Team / kein Ordner / Ordner weg / keine Meldungen)
+//  sind absichtlich unterschieden: Jeder braucht einen anderen nächsten
+//  Schritt, und „nichts da" ohne Grund ist die nutzloseste aller Meldungen.
 //  Copyright © 2025 f-is-h. All rights reserved.
 //
 
@@ -26,6 +26,7 @@ struct TeamView: View {
     @ObservedObject private var teamStore = TeamStore.shared
     @ObservedObject private var folder = TeamFolderAccess.shared
     @ObservedObject private var reportStore = TeamReportStore.shared
+    @ObservedObject private var server = TeamServerConnection.shared
     @StateObject private var localization = LocalizationManager.shared
 
     /// Rückmeldung des Knopfs im leeren Zustand: Ohne sie sieht ein Klick auf
@@ -56,9 +57,21 @@ struct TeamView: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            Text(L.Team.windowTitle)
-                .font(.headline)
-                .lineLimit(1)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(L.Team.windowTitle)
+                    .font(.headline)
+                    .lineLimit(1)
+
+                // Woher die Karten kommen — „Server · verbunden als Admin"
+                // oder „Geteilter Ordner". Eine Zeile, keine Zierde: Wer dem
+                // Team nicht traut, sieht hier sofort, welchen Weg es nimmt.
+                if let line = sourceLine {
+                    Text(line)
+                        .font(.system(size: 9))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+            }
 
             Spacer(minLength: 8)
 
@@ -78,7 +91,22 @@ struct TeamView: View {
             refreshButton
         }
         .padding(.horizontal, 12)
-        .frame(height: 36)
+        .padding(.vertical, 5)
+        .frame(minHeight: 36)
+    }
+
+    /// Beschriftung der Datenquelle unter dem Titel; `nil`, solange nichts
+    /// eingerichtet ist — dann erklärt schon der leere Zustand alles.
+    private var sourceLine: String? {
+        switch reportStore.source {
+        case .server:
+            guard let role = server.role else { return L.Team.sourceServer }
+            return L.Team.sourceServerLine(role.displayName)
+        case .folder:
+            return L.Team.sourceFolderLine
+        case .none:
+            return nil
+        }
     }
 
     private func countPill(_ text: String, help: String?, tint: Color = .secondary) -> some View {
@@ -108,7 +136,9 @@ struct TeamView: View {
 
     @ViewBuilder
     private var content: some View {
-        if !teamStore.hasTeam {
+        if reportStore.source == .server {
+            serverContent
+        } else if !teamStore.hasTeam {
             emptyState(
                 symbol: "person.2",
                 title: L.Team.emptyNoTeam,
@@ -150,6 +180,34 @@ struct TeamView: View {
         }
     }
 
+    /// Server-Weg: Der Server filtert schon (Mitglieder bekommen nur die
+    /// eigene Meldung), hier bleiben zwei leere Zustände — Server gerade
+    /// nicht erreichbar oder schlicht noch keine Meldungen.
+    @ViewBuilder
+    private var serverContent: some View {
+        if reports.isEmpty && reportStore.serverUnavailable {
+            emptyState(
+                symbol: "wifi.exclamationmark",
+                title: L.Team.serverUnreachable,
+                step: L.Team.emptyServerUnreachableStep,
+                buttonTitle: L.Usage.refresh
+            ) {
+                reportStore.refresh(force: true)
+            }
+        } else if reports.isEmpty {
+            emptyState(
+                symbol: "tray",
+                title: L.Team.emptyNoReports,
+                step: L.Team.emptyServerNoReportsStep,
+                buttonTitle: L.Usage.refresh
+            ) {
+                reportStore.refresh(force: true)
+            }
+        } else {
+            cardList
+        }
+    }
+
     /// Der Ordner ist eingerichtet, war beim letzten Blick aber nicht lesbar.
     /// Beide Quellen zählen: Der Speicher merkt es beim Einlesen, der
     /// Ordnerzugriff schon beim Auflösen des Lesezeichens.
@@ -162,6 +220,17 @@ struct TeamView: View {
             VStack(spacing: 8) {
                 ForEach(reports) { report in
                     TeamReportCard(report: report)
+                }
+
+                // Ein Mitglied sieht nur die eigene Karte — das ist Absicht
+                // des Servers, kein Fehler. Eine leise Zeile erklärt es,
+                // bevor jemand nach den Kollegen sucht.
+                if reportStore.source == .server && server.role == .member {
+                    Text(L.Team.membersOwnOnly)
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 2)
                 }
             }
             .padding(12)

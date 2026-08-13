@@ -170,6 +170,26 @@ class KeychainManager {
         deleteAll()
     }
 
+    // MARK: - Team-Server-Token
+
+    /// Token der Team-Server-Verbindung (`TeamServerConnection`).
+    /// Wie alle Zugangsdaten: Release im Schlüsselbund, DEBUG in UserDefaults
+    /// (Schlüssel `DEBUG_teamServerToken`).
+
+    @discardableResult
+    func saveTeamServerToken(_ value: String) -> Bool {
+        storage.save(key: "teamServerToken", value: value)
+    }
+
+    func loadTeamServerToken() -> String? {
+        storage.load(key: "teamServerToken")
+    }
+
+    @discardableResult
+    func deleteTeamServerToken() -> Bool {
+        storage.delete(key: "teamServerToken")
+    }
+
     // MARK: - 账户列表存储（v2.1.0 多账户支持）
 
     @discardableResult

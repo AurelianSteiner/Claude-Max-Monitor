@@ -93,6 +93,11 @@ class MenuBarManager: ObservableObject {
         ui.configureClickHandler(target: self, action: #selector(handleClick))
         setupDataBindings()
         setupSettingsObservers()
+
+        // Team-Server: gespeicherte Verbindung laden, Rolle prüfen und die
+        // automatische Eigenmeldung starten — läuft auch ohne offenes
+        // Team-Fenster (siehe TeamServerConnection / TeamAutoReporter).
+        TeamServerConnection.bootstrap()
     }
 
     /// 设置数据绑定

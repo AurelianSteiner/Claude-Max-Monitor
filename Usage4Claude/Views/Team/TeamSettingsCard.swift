@@ -4,10 +4,13 @@
 //
 //  Team einrichten — die letzte Karte im Reiter „Konten".
 //
-//  Zwei Zustände, mehr gibt es nicht: Ohne Team ein Namensfeld und ein Knopf —
-//  darunter die zweite Zeile für alle, die schon eine Team-ID bekommen haben.
-//  Mit Team der Name, die ID zum Weitergeben, der geteilte Ordner und die Zahl
-//  der gefundenen Meldungen.
+//  Oben die Server-Verbindung (`TeamServerSection`) — der normale Weg.
+//  Darunter der geteilte Ordner als Rückfallweg, mit seinen zwei Zuständen:
+//  Ohne Team ein Namensfeld und ein Knopf — darunter die zweite Zeile für
+//  alle, die schon eine Team-ID bekommen haben. Mit Team der Name, die ID
+//  zum Weitergeben, der geteilte Ordner und die Zahl der gefundenen
+//  Meldungen. Besteht eine Server-Verbindung, wird der Ordner-Teil gedimmt —
+//  er funktioniert weiter, ist aber nicht mehr die Quelle der Übersicht.
 //
 //  Die Beitreten-Zeile ist keine Zierde: Wer ein eigenes Team anlegt, würfelt
 //  eine neue ID — und sieht dann im geteilten Ordner nichts, weil dort alle
@@ -28,6 +31,7 @@ struct TeamSettingsCard: View {
     @ObservedObject private var teamStore = TeamStore.shared
     @ObservedObject private var folder = TeamFolderAccess.shared
     @ObservedObject private var reportStore = TeamReportStore.shared
+    @ObservedObject private var server = TeamServerConnection.shared
 
     @State private var newTeamName = ""
     @State private var joinId = ""
@@ -48,11 +52,11 @@ struct TeamSettingsCard: View {
             iconColor: .teal,
             title: L.Team.settingsTitle
         ) {
-            if let team = teamStore.team {
-                configuredContent(team)
-            } else {
-                setupContent
-            }
+            TeamServerSection()
+
+            Divider()
+
+            folderContent
         }
         .alert(L.Team.leaveConfirmTitle, isPresented: $showLeaveConfirmation) {
             Button(L.Account.cancel, role: .cancel) {}
@@ -70,6 +74,29 @@ struct TeamSettingsCard: View {
         // sonst liefe alle zwei Minuten eine Abfrage gegen einen Cloud-Ordner,
         // deren Ergebnis niemand sieht.
         .onDisappear { reportStore.deactivate() }
+    }
+
+    // MARK: - Ordner-Teil
+
+    /// Der geteilte Ordner ist der Rückfallweg: Sobald eine Server-Verbindung
+    /// besteht, bekommt er eine Überschrift und wird gedimmt — bedienbar
+    /// bleibt er, nur die Aufmerksamkeit gehört ihm nicht mehr.
+    private var folderContent: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if server.isConnected {
+                Text(L.Team.folderFallback)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.secondary)
+            }
+
+            if let team = teamStore.team {
+                configuredContent(team)
+            } else {
+                setupContent
+            }
+        }
+        .opacity(server.isConnected ? 0.55 : 1)
     }
 
     // MARK: - Ohne Team
