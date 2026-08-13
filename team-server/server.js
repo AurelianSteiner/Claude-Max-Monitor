@@ -1,48 +1,59 @@
 //
 // Claude Max Monitor — Team-Relay
 //
-// Winziger Dienst ohne Abhängigkeiten: Kolleginnen und Kollegen schicken ihre
-// Auslastungs-Prozente (POST), die App des Admins holt sie ab (GET). Es werden
-// ausschließlich Prozentwerte, Labels und Reset-Zeitpunkte gespeichert —
-// niemals Session Keys, Chats oder andere Inhalte.
+// Winziger Dienst ohne Abhängigkeiten. Drei Rollen:
+//   super   Team-Inhaber (Token aus TEAM_TOKENS): verwaltet Mitglieder,
+//           sieht alles inklusive der Mitglieds-Tokens.
+//   admin   sieht alle Meldungen des Teams, verwaltet aber nichts.
+//   member  meldet die eigene Auslastung und sieht nur die eigene Meldung.
+//
+// Es werden ausschließlich Prozentwerte, Labels und Reset-Zeitpunkte
+// gespeichert — niemals Session Keys, Chats oder andere Inhalte.
 //
 // Umgebungsvariablen:
-//   TEAM_TOKENS Teams und ihre Geheimnisse: "TEAMID1:token1,TEAMID2:token2".
-//               Jede Anfrage braucht "Authorization: Bearer <token des Teams>".
-//               Neue Teams = neuen Eintrag ergänzen, Railway startet neu, fertig.
-//   TEAM_TOKEN  Abkürzung für genau ein Team (Team-ID egal) — für den Start.
+//   TEAM_TOKENS "TEAMID1:supertoken1,TEAMID2:supertoken2" — je Team genau
+//               ein Super-Admin-Token. Neues Team = neuer Eintrag.
+//   TEAM_TOKEN  Abkürzung: ein Super-Token, das für jedes Team gilt.
 //   DATA_DIR    Ablage (Railway-Volume), Standard /data
 //   PORT        von Railway gesetzt
 //
-// Endpunkte:
-//   GET  /health                     Lebenszeichen, ohne Token
-//   POST /v1/reports                 eine Meldung speichern (JSON, max 64 KB)
-//   GET  /v1/teams/:teamId/reports   alle Meldungen eines Teams
+// Endpunkte (alle außer /health mit "Authorization: Bearer <token>"):
+//   GET    /health                              Lebenszeichen
+//   GET    /v1/teams/:id/me                     wer bin ich? (Rolle, Name)
+//   POST   /v1/teams/:id/members                Mitglied anlegen  {name, role?}   super
+//   GET    /v1/teams/:id/members                Mitglieder auflisten              super (mit Token), admin (ohne)
+//   DELETE /v1/teams/:id/members/:memberId      Mitglied entfernen                super
+//   POST   /v1/reports                          Meldung speichern                 jede Rolle (member: nur als sich selbst)
+//   GET    /v1/teams/:id/reports                Meldungen lesen                   super/admin: alle, member: nur die eigene
 //
 
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 const PORT = Number(process.env.PORT) || 8080;
 const DATA_DIR = process.env.DATA_DIR || "/data";
-const MAX_BODY_BYTES = 64 * 1024;
-const ID_PATTERN = /^[A-Z0-9]{4,16}$/; // Team-IDs wie "K7QP2M9X"
 
-// Team-ID -> Token. Leerer Schlüssel "" = Token gilt für jedes Team (TEAM_TOKEN-Abkürzung).
-const teamTokens = new Map();
+const MAX_BODY_BYTES = 64 * 1024;
+const ID_PATTERN = /^[A-Z0-9]{4,16}$/; // Team-IDs wie "4P074HZ1"
+
+// Team-ID -> Super-Token. Leerer Schlüssel "" = Super-Token für jedes Team.
+const superTokens = new Map();
 for (const pair of String(process.env.TEAM_TOKENS || "").split(",")) {
   const idx = pair.indexOf(":");
-  if (idx > 0) teamTokens.set(pair.slice(0, idx).trim().toUpperCase(), pair.slice(idx + 1).trim());
+  if (idx > 0) superTokens.set(pair.slice(0, idx).trim().toUpperCase(), pair.slice(idx + 1).trim());
 }
-if (process.env.TEAM_TOKEN) teamTokens.set("", process.env.TEAM_TOKEN.trim());
+if (process.env.TEAM_TOKEN) superTokens.set("", process.env.TEAM_TOKEN.trim());
 
-if (teamTokens.size === 0) {
+if (superTokens.size === 0) {
   console.error("Weder TEAM_TOKENS noch TEAM_TOKEN gesetzt — Start verweigert.");
   process.exit(1);
 }
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
+
+// ------------------------------------------------------------------ Helfer
 
 function send(res, status, body) {
   const data = JSON.stringify(body);
@@ -54,24 +65,18 @@ function send(res, status, body) {
   res.end(data);
 }
 
-const crypto = require("crypto");
-
 function tokenMatches(candidate, expected) {
-  if (!expected || candidate.length !== expected.length) return false;
-  // Zeitkonstanter Vergleich, damit das Token nicht über Antwortzeiten erratbar ist
+  if (!expected || !candidate || candidate.length !== expected.length) return false;
+  // Zeitkonstanter Vergleich, damit Tokens nicht über Antwortzeiten erratbar sind
   return crypto.timingSafeEqual(Buffer.from(candidate), Buffer.from(expected));
 }
 
-/// Prüft das Bearer-Token gegen das Team — oder gegen das Allzweck-Token ("").
-function authorized(req, teamId) {
+function bearerToken(req) {
   const header = req.headers["authorization"] || "";
-  const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
-  if (!token) return false;
-  if (tokenMatches(token, teamTokens.get(String(teamId || "").toUpperCase()))) return true;
-  return tokenMatches(token, teamTokens.get(""));
+  return header.startsWith("Bearer ") ? header.slice(7).trim() : "";
 }
 
-/// Dateiname aus dem Personennamen: nur [a-z0-9-], damit nichts aus DATA_DIR ausbricht
+/// Dateiname/ID aus einem Namen: nur [a-z0-9-], bricht nie aus DATA_DIR aus
 function slug(value) {
   return String(value)
     .toLowerCase()
@@ -82,9 +87,44 @@ function slug(value) {
     .slice(0, 40) || "anonym";
 }
 
+function teamDir(teamId) {
+  return path.join(DATA_DIR, String(teamId).toUpperCase());
+}
+
+function readMembers(teamId) {
+  try {
+    const raw = fs.readFileSync(path.join(teamDir(teamId), "members.json"), "utf8");
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return []; // fehlende oder kaputte Datei = keine Mitglieder, kein Absturz
+  }
+}
+
+function writeMembers(teamId, members) {
+  fs.mkdirSync(teamDir(teamId), { recursive: true });
+  fs.writeFileSync(path.join(teamDir(teamId), "members.json"), JSON.stringify(members));
+}
+
+/// Wer ruft an? -> { role: "super"|"admin"|"member", member? } oder null
+function identify(req, teamId) {
+  const token = bearerToken(req);
+  if (!token) return null;
+  const id = String(teamId || "").toUpperCase();
+  if (tokenMatches(token, superTokens.get(id)) || tokenMatches(token, superTokens.get(""))) {
+    return { role: "super" };
+  }
+  for (const member of readMembers(id)) {
+    if (tokenMatches(token, member.token)) {
+      return { role: member.role === "admin" ? "admin" : "member", member };
+    }
+  }
+  return null;
+}
+
 function validReport(report) {
   if (typeof report !== "object" || report === null) return "kein Objekt";
-  if (!ID_PATTERN.test(String(report.teamId || ""))) return "teamId fehlt oder ungültig";
+  if (!ID_PATTERN.test(String(report.teamId || "").toUpperCase())) return "teamId fehlt oder ungültig";
   if (typeof report.person !== "string" || !report.person.trim()) return "person fehlt";
   if (!Array.isArray(report.limits) || report.limits.length === 0) return "limits fehlen";
   for (const limit of report.limits) {
@@ -112,6 +152,30 @@ function readBody(req, callback) {
   req.on("error", (error) => callback(error, null));
 }
 
+function readReports(teamId) {
+  const dir = path.join(teamDir(teamId), "reports");
+  const reports = [];
+  try {
+    const entries = fs.existsSync(dir) ? fs.readdirSync(dir) : [];
+    for (const entry of entries) {
+      if (!entry.endsWith(".json")) continue;
+      try {
+        const raw = fs.readFileSync(path.join(dir, entry), "utf8");
+        if (raw.length > MAX_BODY_BYTES) continue;
+        reports.push(JSON.parse(raw));
+      } catch {
+        // Eine kaputte Datei darf die anderen nicht blockieren
+      }
+    }
+  } catch (error) {
+    console.error("Lesen fehlgeschlagen:", error.message);
+  }
+  reports.sort((a, b) => String(b.reportedAt || "").localeCompare(String(a.reportedAt || "")));
+  return reports;
+}
+
+// ------------------------------------------------------------------ Server
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, "http://localhost");
 
@@ -119,8 +183,7 @@ const server = http.createServer((req, res) => {
     return send(res, 200, { ok: true });
   }
 
-  // POST /v1/reports — eine Meldung speichern.
-  // Das Token wird gegen die Team-ID AUS der Meldung geprüft, daher erst lesen.
+  // POST /v1/reports — Meldung speichern
   if (req.method === "POST" && url.pathname === "/v1/reports") {
     return readBody(req, (error, raw) => {
       if (error) return send(res, 413, { error: "Meldung zu groß" });
@@ -132,52 +195,124 @@ const server = http.createServer((req, res) => {
       }
       const problem = validReport(report);
       if (problem) return send(res, 400, { error: problem });
-      if (!authorized(req, report.teamId)) {
-        return send(res, 401, { error: "Token fehlt oder passt nicht zum Team" });
-      }
 
+      const who = identify(req, report.teamId);
+      if (!who) return send(res, 401, { error: "Token fehlt oder passt nicht zum Team" });
+
+      // Mitglieder melden immer unter ihrem eingetragenen Namen —
+      // niemand kann unter fremdem Namen melden.
+      if (who.member) {
+        report.person = who.member.name;
+        report.memberId = who.member.id;
+      }
       report.receivedAt = new Date().toISOString();
       if (!report.reportedAt) report.reportedAt = report.receivedAt;
 
-      const teamDir = path.join(DATA_DIR, String(report.teamId));
-      const file = path.join(teamDir, `${slug(report.person)}.json`);
+      const dir = path.join(teamDir(report.teamId), "reports");
+      const fileId = who.member ? who.member.id : slug(report.person);
       try {
-        fs.mkdirSync(teamDir, { recursive: true });
-        fs.writeFileSync(file, JSON.stringify(report));
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(path.join(dir, `${fileId}.json`), JSON.stringify(report));
       } catch (writeError) {
         console.error("Schreiben fehlgeschlagen:", writeError.message);
         return send(res, 500, { error: "Speichern fehlgeschlagen" });
       }
-      return send(res, 200, { ok: true, stored: path.basename(file) });
+      return send(res, 200, { ok: true, person: report.person });
     });
   }
 
-  // GET /v1/teams/:teamId/reports — alle Meldungen eines Teams
-  const match = url.pathname.match(/^\/v1\/teams\/([A-Z0-9]{4,16})\/reports$/);
-  if (req.method === "GET" && match) {
-    if (!authorized(req, match[1])) {
-      return send(res, 401, { error: "Token fehlt oder passt nicht zum Team" });
+  // Alles Weitere hängt an /v1/teams/:id/…
+  const teamMatch = url.pathname.match(/^\/v1\/teams\/([A-Za-z0-9]{4,16})(\/.*)?$/);
+  if (!teamMatch) return send(res, 404, { error: "unbekannter Pfad" });
+  const teamId = teamMatch[1].toUpperCase();
+  const rest = teamMatch[2] || "";
+
+  const who = identify(req, teamId);
+  if (!who) return send(res, 401, { error: "Token fehlt oder passt nicht zum Team" });
+
+  // GET /v1/teams/:id/me — Rolle des Tokens (die App erkennt daran den Modus)
+  if (req.method === "GET" && rest === "/me") {
+    return send(res, 200, {
+      role: who.role,
+      name: who.member ? who.member.name : null,
+      memberId: who.member ? who.member.id : null,
+    });
+  }
+
+  // GET /v1/teams/:id/reports
+  if (req.method === "GET" && rest === "/reports") {
+    let reports = readReports(teamId);
+    if (who.role === "member") {
+      reports = reports.filter((r) => r.memberId === who.member.id);
     }
-    const teamDir = path.join(DATA_DIR, match[1]);
-    let reports = [];
-    try {
-      const entries = fs.existsSync(teamDir) ? fs.readdirSync(teamDir) : [];
-      for (const entry of entries) {
-        if (!entry.endsWith(".json")) continue;
-        try {
-          const raw = fs.readFileSync(path.join(teamDir, entry), "utf8");
-          if (raw.length > MAX_BODY_BYTES) continue;
-          reports.push(JSON.parse(raw));
-        } catch {
-          // Eine kaputte Datei darf die anderen nicht blockieren
-        }
-      }
-    } catch (readError) {
-      console.error("Lesen fehlgeschlagen:", readError.message);
-      return send(res, 500, { error: "Lesen fehlgeschlagen" });
-    }
-    reports.sort((a, b) => String(b.reportedAt || "").localeCompare(String(a.reportedAt || "")));
     return send(res, 200, { reports });
+  }
+
+  // POST /v1/teams/:id/members — Mitglied anlegen (nur Super-Admin)
+  if (req.method === "POST" && rest === "/members") {
+    if (who.role !== "super") return send(res, 403, { error: "nur der Team-Inhaber darf Mitglieder anlegen" });
+    return readBody(req, (error, raw) => {
+      if (error) return send(res, 413, { error: "zu groß" });
+      let body;
+      try {
+        body = JSON.parse(raw);
+      } catch {
+        return send(res, 400, { error: "kein gültiges JSON" });
+      }
+      const name = String(body.name || "").trim();
+      if (!name) return send(res, 400, { error: "name fehlt" });
+      const role = body.role === "admin" ? "admin" : "member";
+
+      const members = readMembers(teamId);
+      if (members.length >= 200) return send(res, 400, { error: "zu viele Mitglieder" });
+
+      const member = {
+        id: `${slug(name)}-${crypto.randomBytes(2).toString("hex")}`,
+        name,
+        role,
+        token: crypto.randomBytes(16).toString("hex"),
+        createdAt: new Date().toISOString(),
+      };
+      members.push(member);
+      try {
+        writeMembers(teamId, members);
+      } catch (writeError) {
+        console.error("Mitglied speichern fehlgeschlagen:", writeError.message);
+        return send(res, 500, { error: "Speichern fehlgeschlagen" });
+      }
+      return send(res, 200, { member });
+    });
+  }
+
+  // GET /v1/teams/:id/members — Liste (Super sieht Tokens, Admin nicht)
+  if (req.method === "GET" && rest === "/members") {
+    if (who.role === "member") return send(res, 403, { error: "keine Berechtigung" });
+    const members = readMembers(teamId).map((member) => ({
+      id: member.id,
+      name: member.name,
+      role: member.role,
+      createdAt: member.createdAt,
+      ...(who.role === "super" ? { token: member.token } : {}),
+    }));
+    return send(res, 200, { members });
+  }
+
+  // DELETE /v1/teams/:id/members/:memberId — Mitglied entfernen (nur Super-Admin)
+  const memberMatch = rest.match(/^\/members\/([a-z0-9-]{1,64})$/);
+  if (req.method === "DELETE" && memberMatch) {
+    if (who.role !== "super") return send(res, 403, { error: "nur der Team-Inhaber darf Mitglieder entfernen" });
+    const members = readMembers(teamId);
+    const remaining = members.filter((member) => member.id !== memberMatch[1]);
+    if (remaining.length === members.length) return send(res, 404, { error: "Mitglied nicht gefunden" });
+    try {
+      writeMembers(teamId, remaining);
+      // Die Meldung des Mitglieds gleich mit entfernen
+      fs.rmSync(path.join(teamDir(teamId), "reports", `${memberMatch[1]}.json`), { force: true });
+    } catch (writeError) {
+      console.error("Mitglied entfernen fehlgeschlagen:", writeError.message);
+      return send(res, 500, { error: "Speichern fehlgeschlagen" });
+    }
+    return send(res, 200, { ok: true });
   }
 
   return send(res, 404, { error: "unbekannter Pfad" });
