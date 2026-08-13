@@ -131,6 +131,11 @@ enum L {
         static var sleepLidNote: String { localized("dashboard.sleep.lid_note") }
         static var sleepStateOn: String { localized("dashboard.sleep.state_on") }
         static var sleepStateOff: String { localized("dashboard.sleep.state_off") }
+        /// Zusatz im Tooltip, wenn das System schon per `pmset disablesleep 1`
+        /// nie schläft — der Schalter ändert daran nichts
+        static var sleepSystemOverride: String { localized("dashboard.sleep.system_override") }
+        /// Zusatz im Tooltip, wenn `displaysleep 0` den Bildschirm nie ausschaltet
+        static var sleepDisplayOverride: String { localized("dashboard.sleep.display_override") }
         /// Platzhalter im Ampel-Tooltip, solange für ein Fenster nichts vorliegt
         static var dotNoData: String { localized("dashboard.dot_no_data") }
         /// Zusatz im Ampel-Tooltip, wenn ein Fenster praktisch aufgebraucht ist
@@ -196,6 +201,16 @@ enum L {
         static var copy: String { localized("settings.sleep.copy") }
         static var copied: String { localized("settings.sleep.copied") }
         static var note: String { localized("settings.sleep.note") }
+
+        // Live-Werte aus `pmset -g` (SystemSleepInfo) über den Befehlen
+        static var valueSleepOn: String { localized("settings.sleep.value_sleep_on") }
+        static var valueSleepOff: String { localized("settings.sleep.value_sleep_off") }
+        static var valueDisplayNever: String { localized("settings.sleep.value_display_never") }
+        static func valueDisplayMinutes(_ minutes: Int) -> String {
+            String(format: localized("settings.sleep.value_display_minutes"), minutes, minutes)
+        }
+        /// `pmset` ließ sich nicht ausführen oder die Ausgabe nicht lesen
+        static var valueUnknown: String { localized("settings.sleep.value_unknown") }
     }
 
     // MARK: - Settings Authentication
@@ -600,62 +615,16 @@ enum L {
 
     // MARK: - Team-Übersicht
     enum Team {
-        /// Text im Öffnen-Dialog für den geteilten Ordner
-        static var folderChooseMessage: String { localized("team.folder.choose_message") }
-        static var folderChoosePrompt: String { localized("team.folder.choose_prompt") }
-
         /// Alter einer Meldung
         static var justNow: String { localized("team.report.just_now") }
         static var stale: String { localized("team.report.stale") }
-
-        /// Gründe, warum eine eingefügte Meldung abgelehnt wurde
-        static var errorNoTeam: String { localized("team.import.no_team") }
-        static var errorNoFolder: String { localized("team.import.no_folder") }
-        static var errorInvalidJSON: String { localized("team.import.invalid_json") }
-        static var errorTooLarge: String { localized("team.import.too_large") }
-        static var errorWrongTeam: String { localized("team.import.wrong_team") }
-        static var errorWriteFailed: String { localized("team.import.write_failed") }
 
         // MARK: Einrichtung (Karte im Reiter „Konten")
 
         static var settingsTitle: String { localized("team.settings.title") }
         static var settingsIntro: String { localized("team.settings.intro") }
-        static var namePlaceholder: String { localized("team.settings.name_placeholder") }
-        static var create: String { localized("team.settings.create") }
-        /// Zweiter Weg für alle, die eine ID bekommen haben — ohne ihn sähe
-        /// jede Kollegin nur ihr eigenes, frisch gewürfeltes Team.
-        static var joinHint: String { localized("team.settings.join_hint") }
-        static var join: String { localized("team.settings.join") }
         static var idLabel: String { localized("team.settings.id_label") }
-        static var copyId: String { localized("team.settings.copy_id") }
-        static var folderLabel: String { localized("team.settings.folder_label") }
-        static var folderNone: String { localized("team.settings.folder_none") }
-        static var folderChange: String { localized("team.settings.folder_change") }
-        static var folderUnreachable: String { localized("team.settings.folder_unreachable") }
-        static var leave: String { localized("team.settings.leave") }
-        static var leaveConfirmTitle: String { localized("team.settings.leave_confirm_title") }
-        static var leaveConfirmMessage: String { localized("team.settings.leave_confirm_message") }
-        static var leaveConfirmButton: String { localized("team.settings.leave_confirm_button") }
-        static var copyInstructions: String { localized("team.settings.copy_instructions") }
         static var copied: String { localized("team.settings.copied") }
-        static var pasteTitle: String { localized("team.settings.paste_title") }
-        static var pasteHint: String { localized("team.settings.paste_hint") }
-        static var pasteApply: String { localized("team.settings.paste_apply") }
-
-        /// „Meldungen im Ordner: 3"
-        static func reportsCount(_ count: Int) -> String {
-            String(format: localized("team.settings.reports_count"), count)
-        }
-
-        /// Bestätigung nach dem Einfügen: „Meldung von Jürgen übernommen."
-        static func pasteAccepted(_ person: String) -> String {
-            String(format: localized("team.settings.paste_accepted"), person)
-        }
-
-        /// Fertiger Text für die Kollegen — enthält die Team-ID
-        static func instructions(_ teamId: String) -> String {
-            String(format: localized("team.instructions.template"), teamId)
-        }
 
         // MARK: Übersicht (eigenes Fenster)
 
@@ -682,12 +651,7 @@ enum L {
         static var emptyNoTeam: String { localized("team.empty.no_team") }
         static var emptyNoTeamStep: String { localized("team.empty.no_team_step") }
         static var emptyOpenSettings: String { localized("team.empty.open_settings") }
-        static var emptyNoFolder: String { localized("team.empty.no_folder") }
-        static var emptyNoFolderStep: String { localized("team.empty.no_folder_step") }
         static var emptyNoReports: String { localized("team.empty.no_reports") }
-        static var emptyNoReportsStep: String { localized("team.empty.no_reports_step") }
-        static var emptyUnreachable: String { localized("team.empty.unreachable") }
-        static var emptyUnreachableStep: String { localized("team.empty.unreachable_step") }
 
         // MARK: Server-Verbindung
 
@@ -697,10 +661,6 @@ enum L {
         static var serverInvalidToken: String { localized("team.server.invalid_token") }
         static var serverUnreachable: String { localized("team.server.unreachable") }
         static var serverBadResponse: String { localized("team.server.bad_response") }
-
-        /// Beschriftung der Datenquelle („Server" / „Ordner"), vgl. `TeamReportSource`
-        static var sourceServer: String { localized("team.source.server") }
-        static var sourceFolder: String { localized("team.source.folder") }
 
         // MARK: Server-Verbindung — Karte in den Einstellungen
 
@@ -713,8 +673,6 @@ enum L {
         static var roleSuper: String { localized("team.server.role_super") }
         static var roleAdmin: String { localized("team.server.role_admin") }
         static var roleMember: String { localized("team.server.role_member") }
-        /// Überschrift über dem gedimmten Ordner-Teil, sobald der Server verbunden ist
-        static var folderFallback: String { localized("team.server.folder_fallback") }
 
         // MARK: Mitgliederverwaltung (nur Inhaber)
 
@@ -742,13 +700,12 @@ enum L {
             String(format: localized("team.invite.template"), teamId, token)
         }
 
-        // MARK: Übersicht — Quelle und Server-Zustände
+        // MARK: Übersicht — Verbindungszeile und Server-Zustände
 
-        /// „Server · verbunden als Admin"
-        static func sourceServerLine(_ role: String) -> String {
-            String(format: localized("team.view.source_server"), role)
+        /// „Verbunden als Admin"
+        static func connectedAs(_ role: String) -> String {
+            String(format: localized("team.view.connected_as"), role)
         }
-        static var sourceFolderLine: String { localized("team.view.source_folder") }
         static var membersOwnOnly: String { localized("team.view.members_own_only") }
         static var emptyServerNoReportsStep: String { localized("team.empty.server_no_reports_step") }
         static var emptyServerUnreachableStep: String { localized("team.empty.server_unreachable_step") }

@@ -461,6 +461,10 @@
 "dashboard.sleep.state_on" = "On";
 "dashboard.sleep.state_off" = "Off";
 
+/* Tooltip addition when the system itself already never sleeps (pmset) */
+"dashboard.sleep.system_override" = "Your Mac is already set to never sleep system-wide (sudo pmset disablesleep 1) — this switch changes nothing there. It matters on Macs without that system setting.";
+"dashboard.sleep.display_override" = "The display is set to never turn off system-wide (displaysleep 0) — this switch changes nothing there.";
+
 /* General settings: the collapsed section with the three pmset commands.
    Display and copy only — the app never runs them. */
 "settings.sleep.section" = "System sleep settings";
@@ -472,45 +476,22 @@
 "settings.sleep.copied" = "Copied";
 "settings.sleep.note" = "The two sudo commands ask for the account password in Terminal. With disablesleep = 1 the two buttons in the overview have no additional effect.";
 
-/* Team overview: folder picker, age of a report, rejected pastes */
-"team.folder.choose_message" = "Pick the shared folder — the team's reports land there.";
-"team.folder.choose_prompt" = "Choose folder";
+/* Live values from pmset -g, above the commands */
+"settings.sleep.value_sleep_on" = "SleepDisabled: 1 — the Mac never sleeps, even with the lid closed.";
+"settings.sleep.value_sleep_off" = "SleepDisabled: 0 — the Mac sleeps as usual.";
+"settings.sleep.value_display_never" = "displaysleep: 0 — the display never turns off.";
+"settings.sleep.value_display_minutes" = "displaysleep: %d — the display turns off after %d minutes.";
+"settings.sleep.value_unknown" = "Could not read the current system values.";
+
+/* Team overview: age of a report */
 "team.report.just_now" = "just now";
 "team.report.stale" = "Outdated";
-"team.import.no_team" = "Create a team first.";
-"team.import.no_folder" = "No folder chosen.";
-"team.import.invalid_json" = "That is not a valid report.";
-"team.import.too_large" = "The text is too long.";
-"team.import.wrong_team" = "The report belongs to a different team.";
-"team.import.write_failed" = "The report could not be saved to the folder.";
 
 /* Team setup — card at the bottom of the Accounts tab */
 "team.settings.title" = "Team";
-"team.settings.intro" = "No server needed either: the reports can travel through a shared folder instead.";
-"team.settings.name_placeholder" = "Team name";
-"team.settings.create" = "Create team";
-"team.settings.join_hint" = "Already got a team ID? Enter it here instead of creating your own team.";
-"team.settings.join" = "Join";
+"team.settings.intro" = "The app reports your own usage to the team server and shows who on the team still has headroom. The team ID and token come from whoever runs the team.";
 "team.settings.id_label" = "Team ID";
-"team.settings.copy_id" = "Copy team ID";
-"team.settings.folder_label" = "Folder";
-"team.settings.folder_none" = "None yet";
-"team.settings.folder_change" = "Change folder";
-"team.settings.folder_unreachable" = "Not reachable";
-"team.settings.reports_count" = "Reports in the folder: %d";
-"team.settings.leave" = "Remove team";
-"team.settings.leave_confirm_title" = "Remove team?";
-"team.settings.leave_confirm_message" = "The shared folder and the reports in it stay untouched. You need the team ID to come back.";
-"team.settings.leave_confirm_button" = "Remove";
-"team.settings.copy_instructions" = "Copy instructions";
 "team.settings.copied" = "Copied";
-"team.settings.paste_title" = "Paste a report";
-"team.settings.paste_hint" = "For anyone who cannot reach the shared folder: paste the report they sent here.";
-"team.settings.paste_apply" = "Add";
-"team.settings.paste_accepted" = "Report from %@ added.";
-
-/* Ready-made text for colleagues — the button puts it on the clipboard */
-"team.instructions.template" = "Report your Claude usage\n\nTeam ID: %@\n\n1. Run in Terminal: bash team-report.sh\n2. Enter the team ID when asked.\n3. Drop the resulting file into our shared folder — or just send me the text.\n\nYour session key stays on your machine. Only percentages and reset times are shared.";
 
 /* Team overview in its own window */
 "team.window.title" = "Team";
@@ -521,14 +502,9 @@
 
 /* Empty states — each one names the next step */
 "team.empty.no_team" = "No team yet.";
-"team.empty.no_team_step" = "Enter your team ID and token in Settings, under Accounts — or create a team with a shared folder.";
+"team.empty.no_team_step" = "Enter the team ID and token in the settings.";
 "team.empty.open_settings" = "Open settings";
-"team.empty.no_folder" = "No shared folder.";
-"team.empty.no_folder_step" = "Pick a folder everyone in the team can see — in iCloud, Dropbox or on a server.";
 "team.empty.no_reports" = "No reports yet.";
-"team.empty.no_reports_step" = "Copy the instructions and send them to the team.";
-"team.empty.unreachable" = "Folder not reachable.";
-"team.empty.unreachable_step" = "Is the share mounted? Otherwise pick the folder again.";
 
 /* Team overview — server connection */
 "team.server.not_connected" = "Not connected to the server.";
@@ -536,8 +512,6 @@
 "team.server.invalid_token" = "Invalid token.";
 "team.server.unreachable" = "Server not reachable.";
 "team.server.bad_response" = "Unexpected server response.";
-"team.source.server" = "Server";
-"team.source.folder" = "Folder";
 
 /* Team — server connection (card in Settings) */
 "team.server.section" = "Connect to server";
@@ -549,7 +523,6 @@
 "team.server.role_super" = "Owner";
 "team.server.role_admin" = "Admin";
 "team.server.role_member" = "Member";
-"team.server.folder_fallback" = "Shared folder (fallback)";
 
 /* Team — member management (owner only) */
 "team.members.title" = "Members";
@@ -565,9 +538,8 @@
 /* Ready-made invitation — goes to the clipboard */
 "team.invite.template" = "Share your Claude usage with the team\n\n1. Get the app: https://github.com/AurelianSteiner/Claude-Max-Monitor/releases/latest\n2. In the app: Settings → Accounts → Team → Connect to server\n3. Team ID: %@\n4. Token: %@\n\nOnly percentages and reset times are shared — no keys, no content.";
 
-/* Team overview — source and server states */
-"team.view.source_server" = "Server · connected as %@";
-"team.view.source_folder" = "Shared folder";
+/* Team overview — connection line and server states */
+"team.view.connected_as" = "Connected as %@";
 "team.view.members_own_only" = "Members only see their own report.";
 "team.empty.server_no_reports_step" = "The app reports on its own once connected. Colleagues only need the team ID and a token.";
 "team.empty.server_unreachable_step" = "Check the network and try again.";

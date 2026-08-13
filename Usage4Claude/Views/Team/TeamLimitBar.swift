@@ -5,8 +5,8 @@
 //  Eine Limit-Zeile einer Team-Karte: Beschriftung, Balken, Prozentzahl.
 //
 //  Bewusst eine eigene, kleine Komponente statt `UnifiedLimitRow`: Die Zeilen
-//  der eigenen Konten hängen an `LimitType` und `UsageData` — eine Meldung aus
-//  dem Ordner kennt beides nicht, sie hat nur eine Beschriftung als freien Text
+//  der eigenen Konten hängen an `LimitType` und `UsageData` — eine
+//  Team-Meldung kennt beides nicht, sie hat nur eine Beschriftung als freien Text
 //  und einen Prozentwert. Die Optik ist absichtlich dieselbe (Balken in der
 //  Auslastungsfarbe, Prozentzahl rechts in Ziffern gleicher Breite), damit
 //  fremde und eigene Zahlen ohne Umdenken vergleichbar bleiben.

@@ -2,8 +2,9 @@
 //  GeneralSettingsSleepSection.swift
 //  Usage4Claude
 //
-//  „Schlaf-Einstellungen des Systems" — die drei Terminal-Befehle zum Nachlesen
-//  und Kopieren.
+//  „Schlaf-Einstellungen des Systems" — oben die Live-Werte aus `pmset -g`
+//  (SystemSleepInfo), darunter die drei Terminal-Befehle zum Nachlesen und
+//  Kopieren.
 //
 //  Warum das hier steht: Die beiden Wach-Schalter im Kopf der Übersicht setzen
 //  IOKit-Power-Assertions (siehe `SleepGuard`). Die halten den Mac wach, solange
@@ -27,6 +28,10 @@ struct GeneralSettingsSleepSection: View {
     @State private var copiedCommand: String?
     @State private var copyToken = 0
 
+    /// Live-Werte aus `pmset -g` — was das System JETZT eingestellt hat,
+    /// steht über den Befehlen, die es ändern würden.
+    @ObservedObject private var systemSleep = SystemSleepInfo.shared
+
     /// Ein Befehl samt kurzer Erklärung. Die Befehle stehen bewusst im Code und
     /// nicht in der Lokalisierung: Sie werden nicht übersetzt, und ein Tippfehler
     /// in einer Sprachdatei wäre hier besonders ärgerlich.
@@ -47,6 +52,8 @@ struct GeneralSettingsSleepSection: View {
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
             VStack(alignment: .leading, spacing: 10) {
+                currentValues
+
                 Text(L.SettingsSleep.intro)
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -65,6 +72,7 @@ struct GeneralSettingsSleepSection: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.top, 10)
+            .onAppear { systemSleep.refresh() }
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "moon.zzz")
@@ -87,6 +95,36 @@ struct GeneralSettingsSleepSection: View {
                 )
         )
         .shadow(color: Color.black.opacity(0.05), radius: 2, y: 1)
+    }
+
+    /// Die Live-Werte: Was `pmset -g` gerade meldet, in je einem Satz.
+    /// Ließ sich nichts lesen (Sandbox, unerwartete Ausgabe), steht das
+    /// ehrlich da, statt Werte zu raten.
+    @ViewBuilder
+    private var currentValues: some View {
+        if systemSleep.sleepDisabled == nil && systemSleep.displaySleepMinutes == nil {
+            Text(L.SettingsSleep.valueUnknown)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        } else {
+            VStack(alignment: .leading, spacing: 3) {
+                if let disabled = systemSleep.sleepDisabled {
+                    valueRow(disabled ? L.SettingsSleep.valueSleepOn : L.SettingsSleep.valueSleepOff)
+                }
+                if let minutes = systemSleep.displaySleepMinutes {
+                    valueRow(minutes == 0
+                        ? L.SettingsSleep.valueDisplayNever
+                        : L.SettingsSleep.valueDisplayMinutes(minutes))
+                }
+            }
+        }
+    }
+
+    private func valueRow(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 11, design: .monospaced))
+            .foregroundColor(.primary)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     /// Eine Zeile: Befehl in Schreibmaschinenschrift, daneben wofür er gut ist,

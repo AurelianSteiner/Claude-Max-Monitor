@@ -6,14 +6,13 @@
 //  Ausgelastete oben. Sie beantwortet genau eine Frage — wer im Team ist
 //  gerade am Ende und wer hat noch Luft.
 //
-//  Alles hier ist Anzeige. Geschrieben wird nur an einer Stelle im Programm
-//  (eingefügte Meldung in den Einstellungen), und der geteilte Ordner selbst
-//  bleibt unangetastet.
+//  Alles hier ist Anzeige. Die Meldungen kommen vom Team-Server
+//  (`TeamReportStore`), es gibt keinen anderen Weg mehr.
 //
-//  Die leeren Zustände (Server nicht erreichbar / keine Meldungen bzw. auf
-//  dem Ordner-Weg: kein Team / kein Ordner / Ordner weg / keine Meldungen)
-//  sind absichtlich unterschieden: Jeder braucht einen anderen nächsten
-//  Schritt, und „nichts da" ohne Grund ist die nutzloseste aller Meldungen.
+//  Die leeren Zustände (nicht verbunden / Server nicht erreichbar / noch
+//  keine Meldungen) sind absichtlich unterschieden: Jeder braucht einen
+//  anderen nächsten Schritt, und „nichts da" ohne Grund ist die nutzloseste
+//  aller Meldungen.
 //  Copyright © 2025 f-is-h. All rights reserved.
 //
 
@@ -23,16 +22,9 @@ struct TeamView: View {
     /// Rückkanal für die Einstellungen — dieselbe Aktionsliste wie in der Übersicht
     var onMenuAction: ((MenuAction) -> Void)?
 
-    @ObservedObject private var teamStore = TeamStore.shared
-    @ObservedObject private var folder = TeamFolderAccess.shared
     @ObservedObject private var reportStore = TeamReportStore.shared
     @ObservedObject private var server = TeamServerConnection.shared
     @StateObject private var localization = LocalizationManager.shared
-
-    /// Rückmeldung des Knopfs im leeren Zustand: Ohne sie sieht ein Klick auf
-    /// „Anleitung kopieren" aus, als wäre nichts passiert.
-    @State private var showCopied = false
-    @State private var copyToken = 0
 
     /// Am stärksten Ausgelastete zuerst
     private var reports: [TeamReport] {
@@ -62,10 +54,9 @@ struct TeamView: View {
                     .font(.headline)
                     .lineLimit(1)
 
-                // Woher die Karten kommen — „Server · verbunden als Admin"
-                // oder „Geteilter Ordner". Eine Zeile, keine Zierde: Wer dem
-                // Team nicht traut, sieht hier sofort, welchen Weg es nimmt.
-                if let line = sourceLine {
+                // „Verbunden als Admin" — eine Zeile, keine Zierde. Solange
+                // keine Verbindung besteht, erklärt der leere Zustand alles.
+                if let line = connectionLine {
                     Text(line)
                         .font(.system(size: 9))
                         .foregroundColor(.secondary)
@@ -95,18 +86,11 @@ struct TeamView: View {
         .frame(minHeight: 36)
     }
 
-    /// Beschriftung der Datenquelle unter dem Titel; `nil`, solange nichts
-    /// eingerichtet ist — dann erklärt schon der leere Zustand alles.
-    private var sourceLine: String? {
-        switch reportStore.source {
-        case .server:
-            guard let role = server.role else { return L.Team.sourceServer }
-            return L.Team.sourceServerLine(role.displayName)
-        case .folder:
-            return L.Team.sourceFolderLine
-        case .none:
-            return nil
-        }
+    /// Zeile unter dem Titel: verbunden als wer. `nil`, solange keine
+    /// Verbindung besteht oder die Rolle (Token abgelehnt) fehlt.
+    private var connectionLine: String? {
+        guard server.isConnected, let role = server.role else { return nil }
+        return L.Team.connectedAs(role.displayName)
     }
 
     private func countPill(_ text: String, help: String?, tint: Color = .secondary) -> some View {
@@ -134,11 +118,11 @@ struct TeamView: View {
 
     // MARK: - Inhalt
 
+    /// Drei leere Zustände plus die Kartenliste: nicht verbunden, Server
+    /// gerade nicht erreichbar, noch keine Meldungen.
     @ViewBuilder
     private var content: some View {
-        if reportStore.source == .server {
-            serverContent
-        } else if !teamStore.hasTeam {
+        if !server.isConnected {
             emptyState(
                 symbol: "person.2",
                 title: L.Team.emptyNoTeam,
@@ -147,45 +131,7 @@ struct TeamView: View {
             ) {
                 onMenuAction?(.authSettings)
             }
-        } else if !folder.hasFolder {
-            emptyState(
-                symbol: "folder.badge.questionmark",
-                title: L.Team.emptyNoFolder,
-                step: L.Team.emptyNoFolderStep,
-                buttonTitle: L.Team.folderChoosePrompt
-            ) {
-                folder.chooseFolder()
-            }
-        } else if reports.isEmpty && isFolderUnreachable {
-            emptyState(
-                symbol: "exclamationmark.triangle",
-                title: L.Team.emptyUnreachable,
-                step: L.Team.emptyUnreachableStep,
-                buttonTitle: L.Team.folderChoosePrompt
-            ) {
-                folder.chooseFolder()
-            }
-        } else if reports.isEmpty {
-            emptyState(
-                symbol: "tray",
-                title: L.Team.emptyNoReports,
-                step: L.Team.emptyNoReportsStep,
-                buttonTitle: showCopied ? L.Team.copied : L.Team.copyInstructions
-            ) {
-                TeamClipboard.copyInstructions(teamId: teamStore.teamId)
-                flashCopied()
-            }
-        } else {
-            cardList
-        }
-    }
-
-    /// Server-Weg: Der Server filtert schon (Mitglieder bekommen nur die
-    /// eigene Meldung), hier bleiben zwei leere Zustände — Server gerade
-    /// nicht erreichbar oder schlicht noch keine Meldungen.
-    @ViewBuilder
-    private var serverContent: some View {
-        if reports.isEmpty && reportStore.serverUnavailable {
+        } else if reports.isEmpty && reportStore.serverUnavailable {
             emptyState(
                 symbol: "wifi.exclamationmark",
                 title: L.Team.serverUnreachable,
@@ -208,13 +154,6 @@ struct TeamView: View {
         }
     }
 
-    /// Der Ordner ist eingerichtet, war beim letzten Blick aber nicht lesbar.
-    /// Beide Quellen zählen: Der Speicher merkt es beim Einlesen, der
-    /// Ordnerzugriff schon beim Auflösen des Lesezeichens.
-    private var isFolderUnreachable: Bool {
-        reportStore.folderUnavailable || folder.isUnreachable
-    }
-
     private var cardList: some View {
         ScrollView {
             VStack(spacing: 8) {
@@ -225,7 +164,7 @@ struct TeamView: View {
                 // Ein Mitglied sieht nur die eigene Karte — das ist Absicht
                 // des Servers, kein Fehler. Eine leise Zeile erklärt es,
                 // bevor jemand nach den Kollegen sucht.
-                if reportStore.source == .server && server.role == .member {
+                if server.role == .member {
                     Text(L.Team.membersOwnOnly)
                         .font(.system(size: 10))
                         .foregroundColor(.secondary)
@@ -271,17 +210,5 @@ struct TeamView: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    /// Beschriftung des Knopfs zwei Sekunden lang auf „Kopiert" stellen. Der
-    /// Token sorgt dafür, dass ein zweiter Klick den Hinweis verlängert, statt
-    /// dass die erste Abblendung ihn mitten im zweiten Mal wegnimmt.
-    private func flashCopied() {
-        copyToken += 1
-        let token = copyToken
-        showCopied = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            if copyToken == token { showCopied = false }
-        }
     }
 }

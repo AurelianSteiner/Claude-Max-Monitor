@@ -306,36 +306,3 @@ final class TeamReportTests: XCTestCase {
         XCTAssertEqual(again.fileName, "report-K7QP2M9X-nina.json")
     }
 }
-
-// MARK: - Team-ID
-
-final class TeamConfigTests: XCTestCase {
-
-    func testGeneratedIdUsesUnambiguousAlphabet() {
-        let allowed = Set(TeamConfig.idAlphabet)
-        XCTAssertEqual(TeamConfig.idAlphabet.count, 32)
-        for forbidden in "IO01" {
-            XCTAssertFalse(allowed.contains(forbidden), "\(forbidden) ist zu leicht zu verwechseln")
-        }
-
-        for _ in 0..<200 {
-            let id = TeamConfig.makeId()
-            XCTAssertEqual(id.count, TeamConfig.idLength)
-            XCTAssertTrue(id.allSatisfy { allowed.contains($0) }, "unerwartetes Zeichen in \(id)")
-            XCTAssertTrue(TeamConfig.isValidId(id))
-        }
-    }
-
-    func testNormalizeIdForgivesTypingHabits() {
-        XCTAssertEqual(TeamConfig.normalizeId("k7qp-2m9x"), "K7QP2M9X")
-        XCTAssertEqual(TeamConfig.normalizeId("  K7QP 2M9X "), "K7QP2M9X")
-        XCTAssertNil(TeamConfig.normalizeId("K7QP2M9"))     // zu kurz
-        XCTAssertNil(TeamConfig.normalizeId("K7QP2M9XY"))   // zu lang
-        XCTAssertNil(TeamConfig.normalizeId(""))
-    }
-
-    func testNameIsTrimmedAndNeverEmpty() {
-        XCTAssertEqual(TeamConfig(id: "K7QP2M9X", name: "  Redaktion  ").name, "Redaktion")
-        XCTAssertEqual(TeamConfig(id: "K7QP2M9X", name: "   ").name, "Team")
-    }
-}

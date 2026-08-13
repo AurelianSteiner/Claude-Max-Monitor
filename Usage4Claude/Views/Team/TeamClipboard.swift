@@ -2,14 +2,8 @@
 //  TeamClipboard.swift
 //  Usage4Claude
 //
-//  Was in die Zwischenablage geht: die Team-ID und die fertige Anleitung für
-//  die Kollegen.
-//
-//  Die Anleitung liegt bewusst als ein Text in der Lokalisierung und nicht als
-//  zusammengesetzte Schnipsel: Sie wird an Menschen verschickt, also muss man
-//  sie am Stück lesen und übersetzen können. Sie nennt die Team-ID, den Befehl
-//  und den Satz, auf den es ankommt — der Session Key bleibt auf dem Rechner
-//  der Kollegin.
+//  Was in die Zwischenablage geht: Tokens und die fertige Einladung aus der
+//  Mitgliederverwaltung.
 //  Copyright © 2025 f-is-h. All rights reserved.
 //
 
@@ -26,13 +20,5 @@ enum TeamClipboard {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         return pasteboard.setString(text, forType: .string)
-    }
-
-    /// Kopiert die fertige Anleitung inklusive Team-ID.
-    /// - Returns: `false`, wenn (noch) kein Team eingerichtet ist.
-    @discardableResult
-    static func copyInstructions(teamId: String?) -> Bool {
-        guard let teamId, !teamId.isEmpty else { return false }
-        return copy(L.Team.instructions(teamId))
     }
 }

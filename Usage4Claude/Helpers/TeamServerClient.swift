@@ -150,7 +150,7 @@ final class TeamServerClient {
     ///
     /// Jeder Eintrag läuft einzeln durch den toleranten `TeamReport.parse`:
     /// Ein kaputter Eintrag fliegt still raus, die anderen bleiben. Einträge
-    /// mit fremder Team-ID werden übersprungen (wie beim Ordner-Lesen).
+    /// mit fremder Team-ID werden übersprungen.
     func reports() async throws -> [TeamReport] {
         let data = try await request("GET", "/v1/teams/\(teamId)/reports")
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],

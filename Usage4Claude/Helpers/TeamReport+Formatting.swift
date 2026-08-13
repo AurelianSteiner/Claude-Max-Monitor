@@ -52,20 +52,3 @@ extension TeamLimit {
         return TimeFormatHelper.formatDateMinute(resetsAt, dateTemplate: "MMMd")
     }
 }
-
-// MARK: - Fehler beim Einfügen
-
-extension TeamImportError {
-
-    /// Kurzer Satz, den die Oberfläche unverändert anzeigen kann.
-    var message: String {
-        switch self {
-        case .noTeam:      return L.Team.errorNoTeam
-        case .noFolder:    return L.Team.errorNoFolder
-        case .invalidJSON: return L.Team.errorInvalidJSON
-        case .tooLarge:    return L.Team.errorTooLarge
-        case .wrongTeam:   return L.Team.errorWrongTeam
-        case .writeFailed: return L.Team.errorWriteFailed
-        }
-    }
-}

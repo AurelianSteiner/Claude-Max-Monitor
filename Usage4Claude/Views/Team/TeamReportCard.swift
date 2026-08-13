@@ -2,7 +2,7 @@
 //  TeamReportCard.swift
 //  Usage4Claude
 //
-//  Eine Meldung aus dem geteilten Ordner als Karte — reine Anzeige, hier lässt
+//  Eine Meldung vom Team-Server als Karte — reine Anzeige, hier lässt
 //  sich nichts bedienen. Kopfzeile: Name und wann gemeldet wurde. Darunter je
 //  Limit ein Balken.
 //

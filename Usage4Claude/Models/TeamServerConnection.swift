@@ -4,14 +4,13 @@
 //
 //  Team-Übersicht — Server-Anbindung Teil 1: die Verbindung selbst.
 //
-//  Neben dem geteilten Ordner (`TeamStore` + `TeamFolderAccess`, bleibt als
-//  Rückfallweg erhalten) kann die App direkt mit dem Team-Relay sprechen.
-//  Eine Verbindung besteht aus Server-URL, Team-ID und einem Token; die
-//  Rolle („super", „admin", „member") kommt vom Server (GET /me) und
-//  entscheidet, was die Oberfläche zeigt.
+//  Die App spricht direkt mit dem Team-Relay — das ist der einzige Weg in
+//  ein Team. Eine Verbindung besteht aus Server-URL, Team-ID und einem
+//  Token; die Rolle („super", „admin", „member") kommt vom Server (GET /me)
+//  und entscheidet, was die Oberfläche zeigt.
 //
 //  Persistenz: URL, Team-ID und Rolle liegen in UserDefaults (mit dem
-//  üblichen DEBUG_-Präfix, siehe `TeamDefaultsKeys`), das Token dagegen im
+//  üblichen DEBUG_-Präfix), das Token dagegen im
 //  Schlüsselbund über den bestehenden `KeychainManager` (der in DEBUG
 //  seinerseits bewusst UserDefaults nutzt — die Konvention steckt dort).
 //
@@ -56,7 +55,7 @@ enum TeamServerRole: String, Codable, Equatable {
 // MARK: - Persistenz-Schlüssel
 
 /// UserDefaults-Schlüssel der Server-Verbindung — DEBUG-Präfix wie überall
-/// im Projekt (vgl. `TeamDefaultsKeys` in TeamConfig.swift).
+/// im Projekt (vgl. `AccountStore`, `UserSettings`).
 enum TeamServerDefaultsKeys {
     #if DEBUG
     private static let prefix = "DEBUG_"
@@ -130,6 +129,8 @@ final class TeamServerConnection: ObservableObject {
     }
 
     private init() {
+        Self.removeLegacyFolderConfiguration()
+
         if let raw = defaults.string(forKey: TeamServerDefaultsKeys.serverURL),
            let url = URL(string: raw) {
             serverURL = url
@@ -321,8 +322,28 @@ final class TeamServerConnection: ObservableObject {
         }
     }
 
+    /// Einmaliges Aufräumen: Der geteilte Ordner als Meldeweg ist abgeschafft.
+    /// Reste aus früheren Versionen — das Sicherheits-Lesezeichen des Ordners
+    /// und die lokale Team-Konfiguration — werden still aus den UserDefaults
+    /// entfernt (kein Dialog; der Ordner selbst bleibt unangetastet). Läuft
+    /// beim Start und nach jedem erfolgreichen Verbinden.
+    static func removeLegacyFolderConfiguration() {
+        #if DEBUG
+        let prefix = "DEBUG_"
+        #else
+        let prefix = ""
+        #endif
+        let defaults = UserDefaults.standard
+        for key in [prefix + "teamConfig", prefix + "teamFolderBookmark"] where defaults.object(forKey: key) != nil {
+            defaults.removeObject(forKey: key)
+            Logger.team.notice("Alte Ordner-Konfiguration entfernt: \(key, privacy: .public)")
+        }
+    }
+
     /// Erfolgreiche Verbindung übernehmen und dauerhaft ablegen.
     private func store(serverURL: URL, teamId: String, token: String, identity: TeamServerIdentity) {
+        Self.removeLegacyFolderConfiguration()
+
         self.serverURL = serverURL
         self.teamId = teamId
         self.token = token

@@ -33,7 +33,7 @@ extension Logger {
     /// 用于记录语言切换和本地化相关操作
     static let localization = Logger(subsystem: subsystem, category: "Localization")
 
-    /// Team-Übersicht: geteilter Ordner, Lesezeichen, eingelesene Meldungen
+    /// Team-Übersicht: Server-Verbindung, Meldungen, Aufräumen alter Reste
     static let team = Logger(subsystem: subsystem, category: "Team")
 }
 

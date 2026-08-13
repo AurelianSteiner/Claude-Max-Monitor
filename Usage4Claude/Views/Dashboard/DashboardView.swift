@@ -150,6 +150,10 @@ struct DashboardView: View {
     /// Wach-Schalter im Kopf und im „…"-Menü — beobachtet, damit beide Anzeigen
     /// sofort mitziehen, egal ob hier oder im Rechtsklick-Menü umgeschaltet wurde.
     @ObservedObject private var sleepGuard = SleepGuard.shared
+    /// Systemweite Schlaf-Einstellungen (pmset): Steht der Mac ohnehin auf
+    /// „nie schlafen", bekommen die Wach-Schalter eine Markierung und einen
+    /// erklärenden Tooltip, statt Wirkung vorzutäuschen.
+    @ObservedObject private var systemSleep = SystemSleepInfo.shared
 
     /// Gemessene Inhaltsbreite des eigenen Fensters (0 = noch nicht gemessen).
     /// Im popover bleibt sie 0, dort gilt weiterhin die Spaltenwahl.
@@ -273,6 +277,8 @@ struct DashboardView: View {
                 showRemainingMode = savedRemainingMode
             }
             manager.activate()
+            // Drosselt sich selbst auf einen Lauf pro Minute.
+            systemSleep.refresh()
         }
         .onDisappear {
             manager.deactivate()
@@ -345,6 +351,8 @@ struct DashboardView: View {
                 caption: L.Dashboard.sleepDisplayLabel,
                 label: L.Menu.keepDisplayAwake,
                 detail: L.Dashboard.sleepDisplayHelp,
+                systemOverride: systemSleep.displaySleepMinutes == 0
+                    ? L.Dashboard.sleepDisplayOverride : nil,
                 action: { sleepGuard.toggleDisplayAwake() }
             )
             sleepGuardButton(
@@ -353,6 +361,8 @@ struct DashboardView: View {
                 caption: L.Dashboard.sleepSystemLabel,
                 label: L.Menu.keepMacAwake,
                 detail: L.Dashboard.sleepSystemHelp,
+                systemOverride: systemSleep.sleepDisabled == true
+                    ? L.Dashboard.sleepSystemOverride : nil,
                 action: { sleepGuard.toggleSystemAwake() }
             )
         }
@@ -373,12 +383,17 @@ struct DashboardView: View {
     /// fest (`fixedSize`), gekürzt wird der Titel — er erklärt nichts, was
     /// nicht ohnehin auf dem Schirm steht, die Beschriftungen dagegen schon.
     /// Ab zwei Spalten (Standard) ist überall Platz.
+    /// `systemOverride`: Hinweistext, wenn das System das Gewünschte ohnehin
+    /// schon erzwingt (pmset). Dann bekommt der Schalter einen kleinen Punkt
+    /// als Markierung und der Tooltip den Hinweis dazu — klickbar bleibt er,
+    /// die Assertion ist harmlos und wirkt auf anders eingestellten Macs.
     private func sleepGuardButton(
         isOn: Bool,
         symbol: String,
         caption: String,
         label: String,
         detail: String,
+        systemOverride: String? = nil,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
@@ -397,20 +412,37 @@ struct DashboardView: View {
                 RoundedRectangle(cornerRadius: 5)
                     .fill(isOn ? Color.accentColor.opacity(0.15) : Color.clear)
             )
+            .overlay(alignment: .topTrailing) {
+                if systemOverride != nil {
+                    Circle()
+                        .fill(Color.accentColor)
+                        .frame(width: 5, height: 5)
+                        .offset(x: 1, y: -1)
+                }
+            }
         }
         .buttonStyle(.plain)
         .focusable(false)
-        .help(sleepGuardHelp(label: label, detail: detail, isOn: isOn))
+        .help(sleepGuardHelp(label: label, detail: detail, isOn: isOn, systemOverride: systemOverride))
         .accessibilityLabel(label)
     }
 
     /// Tooltip eines Wach-Schalters: Beschriftung samt aktuellem Zustand, darunter
     /// in Klartext, was der Schalter tut — und was er ausdrücklich nicht tut.
     /// Die Deckel-Zeile steht bei beiden Schaltern, weil beide daran enden:
-    /// zuklappen schläfert den Mac trotzdem ein.
-    private func sleepGuardHelp(label: String, detail: String, isOn: Bool) -> String {
+    /// zuklappen schläfert den Mac trotzdem ein. Sie entfällt, sobald das
+    /// System per `disablesleep 1` auch zugeklappt wach bleibt — dann wäre
+    /// sie falsch. Ein Systemhinweis (pmset) kommt ans Ende.
+    private func sleepGuardHelp(label: String, detail: String, isOn: Bool, systemOverride: String?) -> String {
         let state = isOn ? L.Dashboard.sleepStateOn : L.Dashboard.sleepStateOff
-        return "\(label) — \(state)\n\n\(detail)\n\n\(L.Dashboard.sleepLidNote)"
+        var text = "\(label) — \(state)\n\n\(detail)"
+        if systemSleep.sleepDisabled != true {
+            text += "\n\n\(L.Dashboard.sleepLidNote)"
+        }
+        if let systemOverride {
+            text += "\n\n\(systemOverride)"
+        }
+        return text
     }
 
     // MARK: - Ampel (Wochen-Auslastung)

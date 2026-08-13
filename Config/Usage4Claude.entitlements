@@ -27,15 +27,11 @@
 		<string>$(PRODUCT_BUNDLE_IDENTIFIER)-spki</string>
 	</array>
 	<!--
-	  Team-Übersicht: Der Ordner mit den Meldungen der Kolleginnen und Kollegen
-	  liegt außerhalb des Sandbox-Containers (iCloud Drive, Dropbox, …). Der
-	  Nutzer wählt ihn selbst über einen Öffnen-Dialog aus; „user-selected“
-	  erlaubt genau diesen Zugriff. Das app-scope-Lesezeichen hält ihn über
-	  Neustarts hinweg, sonst müsste der Ordner bei jedem Start neu gewählt werden.
+	  Diagnose-Export: Der Bericht wird über einen Sichern-Dialog an einen
+	  selbst gewählten Ort geschrieben (DiagnosticManager). „user-selected“
+	  erlaubt unter der Sandbox genau diesen Zugriff.
 	-->
 	<key>com.apple.security.files.user-selected.read-write</key>
-	<true/>
-	<key>com.apple.security.files.bookmarks.app-scope</key>
 	<true/>
 </dict>
 </plist>

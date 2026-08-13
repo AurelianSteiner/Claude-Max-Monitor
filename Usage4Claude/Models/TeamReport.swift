@@ -2,10 +2,9 @@
 //  TeamReport.swift
 //  Usage4Claude
 //
-//  Team-Übersicht — Teil 2: das Format, das im geteilten Ordner liegt.
-//
-//  Pro Person genau eine kleine JSON-Datei, geschrieben vom Melde-Skript
-//  (scripts/team-report.sh). Dateiname:
+//  Team-Übersicht — das Format einer Meldung. So liefert sie der Team-Server
+//  (GET /reports), und so schreibt sie das Melde-Skript
+//  (scripts/team-report.sh) als kleine JSON-Datei. Dateiname:
 //
 //      report-<TEAMID>-<slug>.json          z. B. report-K7QP2M9X-aurelian.json
 //
@@ -22,8 +21,9 @@
 //        ]
 //      }
 //
-//  Gelesen wird betont misstrauisch: Der Ordner gehört uns nicht, dort liegt
-//  irgendwann auch Müll. Unbekannte Schlüssel werden ignoriert, `resetsAt`
+//  Gelesen wird betont misstrauisch: Die Meldungen kommen von fremden
+//  Rechnern, irgendwann ist auch Müll dabei. Unbekannte Schlüssel werden
+//  ignoriert, `resetsAt`
 //  darf fehlen, eine kaputte Zeile im `limits`-Array wirft nur diesen einen
 //  Eintrag weg, und eine kaputte Datei wird übersprungen — nie wird der
 //  gesamte Lesevorgang abgebrochen.
@@ -255,8 +255,8 @@ struct TeamReport: Codable, Identifiable, Equatable {
         return try parse(data)
     }
 
-    /// Kanonische Fassung zum Schreiben in den Ordner: immer Schema 1,
-    /// immer ISO-Zeitstempel, ohne den Ballast, den die Eingabe mitbrachte.
+    /// Kanonische Fassung zum Weitergeben (Server, Melde-Skript): immer
+    /// Schema 1, immer ISO-Zeitstempel, ohne den Ballast der Eingabe.
     func canonicalJSONData() throws -> Data {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -265,7 +265,7 @@ struct TeamReport: Codable, Identifiable, Equatable {
 
     // MARK: - Dateinamen
 
-    /// Dateiname dieser Meldung im geteilten Ordner
+    /// Dateiname dieser Meldung (so legt sie das Melde-Skript ab)
     var preferredFileName: String {
         TeamReport.fileName(teamId: teamId, person: person)
     }
@@ -336,9 +336,9 @@ struct TeamReport: Codable, Identifiable, Equatable {
 
     /// Pro Person nur die jüngste Meldung behalten.
     ///
-    /// Nötig, weil im geteilten Ordner alte Dateien liegen bleiben können —
-    /// etwa wenn jemand seinen Namen ändert und das Skript unter neuem
-    /// Dateinamen schreibt. Ohne das stünde dieselbe Person doppelt da.
+    /// Nötig, weil alte Meldungen liegen bleiben können — etwa wenn jemand
+    /// seinen Namen ändert und unter neuem Namen meldet. Ohne das stünde
+    /// dieselbe Person doppelt da.
     static func deduplicatedByPerson(_ reports: [TeamReport]) -> [TeamReport] {
         var newest: [String: TeamReport] = [:]
         for report in reports {

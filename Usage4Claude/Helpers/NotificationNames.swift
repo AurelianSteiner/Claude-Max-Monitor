@@ -32,13 +32,6 @@ extension Notification.Name {
 
     // MARK: - Team-Übersicht
 
-    /// Team angelegt, umbenannt oder verlassen
-    /// Ordner-Zugriff und Meldungen hängen daran und räumen selbst auf
-    static let teamConfigChanged = Notification.Name("teamConfigChanged")
-
-    /// Der geteilte Ordner wurde gewählt oder entfernt
-    static let teamFolderChanged = Notification.Name("teamFolderChanged")
-
     /// Server-Verbindung des Teams hergestellt, getrennt oder Rolle geändert.
     /// `TeamReportStore` lädt daraufhin neu, `TeamAutoReporter` startet/stoppt.
     static let teamServerChanged = Notification.Name("teamServerChanged")
