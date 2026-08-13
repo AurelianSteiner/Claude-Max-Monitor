@@ -24,11 +24,17 @@ Diese App zeigt alle Konten gleichzeitig, eine Karte pro Zugang:
 
 **Countdown, wenn es knapp wird.** Freischaltung in unter drei Tagen zeigt die Restzeit, alles darüber das Datum. Der genaue Tag steht im Tooltip.
 
-**Weitere Limits nach Bedarf.** Opus, Fable, Extra Usage — je nachdem, was dich interessiert, ein- und ausschaltbar in den Anzeigeoptionen.
+**Weitere Limits automatisch.** Opus, Fable, Extra Usage — was das Konto meldet, erscheint auf der Karte, Modell-Wochenlimits als Prozentbalken.
 
-Ein Klick auf eine Karte macht das Konto zum aktiven, dem das Symbol in der Menüleiste folgt. Optional zeigt die App auch ChatGPT-/Codex-Kontingente in derselben Übersicht.
+**Ampel in der Menüleiste.** Ein Punkt je Konto: Die Füllung folgt dem Wochenlimit, ein roter Ring markiert ein aufgebrauchtes Sitzungsfenster. Schmal genug für die Notch. Optional zeigt die App auch ChatGPT-/Codex-Kontingente in derselben Übersicht.
 
-Die Zugangsdaten bleiben im Schlüsselbund des Macs. Es gibt keinen Server, keine Telemetrie, keine Konten bei Dritten — die App spricht ausschließlich mit den Schnittstellen, bei denen du dich angemeldet hast.
+Die Zugangsdaten bleiben im Schlüsselbund des Macs. Keine Telemetrie, keine Konten bei Dritten — die App spricht ausschließlich mit den Schnittstellen, bei denen du dich angemeldet hast.
+
+## Team
+
+Für den Privatgebrauch ist die App frei — herunterladen und loslegen.
+
+Wer die Auslastung eines ganzen Teams sehen will (eine Karte pro Person, wer hat noch Luft, wer ist durch), braucht Zugang zum Team-Relay: Server-Adresse, Team-ID und ein persönliches Token. Teams gibt es auf Anfrage — kurze Mail genügt. Der Team-Inhaber legt Mitglieder mit Namen an und verschickt deren Tokens; jedes Mitglied meldet nur Prozentwerte und Reset-Zeitpunkte, niemals Zugangsdaten. Mitglieder sehen nur sich selbst, Admins das ganze Team.
 
 ## Selbst bauen
 
