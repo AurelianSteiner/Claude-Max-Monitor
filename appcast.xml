@@ -3,6 +3,19 @@
     <channel>
         <title>Claude Max Monitor</title>
         <item>
+            <title>1.6</title>
+            <pubDate>Thu, 13 Aug 2026 01:42:30 +0000</pubDate>
+            <sparkle:version>1.6</sparkle:version>
+            <sparkle:shortVersionString>1.6</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[Die Meldung 'neue Version verfügbar' verschwindet endlich — die App trug intern dauerhaft die Nummer 1.0, weshalb dieselbe Fassung endlos als Update angeboten wurde. Die Einstellungen enthalten nur noch, was gebraucht wird: die Menüleiste zeigt fest einen Punkt je Account, Symbol- und Prozentauswahl, Limit-Kästchen, Verbindungstest, Session-Key-Anleitung und Kontoauswahl sind entfallen. Die Karten benennen jetzt, was gesperrt ist — Sitzung, Woche oder alles — und zählen zum passenden Reset herunter. Die beiden Wachhalte-Symbole in der Übersicht erklären in der Kurzinfo, was sie bewirken.]]></description>
+            <enclosure
+                url="https://github.com/AurelianSteiner/Claude-Max-Monitor/releases/download/v1.6/Claude-Max-Monitor-1.6.dmg"
+                sparkle:edSignature="/s/4cN822DUXOPMDwgO+iyJCFPJ9jQAgX7IYk79BTzOwcPcgU/aWHMODedlEzct6i78oXE74Vayy0p/s4KQyDg=="
+                length="5118300"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>1.5</title>
             <pubDate>Thu, 13 Aug 2026 00:35:56 +0000</pubDate>
             <sparkle:version>1.5</sparkle:version>
