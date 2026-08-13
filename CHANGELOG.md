@@ -1,5 +1,24 @@
 # Änderungen
 
+## 1.8
+
+- Team-Übersicht: Alle Claude-Konten des Teams auf einen Blick, eine Karte pro
+  Person, sortiert nach Auslastung, mit Hinweis auf veraltete Meldungen.
+- Drei Rollen über den Team-Server: Der Inhaber legt Mitglieder mit Namen an,
+  bekommt deren Token einmalig zum Kopieren und einen fertigen Einladungstext.
+  Admins sehen alle Meldungen, Mitglieder nur die eigene.
+- Verbunden meldet die App die eigene Auslastung alle fünfzehn Minuten von
+  selbst — es braucht kein Skript. Übertragen werden nur Prozentwerte, Labels
+  und Reset-Zeitpunkte, niemals Zugangsdaten. Das Token liegt im Schlüsselbund.
+- Alternativ funktioniert ein geteilter Ordner (iCloud/Dropbox) ohne Server;
+  `scripts/team-report.sh` schreibt die Meldung dort hinein, und einzelne
+  Meldungen lassen sich auch als Text einfügen.
+- Die Schalter zum Wachhalten heißen jetzt Always On und Bildschirm an; ein
+  eingeklappter Bereich in den Einstellungen zeigt die stärkeren
+  pmset-Systembefehle zum Kopieren.
+- Ein Klick auf eine Karte wechselt nicht mehr das aktive Konto; der blaue
+  Rahmen ist entfallen.
+
 ## 1.7
 
 - Die Karte kennt nur noch zwei Sperrzustände. Eine gesperrte Woche schließt das
