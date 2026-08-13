@@ -32,6 +32,9 @@ extension Logger {
     /// 本地化管理日志
     /// 用于记录语言切换和本地化相关操作
     static let localization = Logger(subsystem: subsystem, category: "Localization")
+
+    /// Team-Übersicht: geteilter Ordner, Lesezeichen, eingelesene Meldungen
+    static let team = Logger(subsystem: subsystem, category: "Team")
 }
 
 // MARK: - 日志级别说明

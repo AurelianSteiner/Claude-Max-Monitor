@@ -30,6 +30,15 @@ extension Notification.Name {
     /// 当用户切换账户时发送，触发数据刷新
     static let accountChanged = Notification.Name("accountChanged")
 
+    // MARK: - Team-Übersicht
+
+    /// Team angelegt, umbenannt oder verlassen
+    /// Ordner-Zugriff und Meldungen hängen daran und räumen selbst auf
+    static let teamConfigChanged = Notification.Name("teamConfigChanged")
+
+    /// Der geteilte Ordner wurde gewählt oder entfernt
+    static let teamFolderChanged = Notification.Name("teamFolderChanged")
+
     // MARK: - Window Related
 
     /// 打开设置窗口通知

@@ -3,7 +3,12 @@
 //  Usage4Claude
 //
 //  多账户总览：一屏之内并排显示所有已添加的 Claude / Codex 账户，
-//  不再需要先切账户才能看另一个账号的余量。点任意卡片即把该账户设为当前账户。
+//  不再需要先切账户才能看另一个账号的余量。
+//
+//  Ein Klick auf eine Karte tut bewusst nichts mehr: Seit die Menüleiste alle
+//  Konten zeigt, hatte „aktives Konto" keine sichtbare Wirkung mehr — der Klick
+//  verstellte also etwas, das niemand sehen konnte. Umstellen geht weiterhin
+//  über das Rechtsklick-Menü der Karte.
 //
 //  同一个视图既用于菜单栏 popover，也用于独立的总览窗口（isStandaloneWindow）。
 //  Copyright © 2025 f-is-h. All rights reserved.
@@ -235,13 +240,6 @@ struct DashboardView: View {
         isStandaloneWindow ? .infinity : nil
     }
 
-    private func isCurrent(_ snapshot: AccountUsageSnapshot) -> Bool {
-        switch snapshot.provider {
-        case .claude: return snapshot.id == settings.currentAccountId
-        case .codex:  return snapshot.id == settings.currentCodexAccountId
-        }
-    }
-
     // MARK: - Body
 
     var body: some View {
@@ -369,11 +367,12 @@ struct DashboardView: View {
     ///
     /// Platz: Die schmalste mögliche Ansicht ist eine Spalte — 396 pt breit,
     /// im popover fest, beim Fenster als Mindestbreite (siehe
-    /// `DashboardWindowManager`). Der ganze Kopf misst dort mit Beschriftung
-    /// 379 pt (deutsch, zweistelliger Zähler; „Bildschirm" ist das längste
-    /// Wort), passt also überall hinein. Die Beschriftungen stehen deshalb
-    /// immer — nur falls doch einmal etwas fehlt, kürzt der Titel und nicht
-    /// die Beschriftung, die ja gerade den Zweck erklärt.
+    /// `DashboardWindowManager`). Mit den ausgeschriebenen Beschriftungen
+    /// („Bildschirm an" und „Always On") misst der Kopf dort rund 416 pt, ist
+    /// also etwa 20 pt zu breit. Das ist Absicht: Die Beschriftungen stehen
+    /// fest (`fixedSize`), gekürzt wird der Titel — er erklärt nichts, was
+    /// nicht ohnehin auf dem Schirm steht, die Beschriftungen dagegen schon.
+    /// Ab zwei Spalten (Standard) ist überall Platz.
     private func sleepGuardButton(
         isOn: Bool,
         symbol: String,
@@ -563,6 +562,12 @@ struct DashboardView: View {
                     Label(L.Dashboard.openWindow, systemImage: "macwindow")
                 }
             }
+            // Die Team-Übersicht ist ein eigenes Fenster und deshalb auch aus
+            // dem eigenen Übersichtsfenster heraus erreichbar — anders als der
+            // Eintrag darüber, der dort auf sich selbst zeigen würde.
+            Button(action: { onMenuAction?(.openTeamWindow) }) {
+                Label(L.Dashboard.openTeamWindow, systemImage: "person.3")
+            }
             Divider()
             Button(action: { onMenuAction?(.generalSettings) }) {
                 Label(L.Menu.generalSettings, systemImage: "gearshape")
@@ -631,7 +636,6 @@ struct DashboardView: View {
                     ForEach(orderedSnapshots) { snapshot in
                         AccountUsageCard(
                             snapshot: snapshot,
-                            isCurrent: isCurrent(snapshot),
                             showRemainingMode: $showRemainingMode,
                             onSelect: { select(snapshot) },
                             onRefresh: { manager.refreshAccount(id: snapshot.id) },
@@ -681,6 +685,9 @@ struct DashboardView: View {
 
     private var footer: some View {
         HStack(spacing: 6) {
+            // Der Hinweis nennt die einzige Klickfunktion, die es auf einer
+            // Karte noch gibt: die Limit-Zeilen schalten zwischen verbraucht
+            // und übrig um.
             Text(L.Dashboard.tapHint)
                 .font(.system(size: 10))
                 .foregroundColor(.secondary)
@@ -721,6 +728,9 @@ struct DashboardView: View {
 
     // MARK: - Actions
 
+    /// Setzt das Konto als aktives Konto des jeweiligen Anbieters. Aufgerufen
+    /// wird das nur noch aus dem Rechtsklick-Menü der Karte — als Klickaktion
+    /// der ganzen Karte war es eine unsichtbare Umstellung.
     private func select(_ snapshot: AccountUsageSnapshot) {
         switch snapshot.provider {
         case .claude:

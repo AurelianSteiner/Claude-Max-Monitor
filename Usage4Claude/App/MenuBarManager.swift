@@ -206,6 +206,9 @@ class MenuBarManager: ObservableObject {
         case .openDashboardWindow:
             closePopover()
             openDashboardWindow()
+        case .openTeamWindow:
+            closePopover()
+            openTeamWindow()
         case .quit:
             quitApp()
         }
@@ -216,6 +219,13 @@ class MenuBarManager: ObservableObject {
     /// Übersicht in einem eigenständigen Fenster öffnen
     @objc func openDashboardWindow() {
         DashboardWindowManager.shared.show { [weak self] action in
+            self?.handleMenuAction(action)
+        }
+    }
+
+    /// Team-Übersicht in einem eigenständigen Fenster öffnen
+    @objc func openTeamWindow() {
+        TeamWindowManager.shared.show { [weak self] action in
             self?.handleMenuAction(action)
         }
     }
@@ -567,6 +577,7 @@ class MenuBarManager: ObservableObject {
 
         // 关闭窗口
         DashboardWindowManager.shared.close()
+        TeamWindowManager.shared.close()
         settingsWindow?.close()
         settingsWindow = nil
     }

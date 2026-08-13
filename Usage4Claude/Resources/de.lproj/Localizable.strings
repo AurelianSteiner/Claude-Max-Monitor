@@ -17,8 +17,11 @@
 "menu.quit" = "Claude Max Monitor beenden";
 "menu.account" = "Account";
 "menu.account_prefix" = "Account:";
-"menu.keep_display_awake" = "Bildschirm wach halten";
-"menu.keep_mac_awake" = "Mac wach halten";
+// Lange Namen der beiden Wach-Schalter im Kopf der Übersicht (Überschrift im
+// Tooltip und Beschriftung für VoiceOver). Sie müssen wortgleich zu den kurzen
+// Beschriftungen dashboard.sleep.*_label sein.
+"menu.keep_display_awake" = "Bildschirm an";
+"menu.keep_mac_awake" = "Always On";
 
 // MARK: - Usage Detail View
 "usage.title" = "Claude Usage";
@@ -410,13 +413,14 @@
 "dashboard.show_dashboard" = "Übersicht anzeigen";
 "dashboard.show_classic_detail" = "Einzelansicht anzeigen";
 "dashboard.open_window" = "Übersicht in Fenster öffnen";
+"dashboard.open_team_window" = "Team-Übersicht";
 "dashboard.sort_by_order" = "Reihenfolge der Accounts";
 "dashboard.sort_by_availability" = "Freieste zuerst";
 "dashboard.sort_help" = "Sortierung und Spalten";
 "dashboard.refresh_account" = "Diesen Account aktualisieren";
 "dashboard.make_active" = "Als aktiven Account setzen";
 "dashboard.retry" = "Erneut versuchen";
-"dashboard.tap_hint" = "Klick auf eine Karte wechselt den aktiven Account";
+"dashboard.tap_hint" = "Klick auf die Limit-Zeilen zeigt, was übrig ist";
 "dashboard.updated_at" = "Aktualisiert %@";
 "dashboard.columns_one" = "1 Spalte";
 "dashboard.columns_other" = "%d Spalten";
@@ -446,12 +450,81 @@
 "dashboard.lock.weekly_help" = "Das Wochenlimit ist aufgebraucht. Bis zum Wochen-Reset läuft über diesen Account nichts mehr — egal, wie frei das 5-Stunden-Fenster ist.";
 
 /* Wach-Schalter im Kopf der Übersicht — kurze Beschriftung neben dem Symbol */
-"dashboard.sleep.display_label" = "Bildschirm";
-"dashboard.sleep.system_label" = "Mac";
+"dashboard.sleep.display_label" = "Bildschirm an";
+"dashboard.sleep.system_label" = "Always On";
 
 /* Wach-Schalter im Kopf der Übersicht */
 "dashboard.sleep.display_help" = "Der Bildschirm schaltet sich nicht mehr von selbst aus, und der Mac bleibt dabei ebenfalls wach. Gilt nur, solange Claude Max Monitor läuft.";
 "dashboard.sleep.system_help" = "Der Mac geht nicht mehr von selbst in den Ruhezustand. Der Bildschirm darf trotzdem dunkel werden. Gilt nur, solange Claude Max Monitor läuft.";
-"dashboard.sleep.lid_note" = "Zugeklappt schläft der Mac trotzdem ein. Das ließe sich nur über eine Systemeinstellung mit Administratorrechten ändern, und die verlangt diese App bewusst nicht.";
+"dashboard.sleep.lid_note" = "Zugeklappt schläft der Mac trotzdem ein. Das ließe sich nur über eine Systemeinstellung mit Administratorrechten ändern, und die verlangt diese App bewusst nicht — die Befehle dafür stehen in den Einstellungen.";
 "dashboard.sleep.state_on" = "Aktiv";
 "dashboard.sleep.state_off" = "Aus";
+
+/* Allgemeine Einstellungen: der eingeklappte Abschnitt mit den drei
+   pmset-Befehlen. Nur anzeigen und kopieren — die App führt nichts aus. */
+"settings.sleep.section" = "Schlaf-Einstellungen des Systems";
+"settings.sleep.intro" = "macOS hat eine eigene, stärkere Einstellung für den Schlaf des ganzen Rechners. Die beiden Knöpfe in der Übersicht ändern sie nicht — das geht nur im Terminal.";
+"settings.sleep.caption_status" = "Status ansehen";
+"settings.sleep.caption_off" = "Nie schlafen";
+"settings.sleep.caption_on" = "Wieder normal schlafen";
+"settings.sleep.copy" = "Befehl kopieren";
+"settings.sleep.copied" = "Kopiert";
+"settings.sleep.note" = "Die beiden sudo-Befehle fragen im Terminal nach dem Passwort des Kontos. Mit disablesleep = 1 haben die beiden Knöpfe in der Übersicht keine zusätzliche Wirkung.";
+
+/* Team-Übersicht: Ordner-Auswahl, Alter einer Meldung, abgelehnte Einfügungen */
+"team.folder.choose_message" = "Geteilten Ordner wählen — dort landen die Meldungen des Teams.";
+"team.folder.choose_prompt" = "Ordner wählen";
+"team.report.just_now" = "gerade eben";
+"team.report.stale" = "Veraltet";
+"team.import.no_team" = "Zuerst ein Team anlegen.";
+"team.import.no_folder" = "Kein Ordner gewählt.";
+"team.import.invalid_json" = "Das ist keine gültige Meldung.";
+"team.import.too_large" = "Der Text ist zu lang.";
+"team.import.wrong_team" = "Die Meldung gehört zu einem anderen Team.";
+"team.import.write_failed" = "Die Meldung konnte nicht im Ordner gespeichert werden.";
+
+/* Team einrichten — Karte unten im Reiter Konten */
+"team.settings.title" = "Team";
+"team.settings.intro" = "Alle Claude-Konten im Team auf einen Blick — die Meldungen laufen über einen geteilten Ordner.";
+"team.settings.name_placeholder" = "Teamname";
+"team.settings.create" = "Team anlegen";
+"team.settings.join_hint" = "Schon eine Team-ID bekommen? Dann hier eintragen statt ein eigenes Team anzulegen.";
+"team.settings.join" = "Beitreten";
+"team.settings.id_label" = "Team-ID";
+"team.settings.copy_id" = "Team-ID kopieren";
+"team.settings.folder_label" = "Ordner";
+"team.settings.folder_none" = "Noch keiner";
+"team.settings.folder_change" = "Ordner ändern";
+"team.settings.folder_unreachable" = "Nicht erreichbar";
+"team.settings.reports_count" = "Meldungen im Ordner: %d";
+"team.settings.leave" = "Team entfernen";
+"team.settings.leave_confirm_title" = "Team entfernen?";
+"team.settings.leave_confirm_message" = "Der geteilte Ordner und die Meldungen darin bleiben unverändert. Zum Zurückkommen brauchst du die Team-ID.";
+"team.settings.leave_confirm_button" = "Entfernen";
+"team.settings.copy_instructions" = "Anleitung kopieren";
+"team.settings.copied" = "Kopiert";
+"team.settings.paste_title" = "Meldung einfügen";
+"team.settings.paste_hint" = "Für alle, die nicht an den geteilten Ordner kommen: geschickte Meldung hier einfügen.";
+"team.settings.paste_apply" = "Übernehmen";
+"team.settings.paste_accepted" = "Meldung von %@ übernommen.";
+
+/* Fertiger Text für die Kollegen — landet per Knopf in der Zwischenablage */
+"team.instructions.template" = "Claude-Auslastung melden\n\nTeam-ID: %@\n\n1. Im Terminal ausführen: bash team-report.sh\n2. Team-ID eintragen, wenn danach gefragt wird.\n3. Die erzeugte Datei in unseren geteilten Ordner legen — oder mir den Text schicken.\n\nDein Session Key bleibt auf deinem Rechner. Weitergegeben werden nur Prozentzahlen und Reset-Zeiten.";
+
+/* Team-Übersicht im eigenen Fenster */
+"team.window.title" = "Team";
+"team.view.people" = "Personen: %d";
+"team.view.at_limit" = "Fast am Limit: %d";
+"team.view.at_limit_help" = "Wochenlimit bei 90 % oder mehr.";
+"team.view.reported" = "%@ gemeldet";
+
+/* Leere Zustände — jeder nennt den nächsten Schritt */
+"team.empty.no_team" = "Noch kein Team.";
+"team.empty.no_team_step" = "In den Einstellungen bei den Konten ein Team anlegen.";
+"team.empty.open_settings" = "Einstellungen öffnen";
+"team.empty.no_folder" = "Kein geteilter Ordner.";
+"team.empty.no_folder_step" = "Einen Ordner wählen, den alle im Team sehen — etwa in iCloud, Dropbox oder auf dem Server.";
+"team.empty.no_reports" = "Noch keine Meldungen.";
+"team.empty.no_reports_step" = "Anleitung kopieren und an das Team schicken.";
+"team.empty.unreachable" = "Ordner nicht erreichbar.";
+"team.empty.unreachable_step" = "Ist die Freigabe eingehängt? Sonst den Ordner neu wählen.";

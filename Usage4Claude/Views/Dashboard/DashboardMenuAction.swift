@@ -25,4 +25,6 @@ enum MenuAction {
     case codexRelogin
     /// Übersicht in einem eigenständigen Fenster öffnen
     case openDashboardWindow
+    /// Team-Übersicht in einem eigenständigen Fenster öffnen
+    case openTeamWindow
 }

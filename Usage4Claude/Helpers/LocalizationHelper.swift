@@ -99,6 +99,8 @@ enum L {
         static var makeActive: String { localized("dashboard.make_active") }
         static var retry: String { localized("dashboard.retry") }
         static var tapHint: String { localized("dashboard.tap_hint") }
+        /// Eintrag im „…"-Menü, der das Team-Fenster öffnet
+        static var openTeamWindow: String { localized("dashboard.open_team_window") }
         // Kurzlabels im Ringzentrum
         static var ringExtra: String { localized("dashboard.ring_extra") }
         static var ringOpus: String { localized("dashboard.ring_opus") }
@@ -182,6 +184,20 @@ enum L {
         static var resetButton: String { localized("settings.general.reset_button") }
     }
     
+    // MARK: - Settings: Schlaf-Einstellungen des Systems
+    /// Der eingeklappte Abschnitt mit den drei `pmset`-Befehlen. Die Befehle
+    /// selbst stehen im Code, nicht hier — übersetzt wird nur, was sie tun.
+    enum SettingsSleep {
+        static var section: String { localized("settings.sleep.section") }
+        static var intro: String { localized("settings.sleep.intro") }
+        static var captionStatus: String { localized("settings.sleep.caption_status") }
+        static var captionOff: String { localized("settings.sleep.caption_off") }
+        static var captionOn: String { localized("settings.sleep.caption_on") }
+        static var copy: String { localized("settings.sleep.copy") }
+        static var copied: String { localized("settings.sleep.copied") }
+        static var note: String { localized("settings.sleep.note") }
+    }
+
     // MARK: - Settings Authentication
     enum SettingsAuth {
         static var sessionKeyLabel: String { localized("settings.auth.session_key_label") }
@@ -582,8 +598,100 @@ enum L {
         static var preview: String { localized("settings.general.time_format_preview") }
     }
 
+    // MARK: - Team-Übersicht
+    enum Team {
+        /// Text im Öffnen-Dialog für den geteilten Ordner
+        static var folderChooseMessage: String { localized("team.folder.choose_message") }
+        static var folderChoosePrompt: String { localized("team.folder.choose_prompt") }
+
+        /// Alter einer Meldung
+        static var justNow: String { localized("team.report.just_now") }
+        static var stale: String { localized("team.report.stale") }
+
+        /// Gründe, warum eine eingefügte Meldung abgelehnt wurde
+        static var errorNoTeam: String { localized("team.import.no_team") }
+        static var errorNoFolder: String { localized("team.import.no_folder") }
+        static var errorInvalidJSON: String { localized("team.import.invalid_json") }
+        static var errorTooLarge: String { localized("team.import.too_large") }
+        static var errorWrongTeam: String { localized("team.import.wrong_team") }
+        static var errorWriteFailed: String { localized("team.import.write_failed") }
+
+        // MARK: Einrichtung (Karte im Reiter „Konten")
+
+        static var settingsTitle: String { localized("team.settings.title") }
+        static var settingsIntro: String { localized("team.settings.intro") }
+        static var namePlaceholder: String { localized("team.settings.name_placeholder") }
+        static var create: String { localized("team.settings.create") }
+        /// Zweiter Weg für alle, die eine ID bekommen haben — ohne ihn sähe
+        /// jede Kollegin nur ihr eigenes, frisch gewürfeltes Team.
+        static var joinHint: String { localized("team.settings.join_hint") }
+        static var join: String { localized("team.settings.join") }
+        static var idLabel: String { localized("team.settings.id_label") }
+        static var copyId: String { localized("team.settings.copy_id") }
+        static var folderLabel: String { localized("team.settings.folder_label") }
+        static var folderNone: String { localized("team.settings.folder_none") }
+        static var folderChange: String { localized("team.settings.folder_change") }
+        static var folderUnreachable: String { localized("team.settings.folder_unreachable") }
+        static var leave: String { localized("team.settings.leave") }
+        static var leaveConfirmTitle: String { localized("team.settings.leave_confirm_title") }
+        static var leaveConfirmMessage: String { localized("team.settings.leave_confirm_message") }
+        static var leaveConfirmButton: String { localized("team.settings.leave_confirm_button") }
+        static var copyInstructions: String { localized("team.settings.copy_instructions") }
+        static var copied: String { localized("team.settings.copied") }
+        static var pasteTitle: String { localized("team.settings.paste_title") }
+        static var pasteHint: String { localized("team.settings.paste_hint") }
+        static var pasteApply: String { localized("team.settings.paste_apply") }
+
+        /// „Meldungen im Ordner: 3"
+        static func reportsCount(_ count: Int) -> String {
+            String(format: localized("team.settings.reports_count"), count)
+        }
+
+        /// Bestätigung nach dem Einfügen: „Meldung von Jürgen übernommen."
+        static func pasteAccepted(_ person: String) -> String {
+            String(format: localized("team.settings.paste_accepted"), person)
+        }
+
+        /// Fertiger Text für die Kollegen — enthält die Team-ID
+        static func instructions(_ teamId: String) -> String {
+            String(format: localized("team.instructions.template"), teamId)
+        }
+
+        // MARK: Übersicht (eigenes Fenster)
+
+        static var windowTitle: String { localized("team.window.title") }
+        static var atLimitHelp: String { localized("team.view.at_limit_help") }
+
+        /// „Personen: 4"
+        static func peopleCount(_ count: Int) -> String {
+            String(format: localized("team.view.people"), count)
+        }
+
+        /// „Fast am Limit: 2"
+        static func atLimitCount(_ count: Int) -> String {
+            String(format: localized("team.view.at_limit"), count)
+        }
+
+        /// „vor 3 Tagen gemeldet"
+        static func reportedAgo(_ ago: String) -> String {
+            String(format: localized("team.view.reported"), ago)
+        }
+
+        // MARK: Leere Zustände — jeder nennt den nächsten Schritt
+
+        static var emptyNoTeam: String { localized("team.empty.no_team") }
+        static var emptyNoTeamStep: String { localized("team.empty.no_team_step") }
+        static var emptyOpenSettings: String { localized("team.empty.open_settings") }
+        static var emptyNoFolder: String { localized("team.empty.no_folder") }
+        static var emptyNoFolderStep: String { localized("team.empty.no_folder_step") }
+        static var emptyNoReports: String { localized("team.empty.no_reports") }
+        static var emptyNoReportsStep: String { localized("team.empty.no_reports_step") }
+        static var emptyUnreachable: String { localized("team.empty.unreachable") }
+        static var emptyUnreachableStep: String { localized("team.empty.unreachable_step") }
+    }
+
     // MARK: - Helper Methods
-    
+
     /// 本地化字符串辅助方法
     /// 根据用户设置的语言返回对应的本地化字符串
     /// - Parameter key: 本地化字符串的键名

@@ -18,8 +18,11 @@
 "menu.quit" = "Quit Claude Max Monitor";
 "menu.account" = "Account";
 "menu.account_prefix" = "Account:";
-"menu.keep_display_awake" = "Keep Display Awake";
-"menu.keep_mac_awake" = "Keep Mac Awake";
+// Long names of the two stay-awake buttons in the overview header (tooltip
+// heading and accessibility label). They have to match the short labels
+// dashboard.sleep.*_label word for word.
+"menu.keep_display_awake" = "Screen on";
+"menu.keep_mac_awake" = "Always On";
 
 // MARK: - Usage Detail View
 "usage.title" = "Claude Usage";
@@ -411,13 +414,14 @@
 "dashboard.show_dashboard" = "Show overview";
 "dashboard.show_classic_detail" = "Show single account";
 "dashboard.open_window" = "Open overview window";
+"dashboard.open_team_window" = "Team overview";
 "dashboard.sort_by_order" = "Account order";
 "dashboard.sort_by_availability" = "Most free first";
 "dashboard.sort_help" = "Sorting and columns";
 "dashboard.refresh_account" = "Refresh this account";
 "dashboard.make_active" = "Make active account";
 "dashboard.retry" = "Retry";
-"dashboard.tap_hint" = "Click a card to switch the active account";
+"dashboard.tap_hint" = "Click the limit rows to show what is left";
 "dashboard.updated_at" = "Updated %@";
 "dashboard.columns_one" = "1 column";
 "dashboard.columns_other" = "%d columns";
@@ -447,12 +451,81 @@
 "dashboard.lock.weekly_help" = "The weekly limit is used up. Nothing runs through this account until the weekly reset — no matter how free the 5-hour window is.";
 
 /* Stay-awake switches in the overview header — short label next to the symbol */
-"dashboard.sleep.display_label" = "Display";
-"dashboard.sleep.system_label" = "Mac";
+"dashboard.sleep.display_label" = "Screen on";
+"dashboard.sleep.system_label" = "Always On";
 
 /* Stay-awake switches in the overview header */
 "dashboard.sleep.display_help" = "The screen no longer turns itself off, and the Mac stays awake with it. Applies only while Claude Max Monitor is running.";
 "dashboard.sleep.system_help" = "The Mac no longer goes to sleep on its own. The screen may still go dark. Applies only while Claude Max Monitor is running.";
-"dashboard.sleep.lid_note" = "Closing the lid still puts the Mac to sleep. Changing that would take a system setting with administrator rights, which this app deliberately does not ask for.";
+"dashboard.sleep.lid_note" = "Closing the lid still puts the Mac to sleep. Changing that would take a system setting with administrator rights, which this app deliberately does not ask for — the commands for it are in the settings.";
 "dashboard.sleep.state_on" = "On";
 "dashboard.sleep.state_off" = "Off";
+
+/* General settings: the collapsed section with the three pmset commands.
+   Display and copy only — the app never runs them. */
+"settings.sleep.section" = "System sleep settings";
+"settings.sleep.intro" = "macOS has its own, stronger sleep setting for the whole machine. The two buttons in the overview do not change it — that takes the Terminal.";
+"settings.sleep.caption_status" = "Show status";
+"settings.sleep.caption_off" = "Never sleep";
+"settings.sleep.caption_on" = "Sleep as usual again";
+"settings.sleep.copy" = "Copy command";
+"settings.sleep.copied" = "Copied";
+"settings.sleep.note" = "The two sudo commands ask for the account password in Terminal. With disablesleep = 1 the two buttons in the overview have no additional effect.";
+
+/* Team overview: folder picker, age of a report, rejected pastes */
+"team.folder.choose_message" = "Pick the shared folder — the team's reports land there.";
+"team.folder.choose_prompt" = "Choose folder";
+"team.report.just_now" = "just now";
+"team.report.stale" = "Outdated";
+"team.import.no_team" = "Create a team first.";
+"team.import.no_folder" = "No folder chosen.";
+"team.import.invalid_json" = "That is not a valid report.";
+"team.import.too_large" = "The text is too long.";
+"team.import.wrong_team" = "The report belongs to a different team.";
+"team.import.write_failed" = "The report could not be saved to the folder.";
+
+/* Team setup — card at the bottom of the Accounts tab */
+"team.settings.title" = "Team";
+"team.settings.intro" = "Every Claude account in the team at a glance — the reports travel through a shared folder.";
+"team.settings.name_placeholder" = "Team name";
+"team.settings.create" = "Create team";
+"team.settings.join_hint" = "Already got a team ID? Enter it here instead of creating your own team.";
+"team.settings.join" = "Join";
+"team.settings.id_label" = "Team ID";
+"team.settings.copy_id" = "Copy team ID";
+"team.settings.folder_label" = "Folder";
+"team.settings.folder_none" = "None yet";
+"team.settings.folder_change" = "Change folder";
+"team.settings.folder_unreachable" = "Not reachable";
+"team.settings.reports_count" = "Reports in the folder: %d";
+"team.settings.leave" = "Remove team";
+"team.settings.leave_confirm_title" = "Remove team?";
+"team.settings.leave_confirm_message" = "The shared folder and the reports in it stay untouched. You need the team ID to come back.";
+"team.settings.leave_confirm_button" = "Remove";
+"team.settings.copy_instructions" = "Copy instructions";
+"team.settings.copied" = "Copied";
+"team.settings.paste_title" = "Paste a report";
+"team.settings.paste_hint" = "For anyone who cannot reach the shared folder: paste the report they sent here.";
+"team.settings.paste_apply" = "Add";
+"team.settings.paste_accepted" = "Report from %@ added.";
+
+/* Ready-made text for colleagues — the button puts it on the clipboard */
+"team.instructions.template" = "Report your Claude usage\n\nTeam ID: %@\n\n1. Run in Terminal: bash team-report.sh\n2. Enter the team ID when asked.\n3. Drop the resulting file into our shared folder — or just send me the text.\n\nYour session key stays on your machine. Only percentages and reset times are shared.";
+
+/* Team overview in its own window */
+"team.window.title" = "Team";
+"team.view.people" = "People: %d";
+"team.view.at_limit" = "Nearly at the limit: %d";
+"team.view.at_limit_help" = "Weekly limit at 90 % or more.";
+"team.view.reported" = "reported %@";
+
+/* Empty states — each one names the next step */
+"team.empty.no_team" = "No team yet.";
+"team.empty.no_team_step" = "Create a team in Settings, under Accounts.";
+"team.empty.open_settings" = "Open settings";
+"team.empty.no_folder" = "No shared folder.";
+"team.empty.no_folder_step" = "Pick a folder everyone in the team can see — in iCloud, Dropbox or on a server.";
+"team.empty.no_reports" = "No reports yet.";
+"team.empty.no_reports_step" = "Copy the instructions and send them to the team.";
+"team.empty.unreachable" = "Folder not reachable.";
+"team.empty.unreachable_step" = "Is the share mounted? Otherwise pick the folder again.";

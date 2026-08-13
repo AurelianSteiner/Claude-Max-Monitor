@@ -10,7 +10,7 @@ import SwiftUI
 import ServiceManagement
 
 /// 通用设置页面
-/// 卡片顺序：总览 → 刷新 → 通知 → 外观（含菜单栏/时间/语言）→ 开机启动
+/// 卡片顺序：总览 → 刷新 → 通知 → 外观（含菜单栏/时间/语言）→ 开机启动 → 系统睡眠
 /// 各卡片内容按主题拆到 GeneralSettings*Section.swift，保持本文件体量可控
 struct GeneralSettingsView: View {
     @ObservedObject private var settings = UserSettings.shared
@@ -108,6 +108,11 @@ struct GeneralSettingsView: View {
                         }
                     }
                 }
+
+                // Terminal-Befehle für den System-Schlaf — nur Anzeige und
+                // Kopieren, eingeklappt. Steht direkt unter „Beim Login
+                // starten", weil beides das System betrifft und nicht die App.
+                GeneralSettingsSleepSection()
 
                 // 重置按钮
                 HStack {

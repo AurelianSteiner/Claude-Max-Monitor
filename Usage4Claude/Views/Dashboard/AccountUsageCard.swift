@@ -12,7 +12,11 @@
 //  Freischaltung genau dieses Fensters herunter. Darunter die frei
 //  konfigurierbaren übrigen Limits als Zeilen.
 //
-//  Klick auf die Karte macht das Konto zum aktiven, dem die Menüleiste folgt.
+//  Die Karte selbst ist nicht anklickbar: Sie machte das Konto früher zum
+//  „aktiven", was die Menüleiste steuerte — die zeigt inzwischen alle Konten,
+//  der Klick verstellte also etwas Unsichtbares und der blaue Rand markierte
+//  eine Auswahl ohne Wirkung. Umstellen geht weiter über das Rechtsklick-Menü.
+//  Angeklickt werden nur noch die Limit-Zeilen (verbraucht ↔ übrig).
 //  Copyright © 2025 f-is-h. All rights reserved.
 //
 
@@ -20,10 +24,9 @@ import SwiftUI
 
 struct AccountUsageCard: View {
     let snapshot: AccountUsageSnapshot
-    /// Aktives Konto des jeweiligen Anbieters (dem die Menüleiste folgt).
-    /// Wird nur noch durch den farbigen Kartenrand angezeigt.
-    let isCurrent: Bool
     @Binding var showRemainingMode: Bool
+    /// Konto zum aktiven Konto seines Anbieters machen — nur aus dem
+    /// Rechtsklick-Menü heraus, siehe Dateikopf.
     let onSelect: () -> Void
     let onRefresh: () -> Void
     let onOpenAuthSettings: () -> Void
@@ -68,27 +71,25 @@ struct AccountUsageCard: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(borderColor, lineWidth: isCurrent ? 1.5 : 1)
+                .strokeBorder(borderColor, lineWidth: 1)
         )
+        // Trägt das Rechtsklick-Menü über die ganze Karte, auch über die
+        // Leerflächen zwischen den Zahlen.
         .contentShape(RoundedRectangle(cornerRadius: 12))
         .onHover { isHovering = $0 }
         .animation(.easeInOut(duration: 0.15), value: isHovering)
-        .onTapGesture(perform: onSelect)
         .contextMenu {
             Button(action: onRefresh) {
                 Label(L.Dashboard.refreshAccount, systemImage: "arrow.clockwise")
             }
-            if !isCurrent {
-                Button(action: onSelect) {
-                    Label(L.Dashboard.makeActive, systemImage: "checkmark.circle")
-                }
+            Button(action: onSelect) {
+                Label(L.Dashboard.makeActive, systemImage: "checkmark.circle")
             }
         }
     }
 
     private var borderColor: Color {
-        if isCurrent { return Color.accentColor.opacity(0.55) }
-        return Color.primary.opacity(isHovering ? 0.18 : 0.08)
+        Color.primary.opacity(isHovering ? 0.18 : 0.08)
     }
 
     // MARK: - Kopfbereich
