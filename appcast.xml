@@ -3,6 +3,19 @@
     <channel>
         <title>Claude Max Monitor</title>
         <item>
+            <title>1.9</title>
+            <pubDate>Thu, 13 Aug 2026 23:14:33 +0000</pubDate>
+            <sparkle:version>1.9</sparkle:version>
+            <sparkle:shortVersionString>1.9</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[Das Team läuft jetzt ausschließlich über den Server — der Weg über den geteilten Ordner ist entfallen, eine vorhandene Ordner-Verbindung wird beim Start still entfernt. Die Team-Karte besteht nur noch aus Verbinden, Rolle und Mitglieder-Verwaltung. Außerdem kennen die Wachhalte-Schalter jetzt die Systemeinstellungen: Steht der Mac systemweit auf 'nie schlafen', sagt Always On das offen, statt Wirkung vorzutäuschen.]]></description>
+            <enclosure
+                url="https://github.com/AurelianSteiner/Claude-Max-Monitor/releases/download/v1.9/Claude-Max-Monitor-1.9.dmg"
+                sparkle:edSignature="aDV6Oa/3sun9iFgZOnpsAyQQ6XP7jYXtzzrWJtdWpnAJx3npjOyqSTIBKyoMFDVr578yeyx+Lo/7sUGwAhmYDA=="
+                length="5666212"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>1.8</title>
             <pubDate>Thu, 13 Aug 2026 12:36:56 +0000</pubDate>
             <sparkle:version>1.8</sparkle:version>
