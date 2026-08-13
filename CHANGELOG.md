@@ -1,5 +1,18 @@
 # Änderungen
 
+## 1.4
+
+- Die Punkte oben zeigen jetzt beide Fenster auf einmal: Die Füllung folgt dem
+  Wochenlimit — grün bis fünf Prozent, blau während der Nutzung, rot ab neunzig
+  Prozent — und ein roter Ring markiert ein aufgebrauchtes Fünf-Stunden-Fenster.
+  Der Tooltip nennt beide Werte.
+- Neue Anzeigeart für die Menüleiste: ein Punkt je Konto statt der Ringe. Das ist
+  schmal genug, um neben der Notch nicht zu verschwinden.
+- Die Schalter zum Wachhalten stehen auch im Menü der Übersicht, nicht mehr nur
+  im Rechtsklick-Menü.
+- Über-Fenster, Einrichtungshilfe und Diagnosebericht verweisen auf dieses
+  Projekt; die letzten Reste des früheren Produktnamens sind verschwunden.
+
 ## 1.3
 
 - Fast erschöpfte Konten werden nicht mehr ausgegraut. Stattdessen läuft auf der
