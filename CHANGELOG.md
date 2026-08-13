@@ -1,5 +1,16 @@
 # Änderungen
 
+## 1.9
+
+- Der Weg über den geteilten Ordner ist entfallen — das Team läuft ausschließlich
+  über den Server. Eine vorhandene Ordner-Verbindung wird beim Start still
+  entfernt; die Team-Karte besteht nur noch aus Verbinden, Rolle und
+  Mitglieder-Verwaltung.
+- Die Wachhalte-Schalter kennen jetzt die Systemeinstellungen: Steht der Mac
+  systemweit auf „nie schlafen" (sudo pmset disablesleep 1), sagt Always On das
+  offen im Tooltip, statt Wirkung vorzutäuschen. Die Einstellungen zeigen die
+  aktuellen pmset-Werte live über den kopierbaren Befehlen.
+
 ## 1.8
 
 - Team-Übersicht: Alle Claude-Konten des Teams auf einen Blick, eine Karte pro
