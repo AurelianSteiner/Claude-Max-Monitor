@@ -1,5 +1,22 @@
 # Änderungen
 
+## 1.6
+
+- Die Meldung „neue Version verfügbar" verschwindet endlich. Die App trug intern
+  dauerhaft die Nummer 1.0, weshalb der Update-Dienst dieselbe Fassung endlos
+  angeboten hat.
+- Die Einstellungen enthalten nur noch, was gebraucht wird. Die Menüleiste zeigt
+  fest einen Punkt je Account; Symbol- und Prozentauswahl, die Limit-Kästchen,
+  der Verbindungstest, die Session-Key-Anleitung und die Kontoauswahl sind
+  entfallen. Bestehende Installationen werden auf die Punkte umgestellt.
+- Die Schalter zum Wachhalten stehen nur noch als Symbole in der Übersicht. Ihre
+  Kurzinfo erklärt jetzt, was sie bewirken — und dass ein geschlossener Deckel den
+  Mac weiterhin schlafen legt.
+- Die Karten benennen, was gesperrt ist: die Sitzung, die Woche oder alles. Der
+  Countdown zählt zu genau dem Limit, das im Text steht.
+- Zwischen Warnschwelle und wirklich aufgebrauchtem Fenster sagt die Kurzinfo der
+  Punkte „fast aufgebraucht".
+
 ## 1.5
 
 - Die beiden Schalter zum Wachhalten sitzen jetzt als Symbole oben in der
