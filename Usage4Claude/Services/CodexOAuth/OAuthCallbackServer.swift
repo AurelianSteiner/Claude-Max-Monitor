@@ -170,8 +170,8 @@ final class OAuthCallbackServer {
         let title = success ? "Signed in" : "Sign-in failed"
         let heading = success ? "✅ Signed in successfully" : "⚠️ Sign-in failed"
         let message = success
-            ? "You can close this tab and return to Usage4Claude."
-            : "Something went wrong. Please return to Usage4Claude and try again."
+            ? "You can close this tab and return to Claude Max Monitor."
+            : "Something went wrong. Please return to Claude Max Monitor and try again."
         return """
         <!DOCTYPE html><html><head><meta charset="utf-8"><title>\(title)</title></head>
         <body style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;text-align:center;padding-top:80px;color:#1d1d1f;background:#f5f5f7">

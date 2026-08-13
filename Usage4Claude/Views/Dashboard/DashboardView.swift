@@ -119,6 +119,9 @@ struct DashboardView: View {
 
     @ObservedObject private var settings = UserSettings.shared
     @StateObject private var localization = LocalizationManager.shared
+    /// Wach-Schalter im „…"-Menü — beobachtet, damit die Häkchen sofort mitziehen,
+    /// egal ob hier oder im Rechtsklick-Menü umgeschaltet wurde.
+    @ObservedObject private var sleepGuard = SleepGuard.shared
 
     /// 与详情窗口共用同一个开关，两处的"剩余 / 已用"显示保持一致
     @AppStorage("showRemainingMode") private var savedRemainingMode = false
@@ -288,25 +291,41 @@ struct DashboardView: View {
     }
 
     private func trafficDot(for snapshot: AccountUsageSnapshot) -> some View {
+        TrafficLightDot(
+            weeklyUtilization: snapshot.weeklyPeakUtilization,
+            sessionExhausted: snapshot.sessionExhausted
+        )
+        .help(trafficDotHelp(for: snapshot))
+    }
+
+    /// Tooltip je Punkt: „Name – Woche 87 %, Sitzung 42 %". Aufgebrauchte Fenster
+    /// werden benannt, fehlende Daten ebenfalls — der Punkt allein sagt sonst nicht,
+    /// ob 0 % „frisch" oder „noch nichts geladen" heißt.
+    private func trafficDotHelp(for snapshot: AccountUsageSnapshot) -> String {
         let weekly = snapshot.weeklyPeakUtilization
-        return Circle()
-            .fill(WeeklyTrafficLight.color(for: weekly))
-            .frame(width: 10, height: 10)
-            .help(trafficDotHelp(for: snapshot, weekly: weekly))
+        let weeklyExhausted = (weekly ?? 0) >= WeeklyTrafficLight.exhaustedThreshold
+        return L.Dashboard.dotHelp(
+            snapshot.account.displayName,
+            trafficDotValue(weekly, exhausted: weeklyExhausted),
+            trafficDotValue(snapshot.sessionLimit?.percentage, exhausted: snapshot.sessionExhausted)
+        )
     }
 
-    /// Tooltip je Punkt: „Name: 87 % · Wochenlimit". Ohne Wochendaten nur der Name.
-    private func trafficDotHelp(for snapshot: AccountUsageSnapshot, weekly: Double?) -> String {
-        let name = snapshot.account.displayName
-        guard let weekly else { return name }
-        return "\(name): \(Int(weekly.rounded()))% · \(L.Dashboard.weeklyLimit)"
+    /// Ein Wert im Tooltip: „87 %" bzw. „100 % (aufgebraucht)", ohne Daten „keine Daten".
+    /// „Aufgebraucht" folgt je Fenster genau der Schwelle, die auch die Optik treibt:
+    /// Woche ab 90 % (rote Füllung), Sitzung ab 96 % (roter Ring).
+    private func trafficDotValue(_ percentage: Double?, exhausted: Bool) -> String {
+        guard let percentage else { return L.Dashboard.dotNoData }
+        let value = "\(Int(percentage.rounded()))%"
+        return exhausted ? "\(value) (\(L.Dashboard.dotUsedUp))" : value
     }
 
-    /// Punkte pro Zeile aus der verfügbaren Breite: Punkt (10) + Abstand (6).
-    /// Für ≤ 8 Konten passt alles in eine Zeile, erst darüber wird umgebrochen.
+    /// Punkte pro Zeile aus der verfügbaren Breite: Platzbedarf eines Punkts
+    /// inklusive Ring (17) + Abstand (6). Für ≤ 7 Konten passt alles in eine Zeile,
+    /// erst darüber wird umgebrochen.
     private var trafficDotsPerRow: Int {
         let available = DashboardMetrics.width(columns: columnCount) - DashboardMetrics.outerPadding * 2
-        let stride: CGFloat = 10 + 6
+        let stride = TrafficDotMetrics.footprint + 6
         return max(1, Int(available / stride))
     }
 
@@ -389,6 +408,27 @@ struct DashboardView: View {
             }
             Button(action: { onMenuAction?(.about) }) {
                 Label(L.Menu.about, systemImage: "info.circle")
+            }
+            Divider()
+            // Wach halten — dieselben Schalter wie im Rechtsklick-Menü, damit man
+            // sie nicht erst durch Schließen der Übersicht erreicht.
+            // Machart wie beim Sortiermenü: Button mit Häkchen statt Label mit Symbol,
+            // sonst konkurriert das Symbol im Menüeintrag mit der Zustandsanzeige.
+            Button(action: { sleepGuard.toggleDisplayAwake() }) {
+                HStack {
+                    Text(L.Menu.keepDisplayAwake)
+                    if sleepGuard.isDisplayAwake {
+                        Spacer(); Image(systemName: "checkmark")
+                    }
+                }
+            }
+            Button(action: { sleepGuard.toggleSystemAwake() }) {
+                HStack {
+                    Text(L.Menu.keepMacAwake)
+                    if sleepGuard.isSystemAwake {
+                        Spacer(); Image(systemName: "checkmark")
+                    }
+                }
             }
             Divider()
             if !settings.accounts.isEmpty {

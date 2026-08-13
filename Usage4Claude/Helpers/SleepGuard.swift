@@ -102,7 +102,7 @@ final class SleepGuard: ObservableObject {
         if enabled {
             let created = createAssertion(
                 type: kIOPMAssertionTypeNoDisplaySleep,
-                reason: "Usage4Claude: Bildschirm wach halten",
+                reason: "Claude Max Monitor: Bildschirm wach halten",
                 id: &displayAssertionID
             )
             isDisplayAwake = created
@@ -125,7 +125,7 @@ final class SleepGuard: ObservableObject {
         if enabled {
             let created = createAssertion(
                 type: kIOPMAssertionTypePreventUserIdleSystemSleep,
-                reason: "Usage4Claude: Mac wach halten",
+                reason: "Claude Max Monitor: Mac wach halten",
                 id: &systemAssertionID
             )
             isSystemAwake = created

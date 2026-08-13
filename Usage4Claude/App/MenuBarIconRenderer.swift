@@ -28,7 +28,17 @@ class MenuBarIconRenderer {
     init(settings: UserSettings = .shared) {
         self.settings = settings
     }
-    
+
+    // MARK: - Display Mode
+
+    /// Anzeigemodus für die *Ring*-Pfade weiter unten.
+    /// Die Punktreihe wird ganz oben in `createIcon` abgefangen; kommt der Code
+    /// trotzdem hier an, liegen für die Punkte noch keine Kontodaten vor — dann
+    /// zeigt die Menüleiste weiter das gewohnte Bild statt gar nichts.
+    private var effectiveDisplayMode: IconDisplayMode {
+        settings.iconDisplayMode == .accountDots ? .percentageOnly : settings.iconDisplayMode
+    }
+
     // MARK: - Public API
 
     /// 创建菜单栏图标
@@ -44,6 +54,23 @@ class MenuBarIconRenderer {
         hasUpdate: Bool,
         button: NSStatusBarButton?
     ) -> NSImage {
+        // Punktreihe aller Konten: eigener, sehr schmaler Pfad — er ersetzt die
+        // Ringe komplett und interessiert sich weder für UsageData des aktuellen
+        // Kontos noch für die Limit-Auswahl.
+        if settings.iconDisplayMode == .accountDots {
+            let dots = MenuBarAccountDots.shared.currentStates()
+            if !dots.isEmpty {
+                // Für die Punkte zählt allein die Theme-Wahl: die Farben sind unsere
+                // eigene Ampel, nicht die limitabhängige Palette der Ringe.
+                let dotsMonochrome = settings.iconStyleMode == .monochrome
+                var icon = createAccountDotsIcon(states: dots, isMonochrome: dotsMonochrome, button: button)
+                if hasUpdate { icon = addBadgeToImage(icon) }
+                return icon
+            }
+            // Noch keine Daten geladen → unten weiter mit der bisherigen Darstellung
+            // (siehe `effectiveDisplayMode`), statt eine leere Fläche zu zeigen.
+        }
+
         // 确定单色/彩色模式
         let isMonochrome: Bool
         if let data = usageData {
@@ -74,7 +101,7 @@ class MenuBarIconRenderer {
             guard let data = usageData else {
                 let size = NSSize(width: 22, height: 22)
                 let defaultIcon: NSImage
-                if settings.iconDisplayMode == .none {
+                if effectiveDisplayMode == .none {
                     defaultIcon = createMenuBarDividerIcon(isMonochrome: isMonochrome)
                 } else {
                     defaultIcon = isMonochrome ?
@@ -87,8 +114,10 @@ class MenuBarIconRenderer {
 
             let activeTypes = settings.getActiveDisplayTypes(usageData: data, forMenuBar: true)
 
-            switch settings.iconDisplayMode {
-            case .percentageOnly:
+            switch effectiveDisplayMode {
+            // `.accountDots` landet hier nur als Rückfall (noch keine Kontodaten),
+            // dann sieht die Menüleiste aus wie bisher: Ringe des aktuellen Kontos.
+            case .percentageOnly, .accountDots:
                 icon = createCombinedPercentageIcon(data: data, types: activeTypes, isMonochrome: isMonochrome, button: button)
             case .iconOnly:
                 let iconName = isMonochrome ? "AppIconReverse" : "AppIcon"
@@ -121,18 +150,22 @@ class MenuBarIconRenderer {
     ) -> NSImage {
         var icons: [NSImage] = []
 
-        switch settings.iconDisplayMode {
+        // `.accountDots` erreicht diesen Pfad nur als Rückfall ohne Kontodaten und
+        // verhält sich dann wie `.percentageOnly` (siehe `effectiveDisplayMode`).
+        let mode = effectiveDisplayMode
+
+        switch mode {
         case .iconOnly:
             let iconName = isMonochrome ? "AppIconReverse" : "AppIcon"
             if let copy = ImageHelper.createSquareIcon(named: iconName, size: providerBrandIconSize, isTemplate: isMonochrome) {
                 icons.append(copy)
             }
 
-        case .percentageOnly, .both:
+        case .percentageOnly, .both, .accountDots:
             // Claude 部分
             let claudeIcons = claudeTypes.compactMap { createIconForType($0, data: data, isMonochrome: isMonochrome, button: button) }
             if !claudeIcons.isEmpty {
-                if settings.iconDisplayMode == .both {
+                if mode == .both {
                     let iconName = isMonochrome ? "AppIconReverse" : "AppIcon"
                     if let copy = ImageHelper.createSquareIcon(named: iconName, size: providerBrandIconSize, isTemplate: isMonochrome) {
                         icons.append(copy)
@@ -144,9 +177,9 @@ class MenuBarIconRenderer {
             // Codex 部分
             let codexIcons = buildCodexIcons(codex: codex, types: codexTypes, isMonochrome: isMonochrome, button: button)
             if !codexIcons.isEmpty {
-                if settings.iconDisplayMode == .percentageOnly, !claudeIcons.isEmpty {
+                if mode == .percentageOnly, !claudeIcons.isEmpty {
                     icons.append(createMenuBarDividerIcon(isMonochrome: isMonochrome))
-                } else if settings.iconDisplayMode == .both,
+                } else if mode == .both,
                    let brand = createProviderBrandIcon(.codex, isMonochrome: isMonochrome, size: providerBrandIconSize) {
                     icons.append(brand)
                 }
@@ -170,16 +203,20 @@ class MenuBarIconRenderer {
         isMonochrome: Bool,
         button: NSStatusBarButton?
     ) -> NSImage {
-        switch settings.iconDisplayMode {
+        // `.accountDots` erreicht diesen Pfad nur als Rückfall ohne Kontodaten und
+        // verhält sich dann wie `.percentageOnly` (siehe `effectiveDisplayMode`).
+        let mode = effectiveDisplayMode
+
+        switch mode {
         case .none:
             return createMenuBarDividerIcon(isMonochrome: isMonochrome)
 
         case .iconOnly:
             return createProviderBrandIcon(.codex, isMonochrome: isMonochrome, size: providerBrandIconSize) ?? createSimpleCircleIcon()
 
-        case .percentageOnly, .both:
+        case .percentageOnly, .both, .accountDots:
             var icons: [NSImage] = []
-            if settings.iconDisplayMode == .both,
+            if mode == .both,
                let brand = createProviderBrandIcon(.codex, isMonochrome: isMonochrome, size: providerBrandIconSize) {
                 icons.append(brand)
             }
@@ -285,6 +322,133 @@ class MenuBarIconRenderer {
         return combined
     }
     
+    // MARK: - Account Dots (Punktreihe aller Konten)
+
+    /// Maße der Menüleisten-Punktreihe. Bewusst kleiner als die Ampelpunkte der
+    /// Übersicht (`TrafficDotMetrics`): hier zählt jeder Punkt Breite. Fünf Konten
+    /// belegen so ~70 pt statt ~100 pt für fünf Ringe — genau darum geht es auf
+    /// MacBooks mit Notch, wo macOS zu breite Statusleisten-Symbole ausblendet.
+    private enum AccountDotMetrics {
+        /// Durchmesser der farbigen Fläche (Wochenlage)
+        static let fillDiameter: CGFloat = 7.5
+        /// Luft zwischen Fläche und Sitzungsring
+        static let ringGap: CGFloat = 1
+        /// Strichstärke des Sitzungsrings
+        static let ringWidth: CGFloat = 1
+        /// Abstand zwischen zwei Punkten
+        static let spacing: CGFloat = 3
+        /// Platzbedarf eines Punkts inklusive Ring (7,5 + 2 × (1 + 1) = 11,5)
+        static var footprint: CGFloat { fillDiameter + 2 * (ringGap + ringWidth) }
+    }
+
+    /// Zeichnet eine Punktreihe: ein Punkt je Konto.
+    ///
+    /// Reihenfolge ist die **Hinzufüge-Reihenfolge** der Konten (Claude vor Codex),
+    /// nicht die Sortierung der Übersicht: In der Menüleiste soll ein Punkt seinen
+    /// Platz behalten, damit man sich „der dritte Punkt ist mein Zweitkonto" merken
+    /// kann. Die Übersicht darf umsortieren, hier wäre das nur Gezappel.
+    /// - Parameters:
+    ///   - states: Zustände aus `MenuBarAccountDots` (bereits auf Ampelstufe reduziert)
+    ///   - isMonochrome: Einfarbig-Modus → Template-Bild ohne Farbe
+    private func createAccountDotsIcon(
+        states: [MenuBarDotState],
+        isMonochrome: Bool,
+        button: NSStatusBarButton?
+    ) -> NSImage {
+        let footprint = AccountDotMetrics.footprint
+        let height = metricIconSize
+        let width = CGFloat(states.count) * footprint
+            + CGFloat(max(0, states.count - 1)) * AccountDotMetrics.spacing
+
+        let image = NSImage(size: NSSize(width: max(width, footprint), height: height))
+        image.lockFocus()
+
+        // Dynamische Systemfarben (systemGreen, labelColor …) lösen sich nach der
+        // *aktuellen* Zeichen-Appearance auf. Ohne diesen Wechsel zöge die Fenster-
+        // statt der Menüleisten-Darstellung, und die Punkte wären im dunklen Modus
+        // zu blass.
+        let appearance = button?.effectiveAppearance ?? NSApp.effectiveAppearance
+        appearance.performAsCurrentDrawingAppearance {
+            drawAccountDots(states, isMonochrome: isMonochrome, height: height)
+        }
+
+        image.unlockFocus()
+        // Einfarbig = Template-Bild: macOS wertet nur die Deckkraft aus und färbt
+        // selbst ein. Farbe wäre dort wirkungslos, deshalb codiert im Einfarbig-Modus
+        // die *Füllung* den Zustand (siehe `drawAccountDots`).
+        image.isTemplate = isMonochrome
+        return image
+    }
+
+    private func drawAccountDots(_ states: [MenuBarDotState], isMonochrome: Bool, height: CGFloat) {
+        let footprint = AccountDotMetrics.footprint
+        let fill = AccountDotMetrics.fillDiameter
+        let centerY = height / 2
+        var x: CGFloat = 0
+
+        for state in states {
+            let centerX = x + footprint / 2
+            let fillRect = NSRect(
+                x: centerX - fill / 2,
+                y: centerY - fill / 2,
+                width: fill,
+                height: fill
+            )
+            let fillPath = NSBezierPath(ovalIn: fillRect)
+
+            if isMonochrome {
+                // Ohne Farbe trägt die Füllung die Aussage:
+                // voller Punkt = Woche aufgebraucht, hohler Punkt = noch Luft,
+                // dünner hohler Punkt = noch keine Daten.
+                switch state.bucket {
+                case .exhausted:
+                    NSColor.labelColor.setFill()
+                    fillPath.fill()
+                case .fresh, .inUse:
+                    NSColor.labelColor.setStroke()
+                    fillPath.lineWidth = 1.4
+                    fillPath.stroke()
+                case .noData:
+                    NSColor.labelColor.withAlphaComponent(0.5).setStroke()
+                    fillPath.lineWidth = 0.8
+                    fillPath.stroke()
+                }
+            } else {
+                weeklyDotColor(for: state.bucket).setFill()
+                fillPath.fill()
+            }
+
+            if state.sessionExhausted {
+                // Sitzungsfenster aufgebraucht → Ring außen, genau wie beim
+                // Ampelpunkt der Übersicht: Füllung = Woche, Ring = Sitzung.
+                let ringDiameter = footprint - AccountDotMetrics.ringWidth
+                let ringRect = NSRect(
+                    x: centerX - ringDiameter / 2,
+                    y: centerY - ringDiameter / 2,
+                    width: ringDiameter,
+                    height: ringDiameter
+                )
+                let ringPath = NSBezierPath(ovalIn: ringRect)
+                ringPath.lineWidth = AccountDotMetrics.ringWidth
+                (isMonochrome ? NSColor.labelColor : NSColor.systemRed).setStroke()
+                ringPath.stroke()
+            }
+
+            x += footprint + AccountDotMetrics.spacing
+        }
+    }
+
+    /// Farben der Punktreihe — dieselbe Ampel wie `WeeklyTrafficLight` in der
+    /// Übersicht, nur als `NSColor`, weil hier mit `NSBezierPath` gezeichnet wird.
+    private func weeklyDotColor(for bucket: MenuBarDotState.WeeklyBucket) -> NSColor {
+        switch bucket {
+        case .noData: return NSColor.secondaryLabelColor.withAlphaComponent(0.5)
+        case .fresh: return .systemGreen
+        case .inUse: return .systemBlue
+        case .exhausted: return .systemRed
+        }
+    }
+
     // MARK: - Icon Drawing - Colored Mode (彩色模式)
 
     private func createCircleImage(percentage: Double, size: NSSize, useSevenDayColor: Bool = false, colorOverride: NSColor? = nil, useDashedStyle: Bool = false, button: NSStatusBarButton?, removeBackground: Bool = false) -> NSImage {

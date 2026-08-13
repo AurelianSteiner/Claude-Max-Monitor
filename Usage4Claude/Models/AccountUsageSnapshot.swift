@@ -77,6 +77,17 @@ struct AccountUsageSnapshot: Identifiable {
         return peak >= Self.nearExhaustionThreshold
     }
 
+    /// True, wenn das **Sitzungsfenster** (5 Stunden bzw. Codex primary) praktisch
+    /// aufgebraucht ist. Trägt in der Übersicht den roten Ring um den Ampelpunkt,
+    /// während die Füllung weiterhin die Wochenlage zeigt.
+    /// Bewusst dieselbe Schwelle wie `isNearExhausted` (`nearExhaustionThreshold`),
+    /// damit die App nur einen Begriff von „praktisch aufgebraucht" kennt.
+    /// Ohne Daten (kein Sitzungslimit geliefert) false.
+    var sessionExhausted: Bool {
+        guard let session = sessionLimit else { return false }
+        return session.percentage >= Self.nearExhaustionThreshold
+    }
+
     /// 圆环要展示的一项限制，标签已解析好
     struct RingLimit {
         let type: LimitType

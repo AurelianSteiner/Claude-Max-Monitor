@@ -405,7 +405,7 @@ struct SetupStepView: View {
     /// - Parameter section: README 章节
     /// - Returns: 对应语言和章节的 GitHub README URL
     private func getGitHubReadmeURL(section: ReadmeSection) -> String {
-        let baseURL = "https://github.com/f-is-h/Usage4Claude/blob/main"
+        let baseURL = "https://github.com/AurelianSteiner/Claude-Max-Monitor/blob/main"
         let language = settings.language
 
         switch language {

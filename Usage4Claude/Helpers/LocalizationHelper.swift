@@ -101,6 +101,15 @@ enum L {
         static var sessionLimit: String { localized("dashboard.session_limit") }
         /// Überschrift des Countdowns auf praktisch aufgebrauchten Karten
         static var freeAgain: String { localized("dashboard.free_again") }
+        /// Platzhalter im Ampel-Tooltip, solange für ein Fenster nichts vorliegt
+        static var dotNoData: String { localized("dashboard.dot_no_data") }
+        /// Zusatz im Ampel-Tooltip, wenn ein Fenster praktisch aufgebraucht ist
+        static var dotUsedUp: String { localized("dashboard.dot_used_up") }
+
+        /// Tooltip eines Ampelpunkts: Kontoname, Wochen- und Sitzungswert
+        static func dotHelp(_ name: String, _ weekly: String, _ session: String) -> String {
+            String(format: localized("dashboard.dot_help"), name, weekly, session)
+        }
 
         static func updatedAt(_ time: String) -> String {
             String(format: localized("dashboard.updated_at"), time)
@@ -243,6 +252,8 @@ enum L {
         static var none: String { localized("display.none") }
         static var showIcon: String { localized("display.show_icon") }
         static var showPercentage: String { localized("display.show_percentage") }
+        /// Name des Menüleisten-Modus „ein Punkt je Konto"
+        static var accountDots: String { localized("display.account_dots") }
     }
     
     // MARK: - Icon Style Mode
@@ -448,6 +459,12 @@ enum L {
         static var coloredThemeUnavailable: String { localized("colored_theme_unavailable") }
         static var menuBarOnlyToggle: String { localized("custom_display.menu_bar_only_toggle") }
         static var menuBarOnlyDescription: String { localized("custom_display.menu_bar_only_description") }
+        /// Überschrift der Auswahl „Ringe oder Punktreihe in der Menüleiste"
+        static var menuBarLayout: String { localized("display_options.menu_bar_layout") }
+        /// Erste Option: die bisherige Ring-Darstellung des aktuellen Kontos
+        static var menuBarLayoutRings: String { localized("display_options.menu_bar_layout_rings") }
+        /// Erklärung zur Punktreihe unter der Auswahl
+        static var accountDotsDescription: String { localized("display_options.account_dots_description") }
     }
 
     // MARK: - Launch at Login

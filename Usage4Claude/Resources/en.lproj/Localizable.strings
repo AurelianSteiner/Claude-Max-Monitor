@@ -127,6 +127,7 @@
 "display.none" = "No Display";
 "display.show_icon" = "Show Icon";
 "display.show_percentage" = "Show Percentage";
+"display.account_dots" = "Dots (all accounts)";
 
 // MARK: - Refresh Interval
 "refresh.smart_mode" = "Smart Frequency";
@@ -267,6 +268,9 @@
 "colored_theme_unavailable" = "Colored themes are only available when showing 1-2 circular icons without other types";
 "custom_display.menu_bar_only_toggle" = "Apply only to menu bar";
 "custom_display.menu_bar_only_description" = "When on, the popover ignores this selection and shows all available limits.";
+"display_options.menu_bar_layout" = "Menu bar";
+"display_options.menu_bar_layout_rings" = "Rings (current account)";
+"display_options.account_dots_description" = "One dot per account: the fill shows the weekly load (gray without data, green fresh, blue in use, red used up), a red ring marks an exhausted 5-hour window. Far narrower than the rings — even next to the notch.";
 
 // MARK: - Theme Selection (v2.0.0)
 "theme_selection" = "Theme";
@@ -474,3 +478,6 @@
 "dashboard.weekly_limit" = "Weekly limit";
 "dashboard.session_limit" = "Session limit";
 "dashboard.free_again" = "Free again";
+"dashboard.dot_help" = "%1$@ — week %2$@, session %3$@";
+"dashboard.dot_no_data" = "no data";
+"dashboard.dot_used_up" = "used up";

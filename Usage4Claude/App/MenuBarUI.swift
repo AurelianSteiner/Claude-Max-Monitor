@@ -47,11 +47,49 @@ class MenuBarUI {
     /// 图标渲染器 - 负责所有图标绘制逻辑
     private let iconRenderer = MenuBarIconRenderer()
 
+    // MARK: - Account Dots
+
+    /// Letzte Zeichen-Parameter, damit die Punktreihe sich ohne Zutun von
+    /// `MenuBarManager` neu zeichnen kann, wenn neue Kontodaten eintreffen
+    private var lastIconInput: IconInput?
+    /// Abo auf Änderungen der Punktreihe (schwach auf self, kein Zyklus zum Singleton)
+    private var accountDotsCancellable: AnyCancellable?
+
+    /// Eingabe eines Icon-Aufbaus, gebündelt für den Neuaufbau nach Datenänderung
+    private struct IconInput {
+        let usageData: UsageData?
+        let codexUsageData: CodexUsageData?
+        let hasUpdate: Bool
+        let shouldShowBadge: Bool
+    }
+
     // MARK: - Initialization
 
     init() {
         setupStatusItem()
         setupPopover()
+        observeAccountDots()
+    }
+
+    /// Punktreihe an den Refresh-Pfad hängen: `MenuBarAccountDots` meldet jede
+    /// Änderung (auf dem Main-Thread), wir zeichnen mit den zuletzt benutzten
+    /// Parametern neu. Der Cache-Key enthält den Punktzustand, ein Leeren des
+    /// Caches ist deshalb nicht nötig.
+    private func observeAccountDots() {
+        MenuBarAccountDots.shared.start()
+
+        accountDotsCancellable = MenuBarAccountDots.shared.didChange
+            .sink { [weak self] in
+                guard let self = self,
+                      self.settings.iconDisplayMode == .accountDots,
+                      let last = self.lastIconInput else { return }
+                self.updateMenuBarIcon(
+                    usageData: last.usageData,
+                    codexUsageData: last.codexUsageData,
+                    hasUpdate: last.hasUpdate,
+                    shouldShowBadge: last.shouldShowBadge
+                )
+            }
     }
 
     // MARK: - Status Item Setup
@@ -567,6 +605,14 @@ class MenuBarUI {
     func updateMenuBarIcon(usageData: UsageData?, codexUsageData: CodexUsageData? = nil, hasUpdate: Bool, shouldShowBadge: Bool) {
         guard let button = statusItem.button else { return }
 
+        // Für den Neuaufbau nach einem Dashboard-Refresh merken
+        lastIconInput = IconInput(
+            usageData: usageData,
+            codexUsageData: codexUsageData,
+            hasUpdate: hasUpdate,
+            shouldShowBadge: shouldShowBadge
+        )
+
         // 确定是否实际显示徽章
         let showBadge = hasUpdate && shouldShowBadge
 
@@ -612,6 +658,24 @@ class MenuBarUI {
     /// - Returns: 缓存键字符串
     private func generateCacheKey(usageData: UsageData?, codexUsageData: CodexUsageData? = nil, hasUpdate: Bool) -> String {
         let isMulti = settings.isMultiProviderActive
+
+        // Punktreihe: Der Schlüssel muss Anzahl *und* Zustand jedes Punkts enthalten,
+        // sonst serviert der Cache nach einem Refresh das alte Bild. Die Kontodaten
+        // selbst stecken nicht in `usageData` (das ist nur das aktuelle Konto),
+        // deshalb wird hier derselbe Stand gelesen, den der Renderer gleich zeichnet
+        // — beide Aufrufe laufen synchron im selben Durchlauf auf dem Main-Thread.
+        if settings.iconDisplayMode == .accountDots {
+            let dots = MenuBarAccountDots.shared.currentStates()
+            if !dots.isEmpty {
+                var key = "dots_\(settings.iconStyleMode.rawValue)_n\(dots.count)_"
+                    + dots.map(\.cacheToken).joined(separator: "-")
+                if hasUpdate { key += "_badge" }
+                return key
+            }
+            // Leer = Rückfall auf die Ring-Darstellung; der Modus steckt unten
+            // ohnehin im Schlüssel, damit sich beide Bilder nicht überschreiben.
+        }
+
         guard let data = usageData else {
             var key = "no_data_\(settings.iconDisplayMode.rawValue)_\(settings.iconStyleMode.rawValue)_\(settings.displayMode.rawValue)_mp\(isMulti)"
             if let codex = codexUsageData {

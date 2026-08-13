@@ -13,6 +13,10 @@ import SwiftUI
 struct GeneralSettingsDisplayOptionsSection: View {
     @ObservedObject private var settings = UserSettings.shared
 
+    /// Gemerkter Ring-Modus, damit das Zurückschalten von der Punktreihe nicht
+    /// stumm auf „Nur Prozent" fällt, wenn vorher „Symbol und Prozent" gewählt war
+    @State private var ringModeBeforeDots: IconDisplayMode = .percentageOnly
+
     var body: some View {
         SettingCard(
             icon: "rectangle.3.group",
@@ -21,6 +25,37 @@ struct GeneralSettingsDisplayOptionsSection: View {
             hint: settings.displayMode == .smart ? L.DisplayOptions.smartDisplayDescription : L.DisplayOptions.customDisplayDescription
         ) {
             VStack(alignment: .leading, spacing: 16) {
+                // Menüleiste: Ringe des aktuellen Kontos oder ein Punkt je Konto
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(L.DisplayOptions.menuBarLayout)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.secondary)
+
+                    Picker("", selection: accountDotsBinding) {
+                        Text(L.DisplayOptions.menuBarLayoutRings).tag(false)
+                        Text(L.Display.accountDots).tag(true)
+                    }
+                    .pickerStyle(.radioGroup)
+                    .labelsHidden()
+                    .focusable(false)
+
+                    if settings.iconDisplayMode == .accountDots {
+                        HStack(alignment: .top, spacing: 4) {
+                            Image(systemName: "info.circle.fill")
+                                .font(.caption2)
+                                .foregroundColor(.blue)
+                            Text(L.DisplayOptions.accountDotsDescription)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.leading, 20)
+                    }
+                }
+
+                Divider()
+
                 // 显示模式选择
                 VStack(alignment: .leading, spacing: 8) {
                     Text(L.DisplayOptions.displayModeLabel)
@@ -111,6 +146,25 @@ struct GeneralSettingsDisplayOptionsSection: View {
     }
 
     // MARK: - Display Options Helpers
+
+    /// Umschalter zwischen Ring-Darstellung und Punktreihe.
+    /// Die Punktreihe ist ein eigener `IconDisplayMode`; beim Zurückschalten wird
+    /// der zuvor aktive Ring-Modus wiederhergestellt.
+    private var accountDotsBinding: Binding<Bool> {
+        Binding(
+            get: { settings.iconDisplayMode == .accountDots },
+            set: { useDots in
+                if useDots {
+                    if settings.iconDisplayMode != .accountDots {
+                        ringModeBeforeDots = settings.iconDisplayMode
+                    }
+                    settings.iconDisplayMode = .accountDots
+                } else if settings.iconDisplayMode == .accountDots {
+                    settings.iconDisplayMode = ringModeBeforeDots == .accountDots ? .percentageOnly : ringModeBeforeDots
+                }
+            }
+        )
+    }
 
     /// 判断是否只剩一个圆形图标
     private var hasOnlyOneCircularIcon: Bool {

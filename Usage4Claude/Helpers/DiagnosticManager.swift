@@ -72,7 +72,7 @@ class DiagnosticManager: ObservableObject {
         let savePanel = NSSavePanel()
         savePanel.title = L.Diagnostic.exportTitle
         savePanel.message = L.Diagnostic.exportMessage
-        savePanel.nameFieldStringValue = "Usage4Claude_Diagnostic_\(formatFilenameDate()).md"
+        savePanel.nameFieldStringValue = "ClaudeMaxMonitor_Diagnostic_\(formatFilenameDate()).md"
         savePanel.allowedContentTypes = [.plainText]
         savePanel.canCreateDirectories = true
 

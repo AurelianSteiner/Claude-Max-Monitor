@@ -24,6 +24,10 @@ enum IconDisplayMode: String, CaseIterable, Codable {
     case both = "both"
     /// 不显示图标（双 Provider 时显示尖头分隔线）
     case none = "no_display"
+    /// Ein kleiner Ampelpunkt je Konto statt der Ringe des aktuellen Kontos —
+    /// dieselbe Aussage wie die Punktreihe der Übersicht, aber schmal genug,
+    /// dass macOS die Menüleiste neben der Notch nicht abschneidet.
+    case accountDots = "account_dots"
 
     var localizedName: String {
         switch self {
@@ -35,6 +39,8 @@ enum IconDisplayMode: String, CaseIterable, Codable {
             return L.Display.both
         case .none:
             return L.Display.none
+        case .accountDots:
+            return L.Display.accountDots
         }
     }
 }

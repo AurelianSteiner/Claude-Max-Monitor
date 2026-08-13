@@ -82,25 +82,78 @@ enum DashboardPalette {
 
 // MARK: - Ampel (Wochen-Auslastung)
 
-/// Dreistufige Skala für die Punktreihe ganz oben in der Übersicht — sie
-/// beantwortet nur eine Frage: Ist das Konto frisch, in Benutzung oder durch?
+/// Dreistufige Skala für die **Füllung** der Punktreihe ganz oben in der Übersicht —
+/// sie beantwortet nur eine Frage: Ist die Woche frisch, in Benutzung oder durch?
 ///
 /// Schwellen (Wochen-Auslastung):
-/// · Grün  = frisch/unbenutzt, 0 % bis einschließlich 5 %
-/// · Blau  = in Benutzung, über 5 % und unter 100 %
-/// · Rot   = erschöpft, ab 100 %
 /// · Grau  = noch keine Wochendaten (`nil`)
+/// · Grün  = frisch/unbenutzt, 0 % bis einschließlich 5 %
+/// · Blau  = in Benutzung, über 5 % und unter 90 %
+/// · Rot   = praktisch aufgebraucht, ab 90 % — und bleibt darüber rot (auch bei 100 %+)
+///
+/// Das schnelle 5-Stunden-Fenster steckt bewusst **nicht** in dieser Farbe:
+/// Es hängt als roter Ring außen am Punkt (`TrafficLightDot`), damit „Woche durch"
+/// und „Sitzung durch" nicht dasselbe Signal geben.
 ///
 /// Bewusst Systemfarben, damit die Punkte in hellem und dunklem
 /// Erscheinungsbild gleichermaßen tragen.
 enum WeeklyTrafficLight {
+    /// Bis einschließlich hier gilt die Woche als frisch/unbenutzt → grün
+    static let freshThreshold: Double = 5
+    /// Ab hier gilt die Woche als praktisch aufgebraucht → rot
+    static let exhaustedThreshold: Double = 90
+
     static func color(for utilization: Double?) -> Color {
         guard let value = utilization else { return Color.secondary.opacity(0.35) }
-        switch value {
-        case ...5:     return .green
-        case ..<100:   return .blue
-        default:       return .red
+        if value <= freshThreshold { return .green }
+        if value < exhaustedThreshold { return .blue }
+        return .red
+    }
+}
+
+/// Maße des Ampelpunkts. Die Punktreihe rechnet mit `footprint`, wenn sie
+/// bestimmt, wie viele Punkte in eine Zeile passen — deshalb liegen die Werte
+/// hier und nicht als Literale in der View.
+enum TrafficDotMetrics {
+    /// Durchmesser der farbigen Fläche (Wochenlage)
+    static let fillDiameter: CGFloat = 10
+    /// Luft zwischen Fläche und Ring, damit ein roter Ring auf roter Fläche
+    /// nicht zu einem Klumpen verschmilzt
+    static let ringGap: CGFloat = 1.5
+    /// Strichstärke des Sitzungsrings
+    static let ringWidth: CGFloat = 2
+    /// Gesamter Platzbedarf eines Punkts inklusive Ring (10 + 2 × (1,5 + 2) = 17)
+    static var footprint: CGFloat { fillDiameter + 2 * (ringGap + ringWidth) }
+}
+
+/// Ein Punkt der Ampelreihe: **Füllung = Woche, Ring = Sitzung**.
+///
+/// · volle grüne/blaue Fläche, kein Ring → Woche in Ordnung, Sitzung in Ordnung
+/// · Ring rot                            → 5-Stunden-Fenster aufgebraucht
+/// · Fläche rot                          → Woche aufgebraucht
+/// · Fläche rot + Ring rot               → beides aufgebraucht
+///
+/// Der Ring wird außen gezeichnet (`strokeBorder` auf dem vollen Platzbedarf),
+/// die Fläche behält ihre Größe — so bleibt die Reihe ruhig und der Ring kommt
+/// nicht ins Gehege mit der Farbe darunter.
+struct TrafficLightDot: View {
+    /// Wochen-Auslastung (0–100), `nil` = keine Daten
+    let weeklyUtilization: Double?
+    /// Sitzungsfenster praktisch aufgebraucht?
+    let sessionExhausted: Bool
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(WeeklyTrafficLight.color(for: weeklyUtilization))
+                .frame(width: TrafficDotMetrics.fillDiameter, height: TrafficDotMetrics.fillDiameter)
+
+            if sessionExhausted {
+                Circle()
+                    .strokeBorder(Color.red, lineWidth: TrafficDotMetrics.ringWidth)
+            }
         }
+        .frame(width: TrafficDotMetrics.footprint, height: TrafficDotMetrics.footprint)
     }
 }
 

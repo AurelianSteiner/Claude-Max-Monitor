@@ -126,6 +126,7 @@
 "display.none" = "Keine Anzeige";
 "display.show_icon" = "Symbol anzeigen";
 "display.show_percentage" = "Prozent anzeigen";
+"display.account_dots" = "Punkte (alle Konten)";
 
 // MARK: - Refresh Interval
 "refresh.smart_mode" = "Intelligente Frequenz";
@@ -266,6 +267,9 @@
 "colored_theme_unavailable" = "Farbige Themes sind nur verfügbar, wenn 1–2 kreisförmige Symbole ohne andere Typen angezeigt werden";
 "custom_display.menu_bar_only_toggle" = "Nur auf Menüleiste anwenden";
 "custom_display.menu_bar_only_description" = "Wenn aktiviert, ignoriert das Popover diese Auswahl und zeigt alle verfügbaren Limits an.";
+"display_options.menu_bar_layout" = "Menüleiste";
+"display_options.menu_bar_layout_rings" = "Ringe (aktuelles Konto)";
+"display_options.account_dots_description" = "Ein Punkt je Konto: Die Füllung zeigt die Wochenlage (grau ohne Daten, grün frisch, blau in Benutzung, rot aufgebraucht), ein roter Ring das aufgebrauchte 5-Stunden-Fenster. Deutlich schmaler als die Ringe – auch neben der Notch.";
 
 // MARK: - Theme Selection (v2.0.0)
 "theme_selection" = "Theme";
@@ -473,3 +477,6 @@
 "dashboard.weekly_limit" = "Wochenlimit";
 "dashboard.session_limit" = "Stundenlimit";
 "dashboard.free_again" = "Wieder frei";
+"dashboard.dot_help" = "%1$@ – Woche %2$@, Sitzung %3$@";
+"dashboard.dot_no_data" = "keine Daten";
+"dashboard.dot_used_up" = "aufgebraucht";
