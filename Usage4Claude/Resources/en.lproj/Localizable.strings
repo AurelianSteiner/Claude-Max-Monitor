@@ -383,6 +383,11 @@
 "account.claude_accounts" = "Claude Accounts";
 "account.codex_accounts" = "Codex Accounts";
 "account.add_codex_account" = "Add Codex Account";
+"account.kind.company" = "Company";
+"account.kind.personal" = "Personal";
+"account.kind.unknown" = "Unknown";
+"account.kind.label" = "Type";
+"account.kind.hint" = "The type only changes the icon on the card.";
 
 /* Codex OAuth Login (system browser) */
 "weblogin.codex_oauth_preparing" = "Preparing sign-in…";
@@ -438,10 +443,12 @@
 /* Lock badge on an account card — names the window that is actually blocked */
 "dashboard.lock.session" = "Session locked";
 "dashboard.lock.weekly" = "Week locked";
-"dashboard.lock.everything" = "Everything locked";
 "dashboard.lock.session_help" = "The 5-hour window is used up. The week still has room, so work continues as soon as it resets.";
 "dashboard.lock.weekly_help" = "The weekly limit is used up. Nothing runs through this account until the weekly reset — no matter how free the 5-hour window is.";
-"dashboard.lock.everything_help" = "The weekly limit and the 5-hour window are both used up. Nothing runs through this account until the weekly reset.";
+
+/* Stay-awake switches in the overview header — short label next to the symbol */
+"dashboard.sleep.display_label" = "Display";
+"dashboard.sleep.system_label" = "Mac";
 
 /* Stay-awake switches in the overview header */
 "dashboard.sleep.display_help" = "The screen no longer turns itself off, and the Mac stays awake with it. Applies only while Claude Max Monitor is running.";

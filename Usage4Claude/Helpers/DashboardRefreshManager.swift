@@ -156,10 +156,17 @@ final class DashboardRefreshManager: ObservableObject {
             }
         }
 
-        // 账户列表没变化时不写 @Published，避免视图无谓重建
+        // 账户列表没变化时不写 @Published，避免视图无谓重建。
+        // Verglichen wird alles, was die Karte anzeigt: Ohne Alias und Art blieben
+        // die Karten nach einer Umbenennung bzw. einem Wechsel Firma/Privat auf dem
+        // alten Stand, weil die Snapshots ihre eigene Kopie des Kontos halten.
+        // (`Account ==` vergleicht nur die id und taugt hier deshalb nicht.)
         let unchanged = rebuilt.count == snapshots.count
             && zip(rebuilt, snapshots).allSatisfy {
-                $0.id == $1.id && $0.account.sessionKey == $1.account.sessionKey
+                $0.id == $1.id
+                    && $0.account.sessionKey == $1.account.sessionKey
+                    && $0.account.alias == $1.account.alias
+                    && $0.account.kind == $1.account.kind
             }
         if !unchanged {
             snapshots = rebuilt

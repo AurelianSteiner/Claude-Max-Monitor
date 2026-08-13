@@ -297,6 +297,7 @@ struct DashboardView: View {
 
             Text(L.Dashboard.title)
                 .font(.headline)
+                .lineLimit(1)
 
             Text("\(orderedSnapshots.count)")
                 .font(.system(size: 10, weight: .semibold))
@@ -307,10 +308,15 @@ struct DashboardView: View {
 
             Spacer(minLength: 8)
 
-            sleepGuardButtons
-            sortMenu
-            refreshButton
-            actionMenu
+            // Etwas enger als der Rest des Kopfes: Die beschrifteten
+            // Wach-Schalter brauchen den Platz, und die Symbolknöpfe haben in
+            // ihren 20-pt-Feldern ohnehin Luft.
+            HStack(spacing: 6) {
+                sleepGuardButtons
+                sortMenu
+                refreshButton
+                actionMenu
+            }
         }
         .padding(.horizontal, DashboardMetrics.outerPadding)
         .frame(height: DashboardMetrics.headerHeight)
@@ -338,6 +344,7 @@ struct DashboardView: View {
             sleepGuardButton(
                 isOn: sleepGuard.isDisplayAwake,
                 symbol: "sun.max",
+                caption: L.Dashboard.sleepDisplayLabel,
                 label: L.Menu.keepDisplayAwake,
                 detail: L.Dashboard.sleepDisplayHelp,
                 action: { sleepGuard.toggleDisplayAwake() }
@@ -345,6 +352,7 @@ struct DashboardView: View {
             sleepGuardButton(
                 isOn: sleepGuard.isSystemAwake,
                 symbol: "cup.and.saucer",
+                caption: L.Dashboard.sleepSystemLabel,
                 label: L.Menu.keepMacAwake,
                 detail: L.Dashboard.sleepSystemHelp,
                 action: { sleepGuard.toggleSystemAwake() }
@@ -352,29 +360,49 @@ struct DashboardView: View {
         }
     }
 
-    /// Ein Wach-Schalter: aktiv = gefülltes Symbol in Akzentfarbe auf getönter
-    /// Fläche, inaktiv = Umriss in Grau. Der Zustand ist damit ohne Häkchen und
-    /// ohne Tooltip zu erkennen.
+    /// Ein Wach-Schalter: Symbol *und* ein kurzes Wort daneben — ohne die
+    /// Beschriftung musste man die Symbole erst per Tooltip entziffern.
+    /// Symbol und Wort sind eine gemeinsame Schaltfläche.
+    /// Aktiv = gefülltes Symbol in Akzentfarbe auf getönter Fläche,
+    /// inaktiv = Umriss in Grau. Der Zustand ist damit ohne Häkchen und ohne
+    /// Tooltip zu erkennen.
+    ///
+    /// Platz: Die schmalste mögliche Ansicht ist eine Spalte — 396 pt breit,
+    /// im popover fest, beim Fenster als Mindestbreite (siehe
+    /// `DashboardWindowManager`). Der ganze Kopf misst dort mit Beschriftung
+    /// 379 pt (deutsch, zweistelliger Zähler; „Bildschirm" ist das längste
+    /// Wort), passt also überall hinein. Die Beschriftungen stehen deshalb
+    /// immer — nur falls doch einmal etwas fehlt, kürzt der Titel und nicht
+    /// die Beschriftung, die ja gerade den Zweck erklärt.
     private func sleepGuardButton(
         isOn: Bool,
         symbol: String,
+        caption: String,
         label: String,
         detail: String,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Image(systemName: isOn ? "\(symbol).fill" : symbol)
-                .font(.system(size: 12))
-                .foregroundColor(isOn ? .accentColor : .secondary)
-                .frame(width: 20, height: 20)
-                .background(
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(isOn ? Color.accentColor.opacity(0.15) : Color.clear)
-                )
+            HStack(spacing: 3) {
+                Image(systemName: isOn ? "\(symbol).fill" : symbol)
+                    .font(.system(size: 12))
+                Text(caption)
+                    .font(.system(size: 10))
+                    .lineLimit(1)
+                    .fixedSize()
+            }
+            .foregroundColor(isOn ? .accentColor : .secondary)
+            .padding(.horizontal, 4)
+            .frame(height: 20)
+            .background(
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(isOn ? Color.accentColor.opacity(0.15) : Color.clear)
+            )
         }
         .buttonStyle(.plain)
         .focusable(false)
         .help(sleepGuardHelp(label: label, detail: detail, isOn: isOn))
+        .accessibilityLabel(label)
     }
 
     /// Tooltip eines Wach-Schalters: Beschriftung samt aktuellem Zustand, darunter

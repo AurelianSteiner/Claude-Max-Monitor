@@ -50,6 +50,15 @@ enum L {
         static var claudeAccounts: String { localized("account.claude_accounts") }
         static var codexAccounts: String { localized("account.codex_accounts") }
         static var addCodexAccount: String { localized("account.add_codex_account") }
+
+        // Firma oder privat? Steht als kleines Symbol neben dem Kontonamen und
+        // trennt so das Team-Konto vom privaten Abo auf derselben Email.
+        static var kindCompany: String { localized("account.kind.company") }
+        static var kindPersonal: String { localized("account.kind.personal") }
+        static var kindUnknown: String { localized("account.kind.unknown") }
+        /// Beschriftung und Erklärung des Auswahlfelds in den Einstellungen
+        static var kindLabel: String { localized("account.kind.label") }
+        static var kindHint: String { localized("account.kind.hint") }
     }
     
     // MARK: - Usage Detail View
@@ -105,10 +114,13 @@ enum L {
         // auf der Karte stehen, nicht nur im Countdown.
         static var lockSession: String { localized("dashboard.lock.session") }
         static var lockWeekly: String { localized("dashboard.lock.weekly") }
-        static var lockEverything: String { localized("dashboard.lock.everything") }
         static var lockSessionHelp: String { localized("dashboard.lock.session_help") }
         static var lockWeeklyHelp: String { localized("dashboard.lock.weekly_help") }
-        static var lockEverythingHelp: String { localized("dashboard.lock.everything_help") }
+
+        // Kurze Beschriftung neben den Symbolen der beiden Wach-Schalter —
+        // ein Wort, damit man nicht erst den Tooltip abwarten muss.
+        static var sleepDisplayLabel: String { localized("dashboard.sleep.display_label") }
+        static var sleepSystemLabel: String { localized("dashboard.sleep.system_label") }
 
         // Erklärtexte der beiden Wach-Schalter im Kopf
         static var sleepDisplayHelp: String { localized("dashboard.sleep.display_help") }

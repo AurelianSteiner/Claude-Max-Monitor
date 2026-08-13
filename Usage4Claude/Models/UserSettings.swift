@@ -1072,6 +1072,14 @@ class UserSettings: ObservableObject {
         accountStore.updateAccount(account, alias: alias)
     }
 
+    /// 更新账户类型（公司 / 私人）
+    /// - Parameters:
+    ///   - account: 要更新的账户
+    ///   - kind: 手动选择的类型，覆盖登录时的自动识别
+    func updateAccount(_ account: Account, kind: AccountKind) {
+        accountStore.updateAccount(account, kind: kind)
+    }
+
     /// 用于显示的账户列表
     var displayAccounts: [Account] { accountStore.displayAccounts }
 

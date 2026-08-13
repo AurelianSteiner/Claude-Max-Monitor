@@ -92,7 +92,9 @@ struct AuthSettingsView: View {
             icon: "person.2.fill",
             iconColor: .blue,
             title: L.Account.listTitle,
-            hint: settings.accounts.isEmpty && !hasCodex ? "" : L.Account.aliasHint
+            hint: settings.accounts.isEmpty && !hasCodex
+                ? ""
+                : "\(L.Account.aliasHint) \(L.Account.kindHint)"
         ) {
             VStack(alignment: .leading, spacing: 12) {
                 if settings.accounts.isEmpty && !hasCodex {
@@ -274,6 +276,10 @@ struct AuthSettingsView: View {
                     .help(L.Account.clearAlias)
                 }
 
+                if provider == .claude {
+                    kindPicker(for: account)
+                }
+
                 Button(action: {
                     if provider == .codex {
                         codexAccountToDelete = account
@@ -298,6 +304,39 @@ struct AuthSettingsView: View {
                 .padding(.leading, 22)
         }
         .padding(.vertical, 2)
+    }
+
+    // MARK: - Art (Firma / Privat)
+
+    /// Firma oder privat, direkt in der Zeile. Der Login rät die Art beim
+    /// Anmelden; hier steht dann sein Ergebnis und lässt sich überschreiben.
+    /// Dieselben Symbole wie auf der Karte, damit die Zuordnung sichtbar ist.
+    /// Nur für Claude-Konten: Codex kennt die Unterscheidung bisher nicht.
+    private func kindPicker(for account: Account) -> some View {
+        Picker(L.Account.kindLabel, selection: kindBinding(for: account)) {
+            ForEach(AccountKind.allCases, id: \.self) { kind in
+                kindOption(kind).tag(kind)
+            }
+        }
+        .pickerStyle(.menu)
+        .fixedSize()
+        .help(L.Account.kindHint)
+    }
+
+    @ViewBuilder
+    private func kindOption(_ kind: AccountKind) -> some View {
+        if let symbol = kind.symbolName {
+            Label(kind.localizedName, systemImage: symbol)
+        } else {
+            Text(kind.localizedName)
+        }
+    }
+
+    private func kindBinding(for account: Account) -> Binding<AccountKind> {
+        Binding(
+            get: { account.kind },
+            set: { settings.updateAccount(account, kind: $0) }
+        )
     }
 
     // MARK: - Alias

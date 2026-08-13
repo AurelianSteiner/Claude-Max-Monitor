@@ -8,7 +8,7 @@
 //  Linie getrennt rechts groß das Wochenlimit — die Zahl, an der die Planung
 //  hängt. Beide Seiten tragen ihr eigenes Label und ihre eigene Reset-Zeit.
 //  Ist ein Fenster aufgebraucht, steht daneben eine Sperr-Plakette: sie
-//  benennt, *was* gesperrt ist (Sitzung / Woche / alles), und zählt bis zur
+//  benennt, *was* gesperrt ist (Sitzung oder Woche), und zählt bis zur
 //  Freischaltung genau dieses Fensters herunter. Darunter die frei
 //  konfigurierbaren übrigen Limits als Zeilen.
 //
@@ -99,10 +99,14 @@ struct AccountUsageCard: View {
                 .padding(.top, 1)
 
             VStack(alignment: .leading, spacing: 1) {
-                Text(snapshot.account.displayName)
-                    .font(.system(size: 12, weight: .semibold))
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+                HStack(spacing: 4) {
+                    Text(snapshot.account.displayName)
+                        .font(.system(size: 12, weight: .semibold))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+
+                    kindIcon
+                }
 
                 // Anmelde-Email als zweite Zeile — bei Konten, deren Anzeigename
                 // ohnehin die Email ist, entfällt sie (siehe Account.secondaryLabel).
@@ -127,6 +131,18 @@ struct AccountUsageCard: View {
                 .focusable(false)
                 .help(L.Dashboard.refreshAccount)
             }
+        }
+    }
+
+    /// Firma oder privat — beides kann auf derselben Email liegen. Bei
+    /// unbekannter Art bleibt die Stelle leer, statt eine Vermutung zu zeigen.
+    @ViewBuilder
+    private var kindIcon: some View {
+        if let symbol = snapshot.account.kind.symbolName {
+            Image(systemName: symbol)
+                .font(.system(size: 9))
+                .foregroundColor(.secondary)
+                .help(snapshot.account.kind.localizedName)
         }
     }
 
@@ -240,38 +256,41 @@ struct AccountUsageCard: View {
     private enum LockState {
         /// Nur das Sitzungsfenster (5 Stunden bzw. Codex primary) ist aufgebraucht
         case session
-        /// Nur die Woche ist aufgebraucht, die Sitzung hätte noch Luft
+        /// Die Woche ist aufgebraucht
         case weekly
-        /// Woche und Sitzung sind beide aufgebraucht
-        case everything
     }
 
-    /// Die Wochenlage entscheidet zuerst — sie ist die bindende Sperre.
+    /// Die Wochenlage entscheidet zuerst — sie ist die bindende Sperre. Ist die
+    /// Woche zu, läuft über das Konto ohnehin nichts mehr; ob die Sitzung
+    /// zusätzlich voll ist, ändert daran nichts und bleibt deshalb unerwähnt.
     /// `nil` heißt: nichts ist zu, die Plakette bleibt weg. Ein volles
     /// Extra-Kontingent allein sperrt nichts und zählt hier bewusst nicht mit.
     private var lockState: LockState? {
-        let weeklyLocked = (snapshot.weeklyPeakUtilization ?? 0) >= AccountUsageSnapshot.nearExhaustionThreshold
-        switch (weeklyLocked, snapshot.sessionExhausted) {
-        case (true, true):   return .everything
-        case (true, false):  return .weekly
-        case (false, true):  return .session
-        case (false, false): return nil
+        if hasWeeklyWindow, (snapshot.weeklyPeakUtilization ?? 0) >= AccountUsageSnapshot.nearExhaustionThreshold {
+            return .weekly
         }
+        return snapshot.sessionExhausted ? .session : nil
+    }
+
+    /// „Woche gesperrt" nur behaupten, wenn es überhaupt ein Wochenfenster gibt.
+    /// Liefert Codex kein 7-Tage-Fenster, ist `weeklyPeakUtilization` dort nur
+    /// eine Näherung aus dem Sitzungsfenster — die Plakette hätte sonst die Woche
+    /// benannt und dazu einen leeren Countdown gezeigt, obwohl die Sitzung zu ist.
+    private var hasWeeklyWindow: Bool {
+        snapshot.weeklyLimit != nil || !(snapshot.usageData?.weeklyModels.isEmpty ?? true)
     }
 
     private func lockTitle(_ state: LockState) -> String {
         switch state {
-        case .session:    return L.Dashboard.lockSession
-        case .weekly:     return L.Dashboard.lockWeekly
-        case .everything: return L.Dashboard.lockEverything
+        case .session: return L.Dashboard.lockSession
+        case .weekly:  return L.Dashboard.lockWeekly
         }
     }
 
     private func lockDetail(_ state: LockState) -> String {
         switch state {
-        case .session:    return L.Dashboard.lockSessionHelp
-        case .weekly:     return L.Dashboard.lockWeeklyHelp
-        case .everything: return L.Dashboard.lockEverythingHelp
+        case .session: return L.Dashboard.lockSessionHelp
+        case .weekly:  return L.Dashboard.lockWeeklyHelp
         }
     }
 
@@ -279,8 +298,8 @@ struct AccountUsageCard: View {
     /// sonst stünde unter „Woche gesperrt" die Restzeit der Sitzung.
     private func lockResetsAt(_ state: LockState) -> Date? {
         switch state {
-        case .session:              return snapshot.sessionLimit?.resetsAt
-        case .weekly, .everything:  return weeklyLockResetsAt
+        case .session: return snapshot.sessionLimit?.resetsAt
+        case .weekly:  return weeklyLockResetsAt
         }
     }
 
@@ -303,9 +322,9 @@ struct AccountUsageCard: View {
     /// Ersetzt das frühere Ausgrauen: Statt die Karte zu dämpfen, benennt eine
     /// Plakette das gesperrte Fenster und zählt bis zu dessen Freischaltung herunter.
     /// Die Sitzung bekommt den milderen Ton (sie kommt bald zurück), die Woche den
-    /// kräftigen — und wenn beides zu ist, gewinnt die Wochenaussage.
+    /// kräftigen.
     private func lockBadge(_ state: LockState) -> some View {
-        let isWeekly = state != .session
+        let isWeekly = state == .weekly
         // Farbstufe der Skala: 80 % = Clay-Orange (mild), 100 % = Rot (kräftig)
         let level: Double = isWeekly ? 100 : 80
         let resetsAt = lockResetsAt(state)

@@ -206,14 +206,16 @@ final class ClaudeOAuthCoordinator: ObservableObject {
         }
     }
 
-    private func createAccount(tokens: ClaudeOAuthTokens, profile: Result<(email: String, orgId: String, orgName: String), Error>) {
+    private func createAccount(tokens: ClaudeOAuthTokens, profile: Result<(email: String, orgId: String, orgName: String, kind: AccountKind), Error>) {
         guard !finished else { return }
 
         var email = ""
         var orgId = ""
+        var kind: AccountKind = .unknown
         if case .success(let p) = profile {
             email = p.email
             orgId = p.orgId
+            kind = p.kind
         }
         let displayName = email.isEmpty ? "Claude" : email
         // organizationId 用组织 uuid（缺失时退回 email），与旧 cookie 账户的去重标识一致
@@ -222,6 +224,9 @@ final class ClaudeOAuthCoordinator: ObservableObject {
         // 迁移：addAccount 对已存在的 organizationId 会直接跳过，故先移除同标识的旧账户再添加
         if !stableOrgId.isEmpty,
            let existing = UserSettings.shared.accounts.first(where: { $0.organizationId == stableOrgId }) {
+            // Eine manuell gesetzte Kontoart überlebt die Neuanmeldung, solange
+            // das Profil selbst nichts Belastbares liefert.
+            if kind == .unknown { kind = existing.kind }
             UserSettings.shared.removeAccount(existing)
         }
 
@@ -232,7 +237,8 @@ final class ClaudeOAuthCoordinator: ObservableObject {
             alias: nil,
             provider: .claude
         ,
-            email: email)
+            email: email,
+            kind: kind)
         UserSettings.shared.addAccount(account)
         UserSettings.shared.switchToAccount(account)
 

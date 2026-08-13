@@ -57,11 +57,11 @@ enum ClaudeOAuthService {
 
     // MARK: - 账户信息（用于账户显示名）
 
-    /// 拉取 profile，返回 (email, 组织 uuid, 组织名)
+    /// 拉取 profile，返回 (email, 组织 uuid, 组织名, 账户类型)
     /// 组织 uuid 用作账户的 organizationId（与旧 cookie 账户的去重标识一致，便于迁移）
     static func fetchProfile(
         accessToken: String,
-        completion: @escaping (Result<(email: String, orgId: String, orgName: String), Error>) -> Void
+        completion: @escaping (Result<(email: String, orgId: String, orgName: String, kind: AccountKind), Error>) -> Void
     ) {
         guard let url = URL(string: ClaudeOAuthConfig.profileURL) else {
             completion(.failure(UsageError.invalidURL))
@@ -81,8 +81,60 @@ enum ClaudeOAuthService {
             let org = json["organization"] as? [String: Any]
             let orgId = org?["uuid"] as? String ?? ""
             let orgName = org?["name"] as? String ?? email
-            completion(.success((email: email, orgId: orgId, orgName: orgName)))
+            logOrganizationKeysOnce(org)
+            let kind = accountKind(fromOrganization: org)
+            completion(.success((email: email, orgId: orgId, orgName: orgName, kind: kind)))
         }.resume()
+    }
+
+    // MARK: - Firma oder privat?
+
+    /// Anthropic dokumentiert im Profil kein festes Feld für „Team vs. privates
+    /// Abo". Deshalb werden mehrere plausible Schlüssel abgeklopft — alle
+    /// optional gelesen, fehlende oder unerwartete Formen ergeben `.unknown`.
+    /// Aus dem Organisationsnamen wird bewusst **nicht** geraten.
+    static func accountKind(fromOrganization org: [String: Any]?) -> AccountKind {
+        guard let org else { return .unknown }
+
+        // 1) Direkte Typ-Felder
+        for key in ["organization_type", "billing_type", "type"] {
+            if let raw = org[key] as? String {
+                let detected = kind(fromMarker: raw)
+                if detected != .unknown { return detected }
+            }
+        }
+
+        // 2) capabilities: Liste von Markern wie "claude_max" / "raven"
+        if let markers = (org["capabilities"] as? [Any])?.compactMap({ $0 as? String }) {
+            if markers.contains(where: { kind(fromMarker: $0) == .company }) { return .company }
+            if markers.contains(where: { kind(fromMarker: $0) == .personal }) { return .personal }
+        }
+
+        return .unknown
+    }
+
+    /// Firmen-Marker gewinnen: „claude_team" ist ein Firmenkonto, auch wenn
+    /// „claude" nach dem privaten Abo klingt.
+    private static func kind(fromMarker raw: String) -> AccountKind {
+        let value = raw.lowercased()
+        let company = ["team", "enterprise", "business", "raven", "work"]
+        let personal = ["max", "pro", "individual", "personal", "consumer", "free"]
+        if company.contains(where: { value.contains($0) }) { return .company }
+        if personal.contains(where: { value.contains($0) }) { return .personal }
+        return .unknown
+    }
+
+    /// Einmal pro Programmlauf die **Schlüsselnamen** des organization-Objekts
+    /// loggen (nie die Werte — dort stehen Firmenname und uuid). Damit lassen
+    /// sich die echten Feldnamen aus einem realen Login ablesen und die Erkennung
+    /// oben später schärfen.
+    private static var didLogOrganizationKeys = false
+
+    private static func logOrganizationKeysOnce(_ org: [String: Any]?) {
+        guard !didLogOrganizationKeys, let org else { return }
+        didLogOrganizationKeys = true
+        let keys = org.keys.sorted().joined(separator: ", ")
+        Logger.api.debug("Claude profile organization keys: \(keys, privacy: .public)")
     }
 
     // MARK: - Private

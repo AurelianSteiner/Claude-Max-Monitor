@@ -382,6 +382,11 @@
 "account.claude_accounts" = "Claude Accounts";
 "account.codex_accounts" = "Codex Accounts";
 "account.add_codex_account" = "Codex Account hinzufügen";
+"account.kind.company" = "Firma";
+"account.kind.personal" = "Privat";
+"account.kind.unknown" = "Unbekannt";
+"account.kind.label" = "Art";
+"account.kind.hint" = "Die Art ändert nur das Symbol auf der Karte.";
 
 /* Codex OAuth Login (system browser) */
 "weblogin.codex_oauth_preparing" = "Anmeldung wird vorbereitet…";
@@ -437,10 +442,12 @@
 /* Sperr-Plakette auf der Konto-Karte — benennt das Fenster, das wirklich zu ist */
 "dashboard.lock.session" = "Sitzung gesperrt";
 "dashboard.lock.weekly" = "Woche gesperrt";
-"dashboard.lock.everything" = "Alles gesperrt";
 "dashboard.lock.session_help" = "Das 5-Stunden-Fenster ist aufgebraucht. Die Woche hat noch Luft — nach dem Reset geht es sofort weiter.";
 "dashboard.lock.weekly_help" = "Das Wochenlimit ist aufgebraucht. Bis zum Wochen-Reset läuft über diesen Account nichts mehr — egal, wie frei das 5-Stunden-Fenster ist.";
-"dashboard.lock.everything_help" = "Wochenlimit und 5-Stunden-Fenster sind beide aufgebraucht. Bis zum Wochen-Reset läuft über diesen Account nichts mehr.";
+
+/* Wach-Schalter im Kopf der Übersicht — kurze Beschriftung neben dem Symbol */
+"dashboard.sleep.display_label" = "Bildschirm";
+"dashboard.sleep.system_label" = "Mac";
 
 /* Wach-Schalter im Kopf der Übersicht */
 "dashboard.sleep.display_help" = "Der Bildschirm schaltet sich nicht mehr von selbst aus, und der Mac bleibt dabei ebenfalls wach. Gilt nur, solange Claude Max Monitor läuft.";

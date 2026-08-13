@@ -287,6 +287,17 @@ final class AccountStore: ObservableObject {
         Logger.settings.notice("更新账户别名: \(displayName)")
     }
 
+    /// Konto als Firmen- oder Privatkonto markieren. Die manuelle Angabe ist die
+    /// verlässliche Quelle: Nur der Login setzt `kind` sonst noch, stille
+    /// Token-Erneuerungen fassen das Feld nicht an.
+    func updateAccount(_ account: Account, kind: AccountKind) {
+        guard let index = accounts.firstIndex(where: { $0.id == account.id }) else { return }
+        guard accounts[index].kind != kind else { return }
+        accounts[index].kind = kind
+        let displayName = accounts[index].displayName
+        Logger.settings.notice("更新账户类型: \(displayName) → \(kind.rawValue)")
+    }
+
     /// 静默更新当前 Claude 账户的 session-token（不触发 accountChanged 通知）
     /// 用于 OAuth refresh_token 轮换场景——只更新持久化数据，不触发重新拉取循环
     func silentlyUpdateCurrentClaudeSessionToken(_ token: String) {
