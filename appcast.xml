@@ -3,6 +3,19 @@
     <channel>
         <title>Claude Max Monitor</title>
         <item>
+            <title>1.8</title>
+            <pubDate>Thu, 13 Aug 2026 12:36:56 +0000</pubDate>
+            <sparkle:version>1.8</sparkle:version>
+            <sparkle:shortVersionString>1.8</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[Team-Übersicht: alle Claude-Konten des Teams auf einen Blick. Der Inhaber legt Mitglieder mit Namen an und verschickt deren Token samt fertigem Einladungstext; Admins sehen alle Meldungen, Mitglieder nur die eigene. Verbunden meldet die App die eigene Auslastung alle fünfzehn Minuten von selbst — übertragen werden nur Prozentwerte, niemals Zugangsdaten. Ohne Server funktioniert alternativ ein geteilter Ordner. Dazu: Die Wachhalte-Schalter heißen jetzt Always On und Bildschirm an, und die pmset-Systembefehle stehen kopierbereit in den Einstellungen.]]></description>
+            <enclosure
+                url="https://github.com/AurelianSteiner/Claude-Max-Monitor/releases/download/v1.8/Claude-Max-Monitor-1.8.dmg"
+                sparkle:edSignature="x9jkcIoex8f/puKk+IEtBhNP2FMiuBglsHS2ze7yGEC06XUjGS630cArss2cpXAM6PSbdDotY1e99lfdn1ngDQ=="
+                length="5816889"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>1.7</title>
             <pubDate>Thu, 13 Aug 2026 09:31:01 +0000</pubDate>
             <sparkle:version>1.7</sparkle:version>
