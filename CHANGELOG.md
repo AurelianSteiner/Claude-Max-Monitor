@@ -1,5 +1,15 @@
 # Änderungen
 
+## 1.5
+
+- Die beiden Schalter zum Wachhalten sitzen jetzt als Symbole oben in der
+  Übersicht. Ein Klick genügt, der Zustand ist sichtbar.
+- Das Übersichtsfenster ordnet die Karten nach seiner Breite: schmal gezogen
+  stapeln sie sich in einer Spalte, breit gezogen verteilen sie sich auf mehrere.
+  Die Spaltenauswahl im Menü setzt die Fensterbreite entsprechend.
+- Die Punkte in der Menüleiste stehen in derselben Reihenfolge wie die Karten in
+  der Übersicht und ordnen sich mit, wenn die Sortierung wechselt.
+
 ## 1.4
 
 - Die Punkte oben zeigen jetzt beide Fenster auf einmal: Die Füllung folgt dem
