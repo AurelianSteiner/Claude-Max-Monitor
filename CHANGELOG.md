@@ -1,5 +1,15 @@
 # Änderungen
 
+## 1.7
+
+- Die Karte kennt nur noch zwei Sperrzustände. Eine gesperrte Woche schließt das
+  Sitzungsfenster ohnehin ein, deshalb entfällt „Alles gesperrt".
+- Neben den beiden Symbolen zum Wachhalten steht jetzt ein kurzes Wort, sodass
+  ohne Mauszeiger klar ist, was sie tun.
+- Accounts lassen sich als Firma oder privat markieren und zeigen ein passendes
+  Symbol neben dem Namen. Die Anmeldung versucht die Art aus dem Profil zu lesen
+  und lässt sie andernfalls offen, statt zu raten.
+
 ## 1.6
 
 - Die Meldung „neue Version verfügbar" verschwindet endlich. Die App trug intern
