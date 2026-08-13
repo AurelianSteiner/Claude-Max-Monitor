@@ -172,3 +172,40 @@ struct AccountUsageSnapshot: Identifiable {
         return allLimits.first { $0.type == type }
     }
 }
+
+// MARK: - Anzeigereihenfolge
+
+extension AccountUsageSnapshot {
+
+    /// Die **eine** Stelle, an der festgelegt ist, in welcher Reihenfolge Konten
+    /// angezeigt werden — Übersicht wie Menüleisten-Punktreihe.
+    ///
+    /// Vorher lag die Regel als privates `orderedSnapshots` in `DashboardView`,
+    /// während `MenuBarAccountDots` stumpf die Roh-Reihenfolge nahm: Übersicht und
+    /// Menüleiste zeigten dieselben Konten in unterschiedlicher Folge. Wer die
+    /// Sortierung ändern will, ändert sie ab jetzt hier — `DashboardView` und
+    /// `MenuBarAccountDots` rufen beide nur noch diesen Helfer auf.
+    ///
+    /// - Parameters:
+    ///   - snapshots: Roh-Reihenfolge, wie sie der `DashboardRefreshManager` liefert
+    ///     (Hinzufüge-Reihenfolge, Claude vor Codex)
+    ///   - mode: Sortierwunsch des Nutzers
+    /// - Returns: Die Konten in Anzeigereihenfolge — bei `.availability` das freieste
+    ///   zuerst, das vollste zuletzt.
+    static func ordered(_ snapshots: [AccountUsageSnapshot], mode: DashboardSortMode) -> [AccountUsageSnapshot] {
+        switch mode {
+        case .accountOrder:
+            // Layout-Stabilität geht vor: die Karten sollen nicht herumspringen
+            return snapshots
+        case .availability:
+            return snapshots.sorted { lhs, rhs in
+                // Konten ohne Daten ans Ende, damit sie nicht den Platz
+                // „am freiesten" besetzen
+                let left = lhs.peakUtilization ?? .greatestFiniteMagnitude
+                let right = rhs.peakUtilization ?? .greatestFiniteMagnitude
+                if left == right { return lhs.account.createdAt < rhs.account.createdAt }
+                return left < right
+            }
+        }
+    }
+}

@@ -7,10 +7,11 @@
 //  Der klassische Menüleisten-Pfad (`DataRefreshManager`) kennt nur das *aktuelle*
 //  Konto. Für „ein Punkt je Konto" braucht es alle Konten — die liegen bereits in
 //  `DashboardRefreshManager.shared.snapshots`. Diese Klasse abonniert sie einmalig,
-//  destilliert jeden Snapshot auf das, was ein Punkt tatsächlich zeigt
-//  (Wochen-Ampelstufe + Sitzung aufgebraucht), und legt das Ergebnis hinter einem
-//  Lock ab: Der Renderer darf so von jedem Thread lesen, ohne den Main-Thread zu
-//  blockieren oder `@Published`-State nebenläufig anzufassen.
+//  bringt sie über `AccountUsageSnapshot.ordered(_:mode:)` in *dieselbe* Reihenfolge
+//  wie die Übersicht, destilliert jeden Snapshot auf das, was ein Punkt tatsächlich
+//  zeigt (Wochen-Ampelstufe + Sitzung aufgebraucht), und legt das Ergebnis hinter
+//  einem Lock ab: Der Renderer darf so von jedem Thread lesen, ohne den Main-Thread
+//  zu blockieren oder `@Published`-State nebenläufig anzufassen.
 //
 //  Copyright © 2025 f-is-h. All rights reserved.
 //
@@ -95,7 +96,20 @@ final class MenuBarAccountDots {
         DashboardRefreshManager.shared.$snapshots
             .receive(on: DispatchQueue.main)
             .sink { [weak self] snapshots in
-                self?.apply(snapshots)
+                self?.apply(snapshots, mode: UserSettings.shared.dashboardSortMode)
+            }
+            .store(in: &cancellables)
+
+        // Sortierwunsch: Die Punktreihe muss auch dann neu sortieren, wenn sich
+        // *nur* der Modus ändert — sonst behielte die Menüleiste bis zum nächsten
+        // Refresh die alte Folge, während die Übersicht schon umsortiert hat.
+        // Der Modus kommt aus dem Sink (ein `@Published` meldet sich im `willSet`,
+        // gelesen würde also unter Umständen noch der alte Wert).
+        UserSettings.shared.$dashboardSortMode
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] mode in
+                self?.apply(DashboardRefreshManager.shared.snapshots, mode: mode)
             }
             .store(in: &cancellables)
 
@@ -109,7 +123,7 @@ final class MenuBarAccountDots {
             }
             .store(in: &cancellables)
 
-        apply(DashboardRefreshManager.shared.snapshots)
+        apply(DashboardRefreshManager.shared.snapshots, mode: UserSettings.shared.dashboardSortMode)
         syncDashboardRefresh(for: UserSettings.shared.iconDisplayMode)
     }
 
@@ -127,11 +141,15 @@ final class MenuBarAccountDots {
 
     // MARK: - Schreiben (nur Main-Thread)
 
-    private func apply(_ snapshots: [AccountUsageSnapshot]) {
+    private func apply(_ snapshots: [AccountUsageSnapshot], mode: DashboardSortMode) {
+        // Dieselbe Reihenfolge wie die Übersicht — die Regel steht nur einmal,
+        // in `AccountUsageSnapshot.ordered(_:mode:)`.
+        let ordered = AccountUsageSnapshot.ordered(snapshots, mode: mode)
+
         // Solange kein einziges Konto Daten geliefert hat, bleibt die Reihe leer.
-        let hasAnyData = snapshots.contains { $0.hasData }
+        let hasAnyData = ordered.contains { $0.hasData }
         let next: [MenuBarDotState] = hasAnyData
-            ? snapshots.map {
+            ? ordered.map {
                 MenuBarDotState(
                     bucket: .bucket(for: $0.weeklyPeakUtilization),
                     sessionExhausted: $0.sessionExhausted

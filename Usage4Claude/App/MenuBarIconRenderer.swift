@@ -343,12 +343,13 @@ class MenuBarIconRenderer {
 
     /// Zeichnet eine Punktreihe: ein Punkt je Konto.
     ///
-    /// Reihenfolge ist die **Hinzufüge-Reihenfolge** der Konten (Claude vor Codex),
-    /// nicht die Sortierung der Übersicht: In der Menüleiste soll ein Punkt seinen
-    /// Platz behalten, damit man sich „der dritte Punkt ist mein Zweitkonto" merken
-    /// kann. Die Übersicht darf umsortieren, hier wäre das nur Gezappel.
+    /// Die Reihenfolge kommt fertig sortiert aus `MenuBarAccountDots` und ist
+    /// **dieselbe wie in der Übersicht** (`AccountUsageSnapshot.ordered(_:mode:)`):
+    /// im Standardmodus das freieste Konto links, das vollste rechts. Hier wird
+    /// nur noch von links nach rechts gezeichnet, nicht mehr umsortiert.
     /// - Parameters:
-    ///   - states: Zustände aus `MenuBarAccountDots` (bereits auf Ampelstufe reduziert)
+    ///   - states: Zustände aus `MenuBarAccountDots` (bereits auf Ampelstufe reduziert
+    ///     und in Anzeigereihenfolge)
     ///   - isMonochrome: Einfarbig-Modus → Template-Bild ohne Farbe
     private func createAccountDotsIcon(
         states: [MenuBarDotState],

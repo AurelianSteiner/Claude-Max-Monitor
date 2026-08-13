@@ -95,9 +95,23 @@ enum DashboardMetrics {
     }
 
     /// Spaltenzahl der Übersicht — nie mehr Spalten als Karten.
-    /// Auch das Fenster braucht sie, um seine Mindestbreite zu bestimmen.
+    /// Gilt für das popover (feste Breite) und für die Startbreite des Fensters.
     static func columnCount(for snapshotCount: Int, setting: Int) -> Int {
         min(max(1, setting), max(1, snapshotCount))
+    }
+
+    /// Spaltenzahl aus der tatsächlich verfügbaren Breite: so viele Karten, wie
+    /// nebeneinander passen. Nur das eigene Fenster rechnet so — es ist frei
+    /// skalierbar, das popover dagegen hat eine feste Breite.
+    /// Die Karten behalten ihre feste Breite, sie brechen nur um.
+    static func columnCount(fittingWidth width: CGFloat, snapshotCount: Int) -> Int {
+        let usable = width - outerPadding * 2 + cardSpacing
+        // Halber Punkt Toleranz: Die Spaltenwahl im Menü zieht das Fenster auf
+        // *exakt* die Breite, die n Spalten brauchen. Meldet SwiftUI davon durch
+        // Rundung 777,999 statt 778, fiele ohne Toleranz eine ganze Spalte weg
+        // und der Menüeintrag sähe kaputt aus.
+        let fitting = Int(floor((usable + 0.5) / (cardWidth + cardSpacing)))
+        return min(max(1, fitting), max(1, snapshotCount))
     }
 
     static func width(columns: Int) -> CGFloat {
@@ -105,6 +119,15 @@ enum DashboardMetrics {
         return CGFloat(columns) * cardWidth
             + CGFloat(columns - 1) * cardSpacing
             + outerPadding * 2
+    }
+}
+
+/// Meldet die Breite, die dem Übersicht-Inhalt tatsächlich zur Verfügung steht.
+/// Nur das eigene Fenster liest sie aus (responsives Gitter).
+private struct DashboardWidthKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
 
@@ -119,9 +142,13 @@ struct DashboardView: View {
 
     @ObservedObject private var settings = UserSettings.shared
     @StateObject private var localization = LocalizationManager.shared
-    /// Wach-Schalter im „…"-Menü — beobachtet, damit die Häkchen sofort mitziehen,
-    /// egal ob hier oder im Rechtsklick-Menü umgeschaltet wurde.
+    /// Wach-Schalter im Kopf und im „…"-Menü — beobachtet, damit beide Anzeigen
+    /// sofort mitziehen, egal ob hier oder im Rechtsklick-Menü umgeschaltet wurde.
     @ObservedObject private var sleepGuard = SleepGuard.shared
+
+    /// Gemessene Inhaltsbreite des eigenen Fensters (0 = noch nicht gemessen).
+    /// Im popover bleibt sie 0, dort gilt weiterhin die Spaltenwahl.
+    @State private var measuredWidth: CGFloat = 0
 
     /// 与详情窗口共用同一个开关，两处的"剩余 / 已用"显示保持一致
     @AppStorage("showRemainingMode") private var savedRemainingMode = false
@@ -130,19 +157,11 @@ struct DashboardView: View {
 
     // MARK: - Derived data
 
+    /// Anzeigereihenfolge — dieselbe Regel wie die Menüleisten-Punktreihe.
+    /// Sie steht bewusst nur an *einer* Stelle: Solange die Übersicht hier eine
+    /// eigene Kopie hielt, konnten Karten und Punkte auseinanderlaufen.
     private var orderedSnapshots: [AccountUsageSnapshot] {
-        switch settings.dashboardSortMode {
-        case .accountOrder:
-            return manager.snapshots
-        case .availability:
-            return manager.snapshots.sorted { lhs, rhs in
-                // 尚无数据的账户排在最后，避免它们抢占"最空闲"的位置
-                let left = lhs.peakUtilization ?? .greatestFiniteMagnitude
-                let right = rhs.peakUtilization ?? .greatestFiniteMagnitude
-                if left == right { return lhs.account.createdAt < rhs.account.createdAt }
-                return left < right
-            }
-        }
+        AccountUsageSnapshot.ordered(manager.snapshots, mode: settings.dashboardSortMode)
     }
 
     /// 当前最空闲的账户 id：只有存在至少两个有数据的账户时才标注，
@@ -155,8 +174,27 @@ struct DashboardView: View {
         }?.id
     }
 
-    private var columnCount: Int {
+    /// Spaltenwahl aus den Einstellungen. Sie bestimmt das popover vollständig
+    /// und beim Fenster nur noch die Startbreite (danach entscheidet die Größe).
+    private var settingColumnCount: Int {
         DashboardMetrics.columnCount(for: orderedSnapshots.count, setting: settings.dashboardColumns)
+    }
+
+    /// Breite, die dem Inhalt gerade zur Verfügung steht: im eigenen Fenster
+    /// gemessen, im popover die feste Inhaltsbreite.
+    private var layoutWidth: CGFloat {
+        isStandaloneWindow && measuredWidth > 0 ? measuredWidth : contentWidth
+    }
+
+    /// Spalten des Gitters. Im eigenen Fenster fließt der Inhalt in die vorhandene
+    /// Breite (schmal ziehen → eine Spalte, breit ziehen → mehr Spalten), im
+    /// popover bleibt es bei der eingestellten Spaltenzahl.
+    private var columnCount: Int {
+        guard isStandaloneWindow, measuredWidth > 0 else { return settingColumnCount }
+        return DashboardMetrics.columnCount(
+            fittingWidth: measuredWidth,
+            snapshotCount: orderedSnapshots.count
+        )
     }
 
     private var gridColumns: [GridItem] {
@@ -173,9 +211,18 @@ struct DashboardView: View {
         )
     }
 
-    /// Breite, die der Inhalt mindestens braucht (= exakte Breite im popover).
+    /// Wunschbreite des Inhalts (= exakte Breite im popover, Startbreite des Fensters).
+    /// Bewusst an der Einstellung festgemacht und nicht an `columnCount`: sonst
+    /// hinge die Idealbreite an der gemessenen Breite und beide würden sich
+    /// gegenseitig nachziehen.
     private var contentWidth: CGFloat {
-        DashboardMetrics.width(columns: columnCount)
+        DashboardMetrics.width(columns: settingColumnCount)
+    }
+
+    /// Untergrenze: im eigenen Fenster genau eine Spalte, damit man es wirklich
+    /// schmal ziehen kann; im popover die volle Inhaltsbreite.
+    private var minContentWidth: CGFloat {
+        isStandaloneWindow ? DashboardMetrics.width(columns: 1) : contentWidth
     }
 
     /// Im eigenen Fenster darf der Inhalt mitwachsen, im popover nicht:
@@ -208,13 +255,18 @@ struct DashboardView: View {
         }
         // popover: min = ideal = max, also exakt so breit wie früher.
         // Eigenes Fenster: Ideal bleibt die Inhaltsbreite (davon leitet sich die
-        // Startgröße ab), nach oben darf der Inhalt aber mitwachsen.
+        // Startgröße ab), nach unten ist eine Spalte erlaubt, nach oben darf der
+        // Inhalt beliebig mitwachsen.
         .frame(
-            minWidth: contentWidth,
+            minWidth: minContentWidth,
             idealWidth: contentWidth,
             maxWidth: stretchWidth,
             maxHeight: stretchHeight
         )
+        .background(widthReader)
+        .onPreferenceChange(DashboardWidthKey.self) { width in
+            measuredWidth = width
+        }
         .id(localization.updateTrigger)  // 语言变化时重新创建视图
         .onAppear {
             var transaction = Transaction(animation: nil)
@@ -255,12 +307,73 @@ struct DashboardView: View {
 
             Spacer(minLength: 8)
 
+            sleepGuardButtons
             sortMenu
             refreshButton
             actionMenu
         }
         .padding(.horizontal, DashboardMetrics.outerPadding)
         .frame(height: DashboardMetrics.headerHeight)
+    }
+
+    /// Misst die verfügbare Breite für das responsive Gitter. Nur im eigenen
+    /// Fenster aktiv: das popover nimmt seine Größe aus der Idealbreite des
+    /// Inhalts, dort hätte eine zweite Breitenquelle nichts zu suchen.
+    @ViewBuilder
+    private var widthReader: some View {
+        if isStandaloneWindow {
+            GeometryReader { proxy in
+                Color.clear.preference(key: DashboardWidthKey.self, value: proxy.size.width)
+            }
+        }
+    }
+
+    // MARK: - Wach halten
+
+    /// Beide Wach-Schalter direkt im Kopf — ein Klick statt Umweg über das
+    /// „…"-Menü. Dort bleiben sie zusätzlich stehen (mit Häkchen), damit der
+    /// gewohnte Weg weiter funktioniert.
+    private var sleepGuardButtons: some View {
+        HStack(spacing: 2) {
+            sleepGuardButton(
+                isOn: sleepGuard.isDisplayAwake,
+                symbol: "sun.max",
+                label: L.Menu.keepDisplayAwake,
+                action: { sleepGuard.toggleDisplayAwake() }
+            )
+            sleepGuardButton(
+                isOn: sleepGuard.isSystemAwake,
+                symbol: "cup.and.saucer",
+                label: L.Menu.keepMacAwake,
+                action: { sleepGuard.toggleSystemAwake() }
+            )
+        }
+    }
+
+    /// Ein Wach-Schalter: aktiv = gefülltes Symbol in Akzentfarbe auf getönter
+    /// Fläche, inaktiv = Umriss in Grau. Der Zustand ist damit ohne Häkchen und
+    /// ohne Tooltip zu erkennen.
+    private func sleepGuardButton(
+        isOn: Bool,
+        symbol: String,
+        label: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: isOn ? "\(symbol).fill" : symbol)
+                .font(.system(size: 12))
+                .foregroundColor(isOn ? .accentColor : .secondary)
+                .frame(width: 20, height: 20)
+                .background(
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(isOn ? Color.accentColor.opacity(0.15) : Color.clear)
+                )
+        }
+        .buttonStyle(.plain)
+        .focusable(false)
+        // Kein eigener Sprachschlüssel: Beschriftung wie im Menü, Zustand aus
+        // den vorhandenen „Aktiviert / Deaktiviert"-Texten.
+        .help("\(label) — \(isOn ? L.LaunchAtLogin.statusEnabled : L.LaunchAtLogin.statusDisabled)")
     }
 
     // MARK: - Ampel (Wochen-Auslastung)
@@ -324,7 +437,7 @@ struct DashboardView: View {
     /// inklusive Ring (17) + Abstand (6). Für ≤ 7 Konten passt alles in eine Zeile,
     /// erst darüber wird umgebrochen.
     private var trafficDotsPerRow: Int {
-        let available = DashboardMetrics.width(columns: columnCount) - DashboardMetrics.outerPadding * 2
+        let available = layoutWidth - DashboardMetrics.outerPadding * 2
         let stride = TrafficDotMetrics.footprint + 6
         return max(1, Int(available / stride))
     }
@@ -346,7 +459,7 @@ struct DashboardView: View {
             }
             Divider()
             ForEach(1...3, id: \.self) { count in
-                Button(action: { settings.dashboardColumns = count }) {
+                Button(action: { applyColumns(count) }) {
                     HStack {
                         Text(L.Dashboard.columns(count))
                         if settings.dashboardColumns == count {
@@ -367,6 +480,17 @@ struct DashboardView: View {
         .buttonStyle(.plain)
         .focusable(false)
         .help(L.Dashboard.sortHelp)
+    }
+
+    /// Spaltenwahl anwenden. Im popover legt die Einstellung die Breite direkt fest.
+    /// Im eigenen Fenster richtet sich das Gitter dagegen nach der Fenstergröße —
+    /// dort muss die Wahl also das Fenster ziehen, sonst bliebe der Menüeintrag
+    /// wirkungslos (angeklickt, Häkchen wandert, Ansicht unverändert).
+    private func applyColumns(_ count: Int) {
+        settings.dashboardColumns = count
+        if isStandaloneWindow {
+            DashboardWindowManager.shared.resize(toColumns: count)
+        }
     }
 
     private var refreshButton: some View {

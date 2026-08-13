@@ -664,6 +664,9 @@ class MenuBarUI {
         // selbst stecken nicht in `usageData` (das ist nur das aktuelle Konto),
         // deshalb wird hier derselbe Stand gelesen, den der Renderer gleich zeichnet
         // — beide Aufrufe laufen synchron im selben Durchlauf auf dem Main-Thread.
+        // Die Tokens werden in Zeichenreihenfolge aneinandergehängt, der Schlüssel ist
+        // also *reihenfolgeabhängig*: Sortiert die Übersicht um, ändert sich der
+        // Schlüssel mit („g-r" ≠ „r-g") und der Cache liefert kein veraltetes Bild.
         if settings.iconDisplayMode == .accountDots {
             let dots = MenuBarAccountDots.shared.currentStates()
             if !dots.isEmpty {

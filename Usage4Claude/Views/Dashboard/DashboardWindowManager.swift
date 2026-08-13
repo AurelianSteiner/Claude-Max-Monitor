@@ -8,7 +8,6 @@
 //
 
 import AppKit
-import Combine
 import SwiftUI
 
 final class DashboardWindowManager {
@@ -16,12 +15,15 @@ final class DashboardWindowManager {
 
     /// 位置与大小记忆在系统 defaults 里的名字
     private static let frameAutosaveName = "Usage4Claude.DashboardWindow"
-    /// 最小尺寸：一列卡片的宽度，高度足够放下表头 + 一张卡片
-    private static let minimumSize = NSSize(width: 400, height: 320)
+    /// Mindestgröße: genau eine Kartenspalte breit (schmaler wird die Karte
+    /// beschnitten), hoch genug für Kopf + eine Karte. Das Gitter bricht bei
+    /// dieser Breite von selbst auf eine Spalte um.
+    private static var minimumSize: NSSize {
+        NSSize(width: DashboardMetrics.width(columns: 1), height: 320)
+    }
 
     private var window: NSWindow?
     private var closeObserver: NSObjectProtocol?
-    private var widthObserver: AnyCancellable?
 
     private init() {}
 
@@ -66,8 +68,16 @@ final class DashboardWindowManager {
         let idealSize = hostingController.preferredContentSize
         hostingController.sizingOptions = []
         if idealSize.width > 0, idealSize.height > 0 {
-            window.setContentSize(idealSize)
+            window.setContentSize(NSSize(width: startWidth(idealSize.width), height: idealSize.height))
         }
+
+        // Das Gitter im Fenster richtet sich nach der vorhandenen Breite: schmal
+        // gezogen stapeln sich die Karten in einer Spalte, breit gezogen stehen
+        // sie nebeneinander. Deshalb bleibt die Mindestbreite fest bei einer
+        // Spalte — sie darf nicht mehr der Spaltenwahl folgen, sonst ließe sich
+        // das Fenster nicht schmal ziehen. Und weil das Fenster nie mehr von
+        // allein breiter wird, bleibt eine einmal gewählte Größe erhalten.
+        window.minSize = Self.minimumSize
 
         // 先恢复上次的位置和大小，再挂上 autosave 名字——反过来会先把当前
         // 帧写回去，把记住的尺寸覆盖掉。
@@ -76,26 +86,6 @@ final class DashboardWindowManager {
         }
         window.setFrameAutosaveName(Self.frameAutosaveName)
         self.window = window
-
-        // Karten sind fest breit und die Übersicht scrollt nur senkrecht — wird
-        // das Fenster schmaler als der Inhalt, würde rechts eine Spalte
-        // abgeschnitten. Weil sizingOptions abgeschaltet ist, wächst das Fenster
-        // nicht mehr von allein: Mindestbreite und ggf. die Fensterbreite müssen
-        // der Inhaltsbreite folgen, wenn sich Kontenzahl oder Spaltenwahl ändern.
-        // (CombineLatest feuert sofort mit den aktuellen Werten — das deckt auch
-        // den Fall ab, dass das Fenster vor dem ersten Abruf geöffnet wird.)
-        widthObserver = Publishers.CombineLatest(
-            DashboardRefreshManager.shared.$snapshots,
-            UserSettings.shared.$dashboardColumns
-        )
-        .receive(on: RunLoop.main)
-        .sink { snapshots, columns in
-            DashboardWindowManager.shared.enforceContentWidth(
-                DashboardMetrics.width(
-                    columns: DashboardMetrics.columnCount(for: snapshots.count, setting: columns)
-                )
-            )
-        }
 
         if let observer = closeObserver {
             NotificationCenter.default.removeObserver(observer)
@@ -107,7 +97,6 @@ final class DashboardWindowManager {
         ) { _ in
             Task { @MainActor in
                 DashboardWindowManager.shared.window = nil
-                DashboardWindowManager.shared.widthObserver = nil
                 // 回到 accessory：仅当没有别的可见窗口（例如设置窗口）还开着
                 let hasOtherWindows = NSApp.windows.contains {
                     $0.isVisible && $0.canBecomeMain && $0 !== window
@@ -122,25 +111,52 @@ final class DashboardWindowManager {
         window.makeKeyAndOrderFront(nil)
     }
 
-    /// Mindestbreite an den Inhalt nachziehen und das Fenster notfalls
-    /// verbreitern. Die Höhe bleibt unangetastet — senkrecht scrollt das Gitter
-    /// selbst, und die vom Benutzer eingestellte Höhe soll erhalten bleiben.
-    private func enforceContentWidth(_ contentWidth: CGFloat) {
-        guard let window else { return }
+    /// Breite beim ersten Öffnen (ohne gemerkte Fenstergröße): Die Spaltenwahl
+    /// aus den Einstellungen gibt die Startbreite vor.
+    ///
+    /// Die Idealbreite des Inhalts allein reicht nicht: wird das Fenster vor dem
+    /// ersten Abruf geöffnet, gibt es noch keine Karten und sie wäre eine Spalte
+    /// breit. Deshalb die Kontenzahl direkt aus den Einstellungen nehmen.
+    private func startWidth(_ idealWidth: CGFloat) -> CGFloat {
+        let wanted = contentWidth(forColumnSetting: UserSettings.shared.dashboardColumns)
+        let screenWidth = NSScreen.main?.visibleFrame.width ?? wanted
+        return max(Self.minimumSize.width, min(max(idealWidth, wanted), screenWidth))
+    }
 
-        let screenWidth = (window.screen ?? NSScreen.main)?.visibleFrame.width ?? contentWidth
-        let target = max(Self.minimumSize.width, min(contentWidth, screenWidth))
-        window.minSize = NSSize(width: target, height: Self.minimumSize.height)
+    /// Fensterbreite auf eine Spaltenzahl ziehen.
+    ///
+    /// Das Gitter im Fenster folgt der Fensterbreite, die Spaltenwahl im Menü ist
+    /// hier also eine Breitenwahl. Ohne das wäre der Menüeintrag im Fenster ohne
+    /// Wirkung — das Häkchen würde wandern, die Ansicht bliebe stehen.
+    /// Die Höhe bleibt unangetastet, senkrecht scrollt das Gitter selbst.
+    func resize(toColumns columns: Int) {
+        guard let window, window.isVisible else { return }
 
-        guard window.frame.width < target else { return }
         var frame = window.frame
-        frame.size.width = target
+        frame.size.width = contentWidth(forColumnSetting: columns)
+
+        // Beim Verbreitern nicht über den Bildschirmrand hinauslaufen, sonst
+        // steht die zusätzliche Spalte außerhalb des sichtbaren Bereichs.
+        if let visible = (window.screen ?? NSScreen.main)?.visibleFrame {
+            frame.origin.x = max(visible.minX, min(frame.origin.x, visible.maxX - frame.size.width))
+        }
         window.setFrame(frame, display: true)
+    }
+
+    /// Inhaltsbreite für eine Spaltenwahl: nie mehr Spalten als Konten, nie
+    /// schmaler als eine Spalte, nie breiter als der sichtbare Bildschirm.
+    private func contentWidth(forColumnSetting setting: Int) -> CGFloat {
+        let settings = UserSettings.shared
+        let accountCount = settings.accounts.count + settings.codexAccounts.count
+        let wanted = DashboardMetrics.width(
+            columns: DashboardMetrics.columnCount(for: accountCount, setting: setting)
+        )
+        let screenWidth = (window?.screen ?? NSScreen.main)?.visibleFrame.width ?? wanted
+        return max(Self.minimumSize.width, min(wanted, screenWidth))
     }
 
     func close() {
         window?.close()
         window = nil
-        widthObserver = nil
     }
 }
