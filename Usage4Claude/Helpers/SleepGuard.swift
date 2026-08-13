@@ -24,10 +24,22 @@ import IOKit.pwr_mgt
 
 /// Wach-Wächter: verwaltet die beiden Power-Assertions der App.
 ///
-/// - `isDisplayAwake`  → `kIOPMAssertionTypeNoDisplaySleep`
-///   (der Bildschirm schläft nicht ein)
-/// - `isSystemAwake`   → `kIOPMAssertionTypePreventUserIdleSystemSleep`
-///   (das System geht bei Untätigkeit nicht schlafen, Bildschirm darf aus)
+/// Zuordnung zu den beiden Symbolknöpfen im Kopf der Übersicht
+/// (`DashboardView.sleepGuardButtons`) — die Tooltips dort erklären dasselbe
+/// in Nutzersprache:
+///
+/// - Sonne (`sun.max`) → `setDisplayAwake` → `isDisplayAwake`
+///   → `kIOPMAssertionTypeNoDisplaySleep`
+///   Der Bildschirm schaltet sich nicht von selbst aus. Solange der Bildschirm
+///   an ist, schläft auch das System nicht — der Mac bleibt also mit wach.
+/// - Tasse (`cup.and.saucer`) → `setSystemAwake` → `isSystemAwake`
+///   → `kIOPMAssertionTypePreventUserIdleSystemSleep`
+///   Das System geht bei Untätigkeit nicht in den Ruhezustand; der Bildschirm
+///   darf trotzdem dunkel werden.
+///
+/// Beides gilt nur, solange die App läuft: `releaseAll()` beim Beenden gibt die
+/// Assertions frei, danach greifen wieder die Systemeinstellungen. Zuklappen
+/// (Clamshell) schläfert den Mac in beiden Fällen ein — siehe Dateikopf.
 ///
 /// Beide Zustände werden in den UserDefaults gemerkt und beim Start über
 /// `restoreFromDefaults()` erneut angefordert.

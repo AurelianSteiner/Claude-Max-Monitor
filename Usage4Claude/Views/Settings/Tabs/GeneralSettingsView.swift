@@ -10,7 +10,7 @@ import SwiftUI
 import ServiceManagement
 
 /// 通用设置页面
-/// 使用卡片式布局，包含开机启动、显示设置、刷新设置和语言设置
+/// 卡片顺序：总览 → 刷新 → 通知 → 外观（含菜单栏/时间/语言）→ 开机启动
 /// 各卡片内容按主题拆到 GeneralSettings*Section.swift，保持本文件体量可控
 struct GeneralSettingsView: View {
     @ObservedObject private var settings = UserSettings.shared
@@ -20,8 +20,6 @@ struct GeneralSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                GeneralSettingsDisplaySection()
-                GeneralSettingsDisplayOptionsSection()
                 GeneralSettingsDashboardSection()
 
                 // 刷新设置卡片
@@ -68,92 +66,19 @@ struct GeneralSettingsView: View {
                     title: L.SettingsNotification.section,
                     hint: L.SettingsNotification.hint
                 ) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Toggle("", isOn: $settings.notificationsEnabled)
-                                .toggleStyle(.switch)
-                                .controlSize(.mini)
-                                .focusable(false)
-                                .labelsHidden()
-                            Text(L.SettingsNotification.enable)
-                            Spacer()
-                        }
-                        HStack(alignment: .top, spacing: 4) {
-                            Image(systemName: "info.circle.fill")
-                                .font(.caption2)
-                                .foregroundColor(.blue)
-                            Text(L.SettingsNotification.description)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
+                    HStack {
+                        Toggle("", isOn: $settings.notificationsEnabled)
+                            .toggleStyle(.switch)
+                            .controlSize(.mini)
+                            .focusable(false)
+                            .labelsHidden()
+                        Text(L.SettingsNotification.enable)
+                        Spacer()
                     }
                 }
 
-                // 外观设置卡片
-                SettingCard(
-                    icon: "circle.lefthalf.filled",
-                    iconColor: .indigo,
-                    title: L.SettingsGeneralAppearance.section,
-                    hint: L.SettingsGeneralAppearance.hint
-                ) {
-                    Picker("", selection: $settings.appearance) {
-                        ForEach(AppAppearance.allCases, id: \.self) { mode in
-                            Text(mode.localizedName).tag(mode)
-                        }
-                    }
-                    .pickerStyle(.radioGroup)
-                    .labelsHidden()
-                    .focusable(false)
-                }
-
-                // 时间格式设置卡片
-                SettingCard(
-                    icon: "clock",
-                    iconColor: .cyan,
-                    title: L.SettingsGeneralTimeFormat.section,
-                    hint: L.SettingsGeneralTimeFormat.hint
-                ) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Picker("", selection: $settings.timeFormatPreference) {
-                            ForEach(TimeFormatPreference.allCases, id: \.self) { format in
-                                Text(format.localizedName).tag(format)
-                            }
-                        }
-                        .pickerStyle(.radioGroup)
-                        .labelsHidden()
-                        .focusable(false)
-
-                        // 当前时间预览
-                        HStack(spacing: 4) {
-                            Text(L.SettingsGeneralTimeFormat.preview + ":")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(timePreviewString)
-                                .font(.caption)
-                                .fontWeight(.medium)
-                                .foregroundColor(.primary)
-                        }
-                        .padding(.leading, 20)
-                    }
-                }
-
-                // 语言设置卡片
-                SettingCard(
-                    icon: "globe",
-                    iconColor: .orange,
-                    title: L.SettingsGeneral.languageSection,
-                    hint: L.SettingsGeneral.languageHint
-                ) {
-                    Picker("", selection: $settings.language) {
-                        ForEach(AppLanguage.allCases, id: \.self) { lang in
-                            Text(lang.localizedName).tag(lang)
-                        }
-                    }
-                    .pickerStyle(.radioGroup)
-                    .labelsHidden()
-                    .focusable(false)
-                }
+                // 外观卡片（应用主题 + 菜单栏样式 + 时间格式 + 语言）
+                GeneralSettingsAppearanceSection()
 
                 // 开机启动设置卡片
                 SettingCard(
@@ -190,7 +115,7 @@ struct GeneralSettingsView: View {
                     Button(L.SettingsGeneral.resetButton) {
                         settings.resetToDefaults()
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.bordered)
                 }
                 .padding(.top, 8)
 
@@ -223,12 +148,6 @@ struct GeneralSettingsView: View {
     }
 
     // MARK: - Computed Properties
-
-    /// 时间预览字符串
-    private var timePreviewString: String {
-        let now = Date()
-        return TimeFormatHelper.formatTimeOnly(now)
-    }
 
     /// 状态图标
     private var statusIcon: String {

@@ -168,18 +168,10 @@ class MenuBarManager: ObservableObject {
         NSApplication.shared.terminate(nil)
     }
 
-    // MARK: - Wach halten
+    // Für die Wach-Schalter gibt es hier bewusst keine Weiterleitung mehr:
+    // Sie sitzen als Symbolknöpfe im Kopf der Übersicht und rufen `SleepGuard`
+    // direkt auf — ein Menüeintrag wäre ein zweiter Weg zur selben Sache.
 
-    /// Bildschirm-Schlaf verhindern (IOKit-Power-Assertion, kein sudo nötig)
-    @objc func toggleKeepDisplayAwake() {
-        SleepGuard.shared.toggleDisplayAwake()
-    }
-
-    /// System-Schlaf bei Untätigkeit verhindern (IOKit-Power-Assertion)
-    @objc func toggleKeepMacAwake() {
-        SleepGuard.shared.toggleSystemAwake()
-    }
-    
     /// 处理菜单操作
     /// 关闭弹出窗口并执行相应的操作
     private func handleMenuAction(_ action: MenuAction) {

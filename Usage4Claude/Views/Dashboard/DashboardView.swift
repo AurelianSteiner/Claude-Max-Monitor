@@ -330,21 +330,23 @@ struct DashboardView: View {
 
     // MARK: - Wach halten
 
-    /// Beide Wach-Schalter direkt im Kopf — ein Klick statt Umweg über das
-    /// „…"-Menü. Dort bleiben sie zusätzlich stehen (mit Häkchen), damit der
-    /// gewohnte Weg weiter funktioniert.
+    /// Beide Wach-Schalter direkt im Kopf — ein Klick statt Umweg über ein Menü.
+    /// Das ist ihr einziger Platz; im „…"-Menü und im Rechtsklick-Menü der
+    /// Menüleiste standen sie früher zusätzlich und damit dreifach.
     private var sleepGuardButtons: some View {
         HStack(spacing: 2) {
             sleepGuardButton(
                 isOn: sleepGuard.isDisplayAwake,
                 symbol: "sun.max",
                 label: L.Menu.keepDisplayAwake,
+                detail: L.Dashboard.sleepDisplayHelp,
                 action: { sleepGuard.toggleDisplayAwake() }
             )
             sleepGuardButton(
                 isOn: sleepGuard.isSystemAwake,
                 symbol: "cup.and.saucer",
                 label: L.Menu.keepMacAwake,
+                detail: L.Dashboard.sleepSystemHelp,
                 action: { sleepGuard.toggleSystemAwake() }
             )
         }
@@ -357,6 +359,7 @@ struct DashboardView: View {
         isOn: Bool,
         symbol: String,
         label: String,
+        detail: String,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
@@ -371,9 +374,16 @@ struct DashboardView: View {
         }
         .buttonStyle(.plain)
         .focusable(false)
-        // Kein eigener Sprachschlüssel: Beschriftung wie im Menü, Zustand aus
-        // den vorhandenen „Aktiviert / Deaktiviert"-Texten.
-        .help("\(label) — \(isOn ? L.LaunchAtLogin.statusEnabled : L.LaunchAtLogin.statusDisabled)")
+        .help(sleepGuardHelp(label: label, detail: detail, isOn: isOn))
+    }
+
+    /// Tooltip eines Wach-Schalters: Beschriftung samt aktuellem Zustand, darunter
+    /// in Klartext, was der Schalter tut — und was er ausdrücklich nicht tut.
+    /// Die Deckel-Zeile steht bei beiden Schaltern, weil beide daran enden:
+    /// zuklappen schläfert den Mac trotzdem ein.
+    private func sleepGuardHelp(label: String, detail: String, isOn: Bool) -> String {
+        let state = isOn ? L.Dashboard.sleepStateOn : L.Dashboard.sleepStateOff
+        return "\(label) — \(state)\n\n\(detail)\n\n\(L.Dashboard.sleepLidNote)"
     }
 
     // MARK: - Ampel (Wochen-Auslastung)
@@ -424,13 +434,18 @@ struct DashboardView: View {
         )
     }
 
-    /// Ein Wert im Tooltip: „87 %" bzw. „100 % (aufgebraucht)", ohne Daten „keine Daten".
-    /// „Aufgebraucht" folgt je Fenster genau der Schwelle, die auch die Optik treibt:
-    /// Woche ab 90 % (rote Füllung), Sitzung ab 96 % (roter Ring).
+    /// Ein Wert im Tooltip: „87 %", „93 % (fast aufgebraucht)", „100 % (aufgebraucht)",
+    /// ohne Daten „keine Daten".
+    ///
+    /// Die Optik schlägt früher um als die Sperre: Die Füllung wird ab 90 % rot, der
+    /// Ring ab 96 % — gesperrt ist ein Fenster aber erst bei 100 %. Deshalb sagt der
+    /// Tooltip dazwischen „fast aufgebraucht" statt fälschlich „aufgebraucht".
     private func trafficDotValue(_ percentage: Double?, exhausted: Bool) -> String {
         guard let percentage else { return L.Dashboard.dotNoData }
         let value = "\(Int(percentage.rounded()))%"
-        return exhausted ? "\(value) (\(L.Dashboard.dotUsedUp))" : value
+        guard exhausted else { return value }
+        let note = percentage >= 100 ? L.Dashboard.dotUsedUp : L.Dashboard.dotAlmostUsedUp
+        return "\(value) (\(note))"
     }
 
     /// Punkte pro Zeile aus der verfügbaren Breite: Platzbedarf eines Punkts
@@ -533,36 +548,21 @@ struct DashboardView: View {
             Button(action: { onMenuAction?(.about) }) {
                 Label(L.Menu.about, systemImage: "info.circle")
             }
-            Divider()
-            // Wach halten — dieselben Schalter wie im Rechtsklick-Menü, damit man
-            // sie nicht erst durch Schließen der Übersicht erreicht.
-            // Machart wie beim Sortiermenü: Button mit Häkchen statt Label mit Symbol,
-            // sonst konkurriert das Symbol im Menüeintrag mit der Zustandsanzeige.
-            Button(action: { sleepGuard.toggleDisplayAwake() }) {
-                HStack {
-                    Text(L.Menu.keepDisplayAwake)
-                    if sleepGuard.isDisplayAwake {
-                        Spacer(); Image(systemName: "checkmark")
+            // Die Wach-Schalter liegen als Symbolknöpfe im Kopf und tauchen
+            // hier bewusst nicht noch einmal auf. Die Trennlinie gehört zu den
+            // Statusseiten und erscheint nur mit ihnen — ohne Konto stünden
+            // sonst zwei Trennlinien direkt untereinander.
+            if !settings.accounts.isEmpty || !settings.codexAccounts.isEmpty {
+                Divider()
+                if !settings.accounts.isEmpty {
+                    Button(action: { onMenuAction?(.claudeStatus) }) {
+                        Label(L.Menu.claudeStatus, systemImage: "safari")
                     }
                 }
-            }
-            Button(action: { sleepGuard.toggleSystemAwake() }) {
-                HStack {
-                    Text(L.Menu.keepMacAwake)
-                    if sleepGuard.isSystemAwake {
-                        Spacer(); Image(systemName: "checkmark")
+                if !settings.codexAccounts.isEmpty {
+                    Button(action: { onMenuAction?(.codexStatus) }) {
+                        Label(L.Menu.codexStatus, systemImage: "safari.fill")
                     }
-                }
-            }
-            Divider()
-            if !settings.accounts.isEmpty {
-                Button(action: { onMenuAction?(.claudeStatus) }) {
-                    Label(L.Menu.claudeStatus, systemImage: "safari")
-                }
-            }
-            if !settings.codexAccounts.isEmpty {
-                Button(action: { onMenuAction?(.codexStatus) }) {
-                    Label(L.Menu.codexStatus, systemImage: "safari.fill")
                 }
             }
             Divider()

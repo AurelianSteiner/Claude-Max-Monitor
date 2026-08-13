@@ -34,13 +34,12 @@ enum L {
         static var noAccounts: String { localized("account.no_accounts") }
         static var addAccount: String { localized("account.add_account") }
         static var addNewAccount: String { localized("account.add_new_account") }
-        static var currentAccount: String { localized("account.current_account") }
         static var alias: String { localized("account.alias") }
         static var aliasOptional: String { localized("account.alias_optional") }
         static var aliasPlaceholder: String { localized("account.alias_placeholder") }
+        /// Erklärt, wozu das Alias-Feld in der Kontoliste gut ist
+        static var aliasHint: String { localized("account.alias_hint") }
         static var clearAlias: String { localized("account.clear_alias") }
-        static var organizationId: String { localized("account.organization_id") }
-        static var copyOrgId: String { localized("account.copy_org_id") }
         static var deleteAccount: String { localized("account.delete_account") }
         static var deleteConfirmTitle: String { localized("account.delete_confirm_title") }
         static var deleteConfirmMessage: String { localized("account.delete_confirm_message") }
@@ -51,7 +50,6 @@ enum L {
         static var claudeAccounts: String { localized("account.claude_accounts") }
         static var codexAccounts: String { localized("account.codex_accounts") }
         static var addCodexAccount: String { localized("account.add_codex_account") }
-        static var codexCurrentAccount: String { localized("account.codex_current_account") }
     }
     
     // MARK: - Usage Detail View
@@ -101,10 +99,29 @@ enum L {
         static var sessionLimit: String { localized("dashboard.session_limit") }
         /// Überschrift des Countdowns auf praktisch aufgebrauchten Karten
         static var freeAgain: String { localized("dashboard.free_again") }
+
+        // Sperr-Plakette: benennt, *welches* Fenster zu ist. „Sitzung" kommt in
+        // Stunden zurück, „Woche" kann Tage blockieren — der Unterschied muss
+        // auf der Karte stehen, nicht nur im Countdown.
+        static var lockSession: String { localized("dashboard.lock.session") }
+        static var lockWeekly: String { localized("dashboard.lock.weekly") }
+        static var lockEverything: String { localized("dashboard.lock.everything") }
+        static var lockSessionHelp: String { localized("dashboard.lock.session_help") }
+        static var lockWeeklyHelp: String { localized("dashboard.lock.weekly_help") }
+        static var lockEverythingHelp: String { localized("dashboard.lock.everything_help") }
+
+        // Erklärtexte der beiden Wach-Schalter im Kopf
+        static var sleepDisplayHelp: String { localized("dashboard.sleep.display_help") }
+        static var sleepSystemHelp: String { localized("dashboard.sleep.system_help") }
+        /// Gilt für beide Schalter: Zuklappen legt den Mac trotzdem schlafen
+        static var sleepLidNote: String { localized("dashboard.sleep.lid_note") }
+        static var sleepStateOn: String { localized("dashboard.sleep.state_on") }
+        static var sleepStateOff: String { localized("dashboard.sleep.state_off") }
         /// Platzhalter im Ampel-Tooltip, solange für ein Fenster nichts vorliegt
         static var dotNoData: String { localized("dashboard.dot_no_data") }
         /// Zusatz im Ampel-Tooltip, wenn ein Fenster praktisch aufgebraucht ist
         static var dotUsedUp: String { localized("dashboard.dot_used_up") }
+        static var dotAlmostUsedUp: String { localized("dashboard.dot_almost_used_up") }
 
         /// Tooltip eines Ampelpunkts: Kontoname, Wochen- und Sitzungswert
         static func dotHelp(_ name: String, _ weekly: String, _ session: String) -> String {
@@ -127,11 +144,8 @@ enum L {
     enum SettingsDashboard {
         static var section: String { localized("settings.dashboard.section") }
         static var hint: String { localized("settings.dashboard.hint") }
-        static var enable: String { localized("settings.dashboard.enable") }
-        static var description: String { localized("settings.dashboard.description") }
         static var sortLabel: String { localized("settings.dashboard.sort_label") }
         static var columnsLabel: String { localized("settings.dashboard.columns_label") }
-        static var needsMoreAccounts: String { localized("settings.dashboard.needs_more_accounts") }
     }
 
     // MARK: - Settings Tabs
@@ -147,32 +161,17 @@ enum L {
         static var launchAtLogin: String { localized("settings.general.launch_at_login") }
         static var launchHint: String { localized("settings.general.launch_hint") }
         static var displaySection: String { localized("settings.general.display_section") }
-        static var menubarIcon: String { localized("settings.general.menubar_icon") }
-        static var menubarHint: String { localized("settings.general.menubar_hint") }
-        static var menubarTheme: String { localized("settings.general.menubar_theme") }
-        static var displayContent: String { localized("settings.general.display_content") }
-        static var monochromeNoIconHint: String { localized("settings.general.monochrome_no_icon_hint") }
         static var refreshSection: String { localized("settings.general.refresh_section") }
         static var refreshMode: String { localized("settings.general.refresh_mode") }
         static var refreshInterval: String { localized("settings.general.refresh_interval") }
         static var refreshHintSmart: String { localized("settings.general.refresh_hint_smart") }
         static var refreshHintFixed: String { localized("settings.general.refresh_hint_fixed") }
-        static var languageSection: String { localized("settings.general.language_section") }
         static var interfaceLanguage: String { localized("settings.general.interface_language") }
-        static var languageHint: String { localized("settings.general.language_hint") }
         static var resetButton: String { localized("settings.general.reset_button") }
     }
     
     // MARK: - Settings Authentication
     enum SettingsAuth {
-        static var howToTitle: String { localized("settings.auth.how_to_title") }
-        static var step1: String { localized("settings.auth.step1") }
-        static var step2: String { localized("settings.auth.step2") }
-        static var step3: String { localized("settings.auth.step3") }
-        static var step4: String { localized("settings.auth.step4") }
-        static var step5: String { localized("settings.auth.step5") }
-        static var step6: String { localized("settings.auth.step6") }
-        static var openBrowser: String { localized("settings.auth.open_browser") }
         static var sessionKeyLabel: String { localized("settings.auth.session_key_label") }
         static var sessionKeyPlaceholder: String { localized("settings.auth.session_key_placeholder") }
         static var sessionKeyHint: String { localized("settings.auth.session_key_hint") }
@@ -181,8 +180,6 @@ enum L {
         static var credentialsTitle: String { localized("settings.auth.credentials_title") }
         static var readyToUse: String { localized("settings.auth.ready_to_use") }
         static var needCredentials: String { localized("settings.auth.need_credentials") }
-        static var showPassword: String { localized("settings.auth.show_password") }
-        static var hidePassword: String { localized("settings.auth.hide_password") }
         static var manualInputClaudeOnlyHelp: String { localized("settings.auth.manual_input_claude_only_help") }
     }
     
@@ -209,7 +206,6 @@ enum L {
         // v2.0.0 Welcome Flow
         static var credentialsTitle: String { localized("welcome_credentials_title") }
         static var credentialsSubtitle: String { localized("welcome_credentials_subtitle") }
-        static var displayTitle: String { localized("welcome.display_title") }
         static var displaySubtitle: String { localized("welcome.display_subtitle") }
         static var preview: String { localized("welcome.preview") }
         static var back: String { localized("welcome.back") }
@@ -223,12 +219,8 @@ enum L {
         static var validFormat: String { localized("welcome.valid_format") }
         static var howToGetSessionKey: String { localized("welcome.how_to_get_session_key") }
         static var invalidFormat: String { localized("welcome.invalid_format") }
-        static var selectLimits: String { localized("welcome.select_limits") }
-        static var smartModeRecommended: String { localized("welcome.smart_mode_recommended") }
-        static var customSelection: String { localized("welcome.custom_selection") }
         static var configuring: String { localized("welcome.configuring") }
         static var fetchOrgIdFailed: String { localized("welcome.fetch_org_id_failed") }
-        static var menubarIconNotVisible: String { localized("welcome.menubar_icon_not_visible") }
         static var multiAccountHint: String { localized("welcome.multi_account_hint") }
     }
     
@@ -250,8 +242,6 @@ enum L {
         static var iconOnly: String { localized("display.icon_only") }
         static var both: String { localized("display.both") }
         static var none: String { localized("display.none") }
-        static var showIcon: String { localized("display.show_icon") }
-        static var showPercentage: String { localized("display.show_percentage") }
         /// Name des Menüleisten-Modus „ein Punkt je Konto"
         static var accountDots: String { localized("display.account_dots") }
     }
@@ -261,9 +251,6 @@ enum L {
         static var colorTranslucent: String { localized("icon_style.color_translucent") }
         static var colorWithBackground: String { localized("icon_style.color_with_background") }
         static var monochrome: String { localized("icon_style.monochrome") }
-        static var colorTranslucentDesc: String { localized("icon_style.color_translucent_desc") }
-        static var colorWithBackgroundDesc: String { localized("icon_style.color_with_background_desc") }
-        static var monochromeDesc: String { localized("icon_style.monochrome_desc") }
     }
     
     // MARK: - Refresh Interval
@@ -376,8 +363,6 @@ enum L {
 
     // MARK: - Diagnostics
     enum Diagnostic {
-        static var sectionTitle: String { localized("diagnostic.section_title") }
-        static var sectionDescription: String { localized("diagnostic.section_description") }
         static var testButton: String { localized("diagnostic.test_button") }
         static var viewDetailsButton: String { localized("diagnostic.view_details_button") }
         static var exportButton: String { localized("diagnostic.export_button") }
@@ -448,21 +433,10 @@ enum L {
 
     // MARK: - Display Options (v2.0.0)
     enum DisplayOptions {
-        static var title: String { localized("display_options") }
         static var smartDisplay: String { localized("smart_display") }
-        static var smartDisplayDescription: String { localized("smart_display_description") }
         static var customDisplay: String { localized("custom_display") }
-        static var customDisplayDescription: String { localized("custom_display_description") }
-        static var displayModeLabel: String { localized("display_mode_label") }
-        static var selectLimitTypes: String { localized("select_limit_types") }
-        static var circularIconConstraint: String { localized("circular_icon_constraint") }
-        static var coloredThemeUnavailable: String { localized("colored_theme_unavailable") }
-        static var menuBarOnlyToggle: String { localized("custom_display.menu_bar_only_toggle") }
-        static var menuBarOnlyDescription: String { localized("custom_display.menu_bar_only_description") }
         /// Überschrift der Auswahl „Ringe oder Punktreihe in der Menüleiste"
         static var menuBarLayout: String { localized("display_options.menu_bar_layout") }
-        /// Erste Option: die bisherige Ring-Darstellung des aktuellen Kontos
-        static var menuBarLayoutRings: String { localized("display_options.menu_bar_layout_rings") }
         /// Erklärung zur Punktreihe unter der Auswahl
         static var accountDotsDescription: String { localized("display_options.account_dots_description") }
     }
@@ -528,7 +502,6 @@ enum L {
     // MARK: - Settings General (Appearance)
     enum SettingsGeneralAppearance {
         static var section: String { localized("settings.general.appearance_section") }
-        static var hint: String { localized("settings.general.appearance_hint") }
     }
 
     // MARK: - Web Login
@@ -575,7 +548,6 @@ enum L {
         static var section: String { localized("notification.section") }
         static var hint: String { localized("notification.hint") }
         static var enable: String { localized("notification.enable") }
-        static var description: String { localized("notification.description") }
     }
 
     // MARK: - Usage Notification
@@ -595,7 +567,6 @@ enum L {
     // MARK: - Settings General (Time Format)
     enum SettingsGeneralTimeFormat {
         static var section: String { localized("settings.general.time_format_section") }
-        static var hint: String { localized("settings.general.time_format_hint") }
         static var preview: String { localized("settings.general.time_format_preview") }
     }
 

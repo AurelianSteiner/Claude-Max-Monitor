@@ -52,36 +52,18 @@
 "settings.general.launch_at_login" = "Automatisch beim Login starten";
 "settings.general.launch_hint" = "Wenn aktiviert, startet die App automatisch bei der Anmeldung am System";
 "settings.general.display_section" = "Anzeigeeinstellungen";
-"settings.general.menubar_icon" = "Menüleisten-Symbol";
-"settings.general.menubar_hint" = "Legt fest, was in der Menüleiste angezeigt wird";
-"settings.general.menubar_theme" = "Menüleisten-Theme";
-"settings.general.display_content" = "Angezeigter Inhalt";
-"settings.general.monochrome_no_icon_hint" = "Die Symbolanzeige wird im einfarbigen Theme nicht unterstützt";
 "settings.general.refresh_section" = "Aktualisierungseinstellungen";
 "settings.general.refresh_mode" = "Aktualisierungsmodus";
 "settings.general.refresh_interval" = "Festes Aktualisierungsintervall";
 "settings.general.refresh_hint_smart" = "Passt die Aktualisierungsfrequenz automatisch an die Nutzung an (1 Min. bei Aktivität, bis zu 10 Min. im Leerlauf)";
 "settings.general.refresh_hint_fixed" = "Daten in festen Zeitabständen aktualisieren";
-"settings.general.language_section" = "Spracheinstellungen";
 "settings.general.interface_language" = "Oberflächensprache";
-"settings.general.language_hint" = "Ändert die Anzeigesprache der Oberfläche";
 "settings.general.reset_button" = "Auf Standard zurücksetzen";
 "icon_style.color_translucent" = "Farbig transparent";
 "icon_style.color_with_background" = "Farbig mit Hintergrund";
 "icon_style.monochrome" = "Einfarbig";
-"icon_style.color_translucent_desc" = "Farbige Ringe mit transparentem Hintergrund, passend für die meisten Menüleisten-Stile";
-"icon_style.color_with_background_desc" = "Farbige Ringe mit transparent-weißem Hintergrund, ideal wenn „Farbig transparent“ auf dunklen Hintergründen schlecht wirkt";
-"icon_style.monochrome_desc" = "Passt sich automatisch dem Stil der System-Menüleiste an, schlicht und elegant";
 
 // MARK: - Settings - Authentication
-"settings.auth.how_to_title" = "So lassen sich die Claude-Anmeldedaten ermitteln";
-"settings.auth.step1" = "1. claude.ai im Browser aufrufen und anmelden";
-"settings.auth.step2" = "2. Entwicklerwerkzeuge des Browsers öffnen (F12 oder Cmd+Option+I)";
-"settings.auth.step3" = "3. Zum Tab „Netzwerk“ wechseln";
-"settings.auth.step4" = "4. Seite neu laden und die usage-Anfrage suchen";
-"settings.auth.step5" = "5. sessionKey im Cookie unter „Headers“ suchen";
-"settings.auth.step6" = "6. Wert von sessionKey kopieren und oben einfügen";
-"settings.auth.open_browser" = "Claude-Nutzungsseite im Browser öffnen";
 "settings.auth.session_key_label" = "Session Key";
 "settings.auth.session_key_placeholder" = "Session Key einfügen";
 "settings.auth.session_key_hint" = "Den vollständigen sessionKey-Cookie-Wert einfügen (beginnt meist mit sk-ant-sid)";
@@ -90,8 +72,6 @@
 "settings.auth.credentials_title" = "Anmeldedaten";
 "settings.auth.ready_to_use" = "Bereit zur Nutzung der App";
 "settings.auth.need_credentials" = "Bitte Session Key eingeben";
-"settings.auth.show_password" = "Anzeigen";
-"settings.auth.hide_password" = "Verbergen";
 "settings.auth.manual_input_claude_only_help" = "Nur Claude: Manuelle Eingabe des Session Key wird für Codex nicht unterstützt.";
 
 // MARK: - Settings - About
@@ -124,8 +104,6 @@
 "display.icon_only" = "Nur Symbol";
 "display.both" = "Symbol und Prozent";
 "display.none" = "Keine Anzeige";
-"display.show_icon" = "Symbol anzeigen";
-"display.show_percentage" = "Prozent anzeigen";
 "display.account_dots" = "Punkte (alle Konten)";
 
 // MARK: - Refresh Interval
@@ -182,8 +160,6 @@
 "launch.error.disable" = "Start beim Login konnte nicht deaktiviert werden";
 
 // MARK: - Diagnostics
-"diagnostic.section_title" = "Verbindungsdiagnose";
-"diagnostic.section_description" = "Testet die API-Verbindungen und diagnostiziert Probleme. Alle sensiblen Informationen werden in Berichten automatisch geschwärzt.";
 "diagnostic.test_button" = "Verbindung testen";
 "diagnostic.view_details_button" = "Details";
 "diagnostic.export_button" = "Exportieren";
@@ -256,20 +232,10 @@
 "detail_row.extra_usage" = "Zusätzliche Nutzung";
 
 // MARK: - Display Options (v2.0.0)
-"display_options" = "Anzeigeoptionen";
 "smart_display" = "Intelligente Anzeige";
-"smart_display_description" = "Zeigt automatisch alle Limit-Typen mit Daten an";
 "custom_display" = "Benutzerdefinierte Anzeige";
-"custom_display_description" = "Legt manuell fest, welche Limits angezeigt werden";
-"display_mode_label" = "Anzeigemodus";
-"select_limit_types" = "Anzuzeigende Limit-Typen auswählen";
-"circular_icon_constraint" = "Mindestens ein kreisförmiges Limit muss ausgewählt sein";
-"colored_theme_unavailable" = "Farbige Themes sind nur verfügbar, wenn 1–2 kreisförmige Symbole ohne andere Typen angezeigt werden";
-"custom_display.menu_bar_only_toggle" = "Nur auf Menüleiste anwenden";
-"custom_display.menu_bar_only_description" = "Wenn aktiviert, ignoriert das Popover diese Auswahl und zeigt alle verfügbaren Limits an.";
 "display_options.menu_bar_layout" = "Menüleiste";
-"display_options.menu_bar_layout_rings" = "Ringe (aktuelles Konto)";
-"display_options.account_dots_description" = "Ein Punkt je Konto: Die Füllung zeigt die Wochenlage (grau ohne Daten, grün frisch, blau in Benutzung, rot aufgebraucht), ein roter Ring das aufgebrauchte 5-Stunden-Fenster. Deutlich schmaler als die Ringe – auch neben der Notch.";
+"display_options.account_dots_description" = "Die Menüleiste zeigt einen Punkt je Account: grau ohne Daten, grün frisch, blau in Benutzung, rot aufgebraucht. Ein roter Ring markiert ein volles 5-Stunden-Fenster.";
 
 // MARK: - Theme Selection (v2.0.0)
 "theme_selection" = "Theme";
@@ -304,10 +270,6 @@
 "welcome.session_key_hint" = "Den vollständigen sessionKey-Cookie-Wert einfügen";
 "welcome.valid_format" = "Gültiges Format";
 "welcome.invalid_format" = "Der Session Key sollte 20–500 Zeichen lang sein";
-"welcome.select_limits" = "Limits auswählen";
-"welcome.smart_mode_recommended" = "Intelligenter Modus (empfohlen)";
-"welcome.custom_selection" = "Benutzerdefinierte Auswahl";
-"welcome.display_title" = "Anzeigeoptionen";
 "welcome.display_subtitle" = "Auswählen, welche Limit-Typen angezeigt werden";
 "welcome.preview" = "Vorschau";
 "welcome.back" = "Zurück";
@@ -315,7 +277,6 @@
 "welcome.how_to_get_session_key" = "Wie erhält man den Session Key?";
 "welcome.configuring" = "Wird konfiguriert...";
 "welcome.fetch_org_id_failed" = "Organisations-ID konnte nicht abgerufen werden, bitte später in den Einstellungen erneut versuchen";
-"welcome.menubar_icon_not_visible" = "Menüleisten-Symbol nicht sichtbar?";
 "welcome.multi_account_hint" = "Mehrere Accounts nötig? Nach der Einrichtung lassen sich in den Einstellungen weitere hinzufügen.";
 
 // MARK: - Detail Window - Date/Time Formats (v2.0.0)
@@ -365,7 +326,6 @@
 "time_format.twelve_hour" = "12-Stunden (2:30 PM)";
 "time_format.twenty_four_hour" = "24-Stunden (14:30)";
 "settings.general.time_format_section" = "Zeitformat";
-"settings.general.time_format_hint" = "Legt fest, wie die Zeit in der App angezeigt wird";
 "settings.general.time_format_preview" = "Vorschau";
 
 // MARK: - Appearance
@@ -373,20 +333,17 @@
 "appearance.light" = "Hell";
 "appearance.dark" = "Dunkel";
 "settings.general.appearance_section" = "Erscheinungsbild";
-"settings.general.appearance_hint" = "Legt das Farbschema der App fest oder folgt den Systemeinstellungen";
 
 // MARK: - Account Management (v2.1.0)
 "account.list_title" = "Accounts";
 "account.no_accounts" = "Keine Accounts konfiguriert. Zum Beginnen einen Account hinzufügen.";
 "account.add_account" = "Account hinzufügen";
 "account.add_new_account" = "Neuen Account hinzufügen";
-"account.current_account" = "Aktueller Claude Account";
 "account.alias" = "Alias";
 "account.alias_optional" = "Alias (optional)";
 "account.alias_placeholder" = "z. B. Privat Pro, Arbeits-Team";
+"account.alias_hint" = "Der Alias benennt die Karte in der Übersicht – so lassen sich Firmen- und Privat-Account auf einen Blick unterscheiden. Leer lassen zeigt den Namen der Organisation.";
 "account.clear_alias" = "Alias löschen";
-"account.organization_id" = "Organisations-ID";
-"account.copy_org_id" = "Organisations-ID kopieren";
 "account.delete_account" = "Diesen Account löschen";
 "account.delete_confirm_title" = "Account löschen";
 "account.delete_confirm_message" = "Soll dieser Account wirklich gelöscht werden? Diese Aktion kann nicht rückgängig gemacht werden.";
@@ -399,7 +356,6 @@
 "notification.section" = "Benachrichtigungen";
 "notification.hint" = "Benachrichtigen, wenn die Nutzung einen Schwellenwert erreicht oder zurückgesetzt wird";
 "notification.enable" = "Nutzungsbenachrichtigungen aktivieren";
-"notification.description" = "Eine Benachrichtigung wird gesendet, wenn ein Limit 90% erreicht oder die Nutzung zurückgesetzt wird";
 "notification.warning_title" = "Nutzungswarnung";
 "notification.warning_body" = "%@ hat %d%% Nutzung erreicht";
 "notification.reset_title" = "Nutzung zurückgesetzt";
@@ -426,7 +382,6 @@
 "account.claude_accounts" = "Claude Accounts";
 "account.codex_accounts" = "Codex Accounts";
 "account.add_codex_account" = "Codex Account hinzufügen";
-"account.codex_current_account" = "Aktueller Codex Account";
 
 /* Codex OAuth Login (system browser) */
 "weblogin.codex_oauth_preparing" = "Anmeldung wird vorbereitet…";
@@ -462,11 +417,8 @@
 "dashboard.columns_other" = "%d Spalten";
 "settings.dashboard.section" = "Übersicht (mehrere Accounts)";
 "settings.dashboard.hint" = "Die Übersicht zeigt alle hinzugefügten Accounts nebeneinander – so ist auf einen Blick sichtbar, welcher noch Luft hat.";
-"settings.dashboard.enable" = "Übersicht beim Klick auf das Menüleisten-Symbol öffnen";
-"settings.dashboard.description" = "Bei nur einem Account wird immer das klassische Detailfenster gezeigt.";
 "settings.dashboard.sort_label" = "Sortierung";
 "settings.dashboard.columns_label" = "Spalten";
-"settings.dashboard.needs_more_accounts" = "Für die Übersicht wird ein zweiter Account benötigt.";
 "dashboard.ring_extra" = "Extra";
 "dashboard.ring_opus" = "Opus";
 "dashboard.ring_sonnet" = "Sonnet";
@@ -480,3 +432,19 @@
 "dashboard.dot_help" = "%1$@ – Woche %2$@, Sitzung %3$@";
 "dashboard.dot_no_data" = "keine Daten";
 "dashboard.dot_used_up" = "aufgebraucht";
+"dashboard.dot_almost_used_up" = "fast aufgebraucht";
+
+/* Sperr-Plakette auf der Konto-Karte — benennt das Fenster, das wirklich zu ist */
+"dashboard.lock.session" = "Sitzung gesperrt";
+"dashboard.lock.weekly" = "Woche gesperrt";
+"dashboard.lock.everything" = "Alles gesperrt";
+"dashboard.lock.session_help" = "Das 5-Stunden-Fenster ist aufgebraucht. Die Woche hat noch Luft — nach dem Reset geht es sofort weiter.";
+"dashboard.lock.weekly_help" = "Das Wochenlimit ist aufgebraucht. Bis zum Wochen-Reset läuft über diesen Account nichts mehr — egal, wie frei das 5-Stunden-Fenster ist.";
+"dashboard.lock.everything_help" = "Wochenlimit und 5-Stunden-Fenster sind beide aufgebraucht. Bis zum Wochen-Reset läuft über diesen Account nichts mehr.";
+
+/* Wach-Schalter im Kopf der Übersicht */
+"dashboard.sleep.display_help" = "Der Bildschirm schaltet sich nicht mehr von selbst aus, und der Mac bleibt dabei ebenfalls wach. Gilt nur, solange Claude Max Monitor läuft.";
+"dashboard.sleep.system_help" = "Der Mac geht nicht mehr von selbst in den Ruhezustand. Der Bildschirm darf trotzdem dunkel werden. Gilt nur, solange Claude Max Monitor läuft.";
+"dashboard.sleep.lid_note" = "Zugeklappt schläft der Mac trotzdem ein. Das ließe sich nur über eine Systemeinstellung mit Administratorrechten ändern, und die verlangt diese App bewusst nicht.";
+"dashboard.sleep.state_on" = "Aktiv";
+"dashboard.sleep.state_off" = "Aus";

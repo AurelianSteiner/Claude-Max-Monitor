@@ -209,27 +209,6 @@ struct GeneralSettingsDebugSection: View {
                         .foregroundColor(.secondary)
                 }
 
-                // 单独显示所有形状图标开关
-                Divider()
-                    .padding(.vertical, 4)
-
-                HStack {
-                    Toggle("", isOn: $settings.debugShowAllShapesIndividually)
-                        .toggleStyle(.switch)
-                        .controlSize(.mini)
-                        .focusable(false)
-                        .labelsHidden()
-
-                    Text("形状图标可单独显示")
-                        .font(.subheadline)
-
-                    Spacer()
-
-                    Text("方便截图")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-
                 // 保持详情窗口打开开关
                 Divider()
                     .padding(.vertical, 4)

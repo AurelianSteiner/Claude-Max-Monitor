@@ -162,7 +162,13 @@ substitutions = {
     "$(PRODUCT_NAME)": product_name,
     "$(PRODUCT_BUNDLE_PACKAGE_TYPE)": "APPL",
     "$(MARKETING_VERSION)": version,
-    "$(CURRENT_PROJECT_VERSION)": base_version,  # CFBundleVersion bleibt rein numerisch
+    # CFBundleVersion muss mitwachsen: Sparkle vergleicht die <sparkle:version>
+    # des Appcasts gegen CFBundleVersion, nicht gegen die sichtbare Version.
+    # Stand hier die feste base_version, meldete jede gebaute App dauerhaft 1.0 —
+    # und der Appcast bot dieselbe Version endlos als „Update" an.
+    # Nur der numerische Anteil: Entwickler-Builds heißen „1.0+dashboard“, und
+    # CFBundleVersion erlaubt ausschließlich Ziffern und Punkte.
+    "$(CURRENT_PROJECT_VERSION)": re.match(r"[0-9.]*", version).group(0).strip(".") or base_version,
     "$(MACOSX_DEPLOYMENT_TARGET)": min_os,
 }
 

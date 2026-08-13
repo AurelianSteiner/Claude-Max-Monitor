@@ -5,14 +5,15 @@
 //  Created by Claude Code on 2025-12-02.
 //  Copyright © 2025 f-is-h. All rights reserved.
 //
-//  账户详情卡片、添加账户流程、说明/诊断卡片分别拆到
-//  AuthSettingsView+AccountDetail.swift / +AddAccount.swift / +Help.swift，
-//  保持本文件体量可控。跨文件共享的 @State 因此不能标 private（extension 无法跨文件访问）。
+//  Kontoliste mit Alias-Feld und Löschen; der Ablauf „Konto manuell hinzufügen"
+//  liegt in AuthSettingsView+AddAccount.swift, damit diese Datei kurz bleibt.
+//  Die dafür geteilten @State dürfen deshalb nicht private sein (Extensions in
+//  anderen Dateien kämen sonst nicht heran).
 
 import SwiftUI
 
 /// 认证设置页面
-/// 使用卡片式布局，用于管理多账户
+/// Eine Karte: alle Konten mit ihrem Alias, dazu die Knöpfe zum Hinzufügen.
 struct AuthSettingsView: View {
     @ObservedObject var settings = UserSettings.shared
     @State var isAddingAccount = false
@@ -20,7 +21,6 @@ struct AuthSettingsView: View {
     @State var newAlias = ""
     @State var isValidating = false
     @State var validationError: String?
-    @State var isShowingPassword = false
     @State var showDeleteConfirmation = false
     @State var accountToDelete: Account?
     @State var successMessage: String?
@@ -56,22 +56,6 @@ struct AuthSettingsView: View {
 
                     // 账户列表视图
                     accountListView
-
-                    // 当前 Claude 账户详情
-                    if let currentAccount = settings.currentAccount {
-                        currentAccountDetailView(account: currentAccount)
-                    }
-
-                    // 当前 Codex 账户详情
-                    if let currentCodexAccount = settings.currentCodexAccount {
-                        currentCodexAccountDetailView(account: currentCodexAccount)
-                    }
-
-                    // 说明卡片
-                    howToCard
-
-                    // 诊断卡片
-                    diagnosticsCard
                 }
             }
             .padding()
@@ -108,10 +92,10 @@ struct AuthSettingsView: View {
             icon: "person.2.fill",
             iconColor: .blue,
             title: L.Account.listTitle,
-            hint: ""
+            hint: settings.accounts.isEmpty && !hasCodex ? "" : L.Account.aliasHint
         ) {
             VStack(alignment: .leading, spacing: 12) {
-                if settings.accounts.isEmpty && settings.codexAccounts.isEmpty {
+                if settings.accounts.isEmpty && !hasCodex {
                     // 无账户时的提示
                     VStack(spacing: 12) {
                         Image(systemName: "person.crop.circle.badge.plus")
@@ -266,63 +250,73 @@ struct AuthSettingsView: View {
 
     // MARK: - Account Row
 
+    /// Eine Zeile je Konto: Alias direkt bearbeitbar, darunter der echte
+    /// Organisationsname, rechts das Löschen. Die frühere Auswahl „aktuelles
+    /// Konto" ist entfallen — die Übersicht zeigt ohnehin alle Konten.
     func accountRow(account: Account, provider: ProviderType) -> some View {
-        let isSelected = provider == .codex
-            ? account.id == settings.currentCodexAccountId
-            : account.id == settings.currentAccountId
-        let accentColor: Color = provider == .codex
-            ? Color(red: 45/255.0, green: 212/255.0, blue: 191/255.0)
-            : .blue
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Image(systemName: "tag")
+                    .font(.caption)
+                    .foregroundColor(.orange)
 
-        return Button(action: {
-            if provider == .codex {
-                settings.switchToCodexAccount(account)
-            } else {
-                settings.switchToAccount(account)
-            }
-        }) {
-            HStack(spacing: 12) {
-                // 选中状态指示器
-                Circle()
-                    .fill(isSelected ? accentColor : Color.clear)
-                    .frame(width: 8, height: 8)
-                    .overlay(
-                        Circle()
-                            .stroke(Color.secondary.opacity(0.5), lineWidth: 1)
-                    )
+                TextField(account.organizationName, text: aliasBinding(for: account, provider: provider))
+                    .textFieldStyle(.roundedBorder)
+                    .help(L.Account.aliasHint)
+                    .accessibilityLabel(L.Account.alias)
 
-                // 账户信息
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack {
-                        Text(account.displayName)
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(.primary)
-
-                        if isSelected {
-                            Image(systemName: "checkmark")
-                                .font(.caption)
-                                .foregroundColor(accentColor)
-                        }
-                    }
-
-                    if account.alias != nil && !account.alias!.isEmpty {
-                        Text(account.organizationName)
-                            .font(.caption)
+                if let alias = account.alias, !alias.isEmpty {
+                    Button(action: { updateAlias(nil, for: account, provider: provider) }) {
+                        Image(systemName: "xmark.circle.fill")
                             .foregroundColor(.secondary)
                     }
+                    .buttonStyle(.plain)
+                    .help(L.Account.clearAlias)
                 }
 
-                Spacer()
+                Button(action: {
+                    if provider == .codex {
+                        codexAccountToDelete = account
+                        showDeleteCodexConfirmation = true
+                    } else {
+                        accountToDelete = account
+                        showDeleteConfirmation = true
+                    }
+                }) {
+                    Image(systemName: "trash")
+                        .foregroundColor(.red)
+                }
+                .buttonStyle(.plain)
+                .help(L.Account.deleteAccount)
             }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(isSelected ? accentColor.opacity(0.1) : Color.clear)
-            )
-            .contentShape(Rectangle())
+
+            Text(account.organizationName)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .padding(.leading, 22)
         }
-        .buttonStyle(.plain)
+        .padding(.vertical, 2)
+    }
+
+    // MARK: - Alias
+
+    private func aliasBinding(for account: Account, provider: ProviderType) -> Binding<String> {
+        Binding(
+            get: { account.alias ?? "" },
+            set: { newValue in
+                let trimmed = newValue.trimmingCharacters(in: .whitespaces)
+                updateAlias(trimmed.isEmpty ? nil : newValue, for: account, provider: provider)
+            }
+        )
+    }
+
+    private func updateAlias(_ alias: String?, for account: Account, provider: ProviderType) {
+        if provider == .codex {
+            settings.updateCodexAccount(account, alias: alias)
+        } else {
+            settings.updateAccount(account, alias: alias)
+        }
     }
 }

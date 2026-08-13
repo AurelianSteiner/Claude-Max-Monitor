@@ -53,36 +53,18 @@
 "settings.general.launch_at_login" = "Start automatically at login";
 "settings.general.launch_hint" = "When enabled, the app will launch automatically when you log in to your system";
 "settings.general.display_section" = "Display Settings";
-"settings.general.menubar_icon" = "Menu Bar Icon";
-"settings.general.menubar_hint" = "Choose what to display in the menu bar";
-"settings.general.menubar_theme" = "Menu Bar Theme";
-"settings.general.display_content" = "Display Content";
-"settings.general.monochrome_no_icon_hint" = "Icon display is not supported in Monochrome theme";
 "settings.general.refresh_section" = "Refresh Settings";
 "settings.general.refresh_mode" = "Refresh Mode";
 "settings.general.refresh_interval" = "Fixed Refresh Interval";
 "settings.general.refresh_hint_smart" = "Automatically adjust refresh frequency based on usage (1 min when active, up to 10 min when idle)";
 "settings.general.refresh_hint_fixed" = "Refresh data at fixed time intervals";
-"settings.general.language_section" = "Language Settings";
 "settings.general.interface_language" = "Interface Language";
-"settings.general.language_hint" = "Change the interface display language";
 "settings.general.reset_button" = "Reset to Defaults";
 "icon_style.color_translucent" = "Color Translucent";
 "icon_style.color_with_background" = "Color with Background";
 "icon_style.monochrome" = "Monochrome";
-"icon_style.color_translucent_desc" = "Colored rings with transparent background, suitable for most menu bar styles";
-"icon_style.color_with_background_desc" = "Colored rings with translucent white background, ideal when Color Translucent performs poorly on dark wallpapers";
-"icon_style.monochrome_desc" = "Automatically adapts to system menu bar style, clean and elegant";
 
 // MARK: - Settings - Authentication
-"settings.auth.how_to_title" = "How to Get Claude Authentication Info";
-"settings.auth.step1" = "1. Visit claude.ai in your browser and log in";
-"settings.auth.step2" = "2. Open browser developer tools (F12 or Cmd+Option+I)";
-"settings.auth.step3" = "3. Switch to the Network tab";
-"settings.auth.step4" = "4. Refresh the page and find the usage request";
-"settings.auth.step5" = "5. Find sessionKey in Cookie under Headers";
-"settings.auth.step6" = "6. Copy the sessionKey value and paste it above";
-"settings.auth.open_browser" = "Open Claude Usage Page in Browser";
 "settings.auth.session_key_label" = "Session Key";
 "settings.auth.session_key_placeholder" = "Paste Session Key";
 "settings.auth.session_key_hint" = "Paste the full sessionKey cookie value (usually starts with sk-ant-sid)";
@@ -91,8 +73,6 @@
 "settings.auth.credentials_title" = "Authentication Credentials";
 "settings.auth.ready_to_use" = "Ready to use the app";
 "settings.auth.need_credentials" = "Please enter Session Key";
-"settings.auth.show_password" = "Show";
-"settings.auth.hide_password" = "Hide";
 "settings.auth.manual_input_claude_only_help" = "Claude only: manual Session Key input is not supported for Codex.";
 
 // MARK: - Settings - About
@@ -125,8 +105,6 @@
 "display.icon_only" = "Icon Only";
 "display.both" = "Icon and Percentage";
 "display.none" = "No Display";
-"display.show_icon" = "Show Icon";
-"display.show_percentage" = "Show Percentage";
 "display.account_dots" = "Dots (all accounts)";
 
 // MARK: - Refresh Interval
@@ -183,8 +161,6 @@
 "launch.error.disable" = "Failed to disable launch at login";
 
 // MARK: - Diagnostics
-"diagnostic.section_title" = "Connection Diagnostics";
-"diagnostic.section_description" = "Test your API connections and diagnose issues. All sensitive information is automatically redacted in reports.";
 "diagnostic.test_button" = "Test Connection";
 "diagnostic.view_details_button" = "View Details";
 "diagnostic.export_button" = "Export Report";
@@ -257,20 +233,10 @@
 "detail_row.extra_usage" = "Extra Usage";
 
 // MARK: - Display Options (v2.0.0)
-"display_options" = "Display Options";
 "smart_display" = "Smart Display";
-"smart_display_description" = "Automatically display all limit types with data";
 "custom_display" = "Custom Display";
-"custom_display_description" = "Manually select which limits to display";
-"display_mode_label" = "Display Mode";
-"select_limit_types" = "Select Limit Types to Display";
-"circular_icon_constraint" = "At least one circular limit must be selected";
-"colored_theme_unavailable" = "Colored themes are only available when showing 1-2 circular icons without other types";
-"custom_display.menu_bar_only_toggle" = "Apply only to menu bar";
-"custom_display.menu_bar_only_description" = "When on, the popover ignores this selection and shows all available limits.";
 "display_options.menu_bar_layout" = "Menu bar";
-"display_options.menu_bar_layout_rings" = "Rings (current account)";
-"display_options.account_dots_description" = "One dot per account: the fill shows the weekly load (gray without data, green fresh, blue in use, red used up), a red ring marks an exhausted 5-hour window. Far narrower than the rings — even next to the notch.";
+"display_options.account_dots_description" = "The menu bar shows one dot per account: gray without data, green fresh, blue in use, red used up. A red ring marks a full 5-hour window.";
 
 // MARK: - Theme Selection (v2.0.0)
 "theme_selection" = "Theme";
@@ -305,10 +271,6 @@
 "welcome.session_key_hint" = "Paste the full sessionKey cookie value";
 "welcome.valid_format" = "Valid format";
 "welcome.invalid_format" = "Session Key should be 20-500 characters";
-"welcome.select_limits" = "Select Limits";
-"welcome.smart_mode_recommended" = "Smart Mode (Recommended)";
-"welcome.custom_selection" = "Custom Selection";
-"welcome.display_title" = "Display Options";
 "welcome.display_subtitle" = "Choose which limit types to display";
 "welcome.preview" = "Preview";
 "welcome.back" = "Back";
@@ -316,7 +278,6 @@
 "welcome.how_to_get_session_key" = "How to get Session Key?";
 "welcome.configuring" = "Configuring...";
 "welcome.fetch_org_id_failed" = "Unable to fetch Organization ID, please retry in Settings later";
-"welcome.menubar_icon_not_visible" = "Menu bar icon not visible?";
 "welcome.multi_account_hint" = "Need multiple accounts? You can add more in Settings after setup.";
 
 // MARK: - Detail Window - Date/Time Formats (v2.0.0)
@@ -366,7 +327,6 @@
 "time_format.twelve_hour" = "12-Hour (2:30 PM)";
 "time_format.twenty_four_hour" = "24-Hour (14:30)";
 "settings.general.time_format_section" = "Time Format";
-"settings.general.time_format_hint" = "Choose how time is displayed throughout the app";
 "settings.general.time_format_preview" = "Preview";
 
 // MARK: - Appearance
@@ -374,20 +334,17 @@
 "appearance.light" = "Light";
 "appearance.dark" = "Dark";
 "settings.general.appearance_section" = "Appearance";
-"settings.general.appearance_hint" = "Choose the app's color scheme, or follow system settings";
 
 // MARK: - Account Management (v2.1.0)
 "account.list_title" = "Accounts";
 "account.no_accounts" = "No accounts configured. Add an account to get started.";
 "account.add_account" = "Add Account";
 "account.add_new_account" = "Add New Account";
-"account.current_account" = "Current Claude Account";
 "account.alias" = "Alias";
 "account.alias_optional" = "Alias (Optional)";
 "account.alias_placeholder" = "e.g., Personal Pro, Work Team";
+"account.alias_hint" = "The alias renames the card in the overview, so you can tell a company org from a personal one at a glance. Leave it empty to show the organization name.";
 "account.clear_alias" = "Clear Alias";
-"account.organization_id" = "Organization ID";
-"account.copy_org_id" = "Copy Organization ID";
 "account.delete_account" = "Delete This Account";
 "account.delete_confirm_title" = "Delete Account";
 "account.delete_confirm_message" = "Are you sure you want to delete this account? This action cannot be undone.";
@@ -400,7 +357,6 @@
 "notification.section" = "Notifications";
 "notification.hint" = "Get notified when usage reaches threshold or resets";
 "notification.enable" = "Enable Usage Notifications";
-"notification.description" = "Receive a notification when any limit reaches 90%%, or when usage resets.";
 "notification.warning_title" = "Usage Warning";
 "notification.warning_body" = "%@ has reached %d%% usage";
 "notification.reset_title" = "Usage Reset";
@@ -427,7 +383,6 @@
 "account.claude_accounts" = "Claude Accounts";
 "account.codex_accounts" = "Codex Accounts";
 "account.add_codex_account" = "Add Codex Account";
-"account.codex_current_account" = "Current Codex Account";
 
 /* Codex OAuth Login (system browser) */
 "weblogin.codex_oauth_preparing" = "Preparing sign-in…";
@@ -463,11 +418,8 @@
 "dashboard.columns_other" = "%d columns";
 "settings.dashboard.section" = "Overview (multiple accounts)";
 "settings.dashboard.hint" = "The overview shows every account you added side by side, so you can tell at a glance which one still has room.";
-"settings.dashboard.enable" = "Open the overview when clicking the menu bar icon";
-"settings.dashboard.description" = "With only one account the classic detail window is always shown.";
 "settings.dashboard.sort_label" = "Sorting";
 "settings.dashboard.columns_label" = "Columns";
-"settings.dashboard.needs_more_accounts" = "Add a second account to use the overview.";
 "dashboard.ring_extra" = "Extra";
 "dashboard.ring_opus" = "Opus";
 "dashboard.ring_sonnet" = "Sonnet";
@@ -481,3 +433,19 @@
 "dashboard.dot_help" = "%1$@ — week %2$@, session %3$@";
 "dashboard.dot_no_data" = "no data";
 "dashboard.dot_used_up" = "used up";
+"dashboard.dot_almost_used_up" = "almost used up";
+
+/* Lock badge on an account card — names the window that is actually blocked */
+"dashboard.lock.session" = "Session locked";
+"dashboard.lock.weekly" = "Week locked";
+"dashboard.lock.everything" = "Everything locked";
+"dashboard.lock.session_help" = "The 5-hour window is used up. The week still has room, so work continues as soon as it resets.";
+"dashboard.lock.weekly_help" = "The weekly limit is used up. Nothing runs through this account until the weekly reset — no matter how free the 5-hour window is.";
+"dashboard.lock.everything_help" = "The weekly limit and the 5-hour window are both used up. Nothing runs through this account until the weekly reset.";
+
+/* Stay-awake switches in the overview header */
+"dashboard.sleep.display_help" = "The screen no longer turns itself off, and the Mac stays awake with it. Applies only while Claude Max Monitor is running.";
+"dashboard.sleep.system_help" = "The Mac no longer goes to sleep on its own. The screen may still go dark. Applies only while Claude Max Monitor is running.";
+"dashboard.sleep.lid_note" = "Closing the lid still puts the Mac to sleep. Changing that would take a system setting with administrator rights, which this app deliberately does not ask for.";
+"dashboard.sleep.state_on" = "On";
+"dashboard.sleep.state_off" = "Off";

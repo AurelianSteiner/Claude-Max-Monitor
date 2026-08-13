@@ -404,55 +404,37 @@ class MenuBarUI {
         setMenuItemIcon(aboutItem, systemName: "info.circle")
         menu.addItem(aboutItem)
 
-        menu.addItem(NSMenuItem.separator())
+        // Die Wach-Schalter stehen als Symbolknöpfe im Kopf der Übersicht —
+        // hier würden sie dieselbe Sache ein zweites Mal anbieten.
 
-        // Wach halten (IOKit-Power-Assertions, kein sudo / kein Helper-Tool nötig).
-        // Deckel-zu (Clamshell) bleibt bewusst außen vor — das ginge nur mit
-        // `sudo pmset disablesleep`, siehe Kommentar in SleepGuard.swift.
-        let sleepGuard = SleepGuard.shared
+        // Statusseiten der Anbieter: eigener Abschnitt samt Trennlinie, aber nur,
+        // wenn er auch Einträge bekommt. Seit die Wach-Schalter hier weg sind,
+        // stünden bei einem noch kontenlosen Start sonst zwei Trennlinien
+        // unmittelbar untereinander (NSMenu fasst die nicht von selbst zusammen).
+        if !settings.accounts.isEmpty || !settings.codexAccounts.isEmpty {
+            menu.addItem(NSMenuItem.separator())
 
-        let displayAwakeItem = NSMenuItem(
-            title: L.Menu.keepDisplayAwake,
-            action: #selector(MenuBarManager.toggleKeepDisplayAwake),
-            keyEquivalent: ""
-        )
-        displayAwakeItem.target = target
-        displayAwakeItem.state = sleepGuard.isDisplayAwake ? .on : .off
-        setMenuItemIcon(displayAwakeItem, systemName: "display")
-        menu.addItem(displayAwakeItem)
+            if !settings.accounts.isEmpty {
+                let claudeStatusItem = NSMenuItem(
+                    title: L.Menu.claudeStatus,
+                    action: #selector(MenuBarManager.openClaudeStatus),
+                    keyEquivalent: ""
+                )
+                claudeStatusItem.target = target
+                setMenuItemIcon(claudeStatusItem, systemName: "safari")
+                menu.addItem(claudeStatusItem)
+            }
 
-        let systemAwakeItem = NSMenuItem(
-            title: L.Menu.keepMacAwake,
-            action: #selector(MenuBarManager.toggleKeepMacAwake),
-            keyEquivalent: ""
-        )
-        systemAwakeItem.target = target
-        systemAwakeItem.state = sleepGuard.isSystemAwake ? .on : .off
-        setMenuItemIcon(systemAwakeItem, systemName: "cup.and.saucer")
-        menu.addItem(systemAwakeItem)
-
-        menu.addItem(NSMenuItem.separator())
-
-        if !settings.accounts.isEmpty {
-            let claudeStatusItem = NSMenuItem(
-                title: L.Menu.claudeStatus,
-                action: #selector(MenuBarManager.openClaudeStatus),
-                keyEquivalent: ""
-            )
-            claudeStatusItem.target = target
-            setMenuItemIcon(claudeStatusItem, systemName: "safari")
-            menu.addItem(claudeStatusItem)
-        }
-
-        if !settings.codexAccounts.isEmpty {
-            let codexStatusItem = NSMenuItem(
-                title: L.Menu.codexStatus,
-                action: #selector(MenuBarManager.openCodexStatus),
-                keyEquivalent: ""
-            )
-            codexStatusItem.target = target
-            setMenuItemIcon(codexStatusItem, systemName: "safari.fill")
-            menu.addItem(codexStatusItem)
+            if !settings.codexAccounts.isEmpty {
+                let codexStatusItem = NSMenuItem(
+                    title: L.Menu.codexStatus,
+                    action: #selector(MenuBarManager.openCodexStatus),
+                    keyEquivalent: ""
+                )
+                codexStatusItem.target = target
+                setMenuItemIcon(codexStatusItem, systemName: "safari.fill")
+                menu.addItem(codexStatusItem)
+            }
         }
 
         menu.addItem(NSMenuItem.separator())

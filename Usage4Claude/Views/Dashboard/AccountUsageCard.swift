@@ -7,9 +7,10 @@
 //  Aufbau: links der Wasserstand für das Stundenlimit, durch eine senkrechte
 //  Linie getrennt rechts groß das Wochenlimit — die Zahl, an der die Planung
 //  hängt. Beide Seiten tragen ihr eigenes Label und ihre eigene Reset-Zeit.
-//  Ist ein Konto praktisch aufgebraucht, steht daneben ein mitlaufender
-//  Countdown bis zur Freischaltung. Darunter die frei konfigurierbaren
-//  übrigen Limits als Zeilen.
+//  Ist ein Fenster aufgebraucht, steht daneben eine Sperr-Plakette: sie
+//  benennt, *was* gesperrt ist (Sitzung / Woche / alles), und zählt bis zur
+//  Freischaltung genau dieses Fensters herunter. Darunter die frei
+//  konfigurierbaren übrigen Limits als Zeilen.
 //
 //  Klick auf die Karte macht das Konto zum aktiven, dem die Menüleiste folgt.
 //  Copyright © 2025 f-is-h. All rights reserved.
@@ -178,8 +179,8 @@ struct AccountUsageCard: View {
 
             Spacer(minLength: 4)
 
-            if snapshot.isNearExhausted {
-                exhaustionCountdown
+            if let lock = lockState {
+                lockBadge(lock)
             }
         }
         .frame(height: Self.headlineHeight)
@@ -229,19 +230,94 @@ struct AccountUsageCard: View {
             .minimumScaleFactor(0.8)
     }
 
-    /// Ersetzt das frühere Ausgrauen: Statt die Karte zu dämpfen, sagt ein
-    /// mitlaufender Countdown, wie lange das knappste Limit noch blockiert.
-    private var exhaustionCountdown: some View {
-        let resetsAt = snapshot.criticalLimit?.resetsAt
+    // MARK: - Sperr-Plakette
+
+    /// Welches Fenster blockiert dieses Konto gerade? Der Unterschied ist groß:
+    /// ein aufgebrauchtes Sitzungsfenster ist in Stunden zurück, ein
+    /// aufgebrauchtes Wochenlimit kann Tage blockieren. Ein reiner Countdown
+    /// („noch 3h 12m") sagt nicht, welches der beiden gemeint ist — deshalb
+    /// benennt die Plakette zuerst das Fenster und erst danach die Restzeit.
+    private enum LockState {
+        /// Nur das Sitzungsfenster (5 Stunden bzw. Codex primary) ist aufgebraucht
+        case session
+        /// Nur die Woche ist aufgebraucht, die Sitzung hätte noch Luft
+        case weekly
+        /// Woche und Sitzung sind beide aufgebraucht
+        case everything
+    }
+
+    /// Die Wochenlage entscheidet zuerst — sie ist die bindende Sperre.
+    /// `nil` heißt: nichts ist zu, die Plakette bleibt weg. Ein volles
+    /// Extra-Kontingent allein sperrt nichts und zählt hier bewusst nicht mit.
+    private var lockState: LockState? {
+        let weeklyLocked = (snapshot.weeklyPeakUtilization ?? 0) >= AccountUsageSnapshot.nearExhaustionThreshold
+        switch (weeklyLocked, snapshot.sessionExhausted) {
+        case (true, true):   return .everything
+        case (true, false):  return .weekly
+        case (false, true):  return .session
+        case (false, false): return nil
+        }
+    }
+
+    private func lockTitle(_ state: LockState) -> String {
+        switch state {
+        case .session:    return L.Dashboard.lockSession
+        case .weekly:     return L.Dashboard.lockWeekly
+        case .everything: return L.Dashboard.lockEverything
+        }
+    }
+
+    private func lockDetail(_ state: LockState) -> String {
+        switch state {
+        case .session:    return L.Dashboard.lockSessionHelp
+        case .weekly:     return L.Dashboard.lockWeeklyHelp
+        case .everything: return L.Dashboard.lockEverythingHelp
+        }
+    }
+
+    /// Der Countdown gehört immer zu dem Fenster, das die Plakette benennt —
+    /// sonst stünde unter „Woche gesperrt" die Restzeit der Sitzung.
+    private func lockResetsAt(_ state: LockState) -> Date? {
+        switch state {
+        case .session:              return snapshot.sessionLimit?.resetsAt
+        case .weekly, .everything:  return weeklyLockResetsAt
+        }
+    }
+
+    /// Ende der Wochensperre: der späteste Reset unter den aufgebrauchten
+    /// Wochenfenstern. Die Modell-Wochenlimits (Opus/Sonnet/Fable) gehören dazu,
+    /// stehen aber nicht in `snapshot.weeklyLimit` — ohne sie hinge ein volles
+    /// Opus-Fenster ohne Datum da. Fällt notfalls auf das 7-Tage-Fenster zurück.
+    private var weeklyLockResetsAt: Date? {
+        let threshold = AccountUsageSnapshot.nearExhaustionThreshold
+        var dates: [Date] = []
+        if let weekly = snapshot.weeklyLimit, weekly.percentage >= threshold, let date = weekly.resetsAt {
+            dates.append(date)
+        }
+        for model in snapshot.usageData?.weeklyModels ?? [] where model.limit.percentage >= threshold {
+            if let date = model.limit.resetsAt { dates.append(date) }
+        }
+        return dates.max() ?? snapshot.weeklyLimit?.resetsAt
+    }
+
+    /// Ersetzt das frühere Ausgrauen: Statt die Karte zu dämpfen, benennt eine
+    /// Plakette das gesperrte Fenster und zählt bis zu dessen Freischaltung herunter.
+    /// Die Sitzung bekommt den milderen Ton (sie kommt bald zurück), die Woche den
+    /// kräftigen — und wenn beides zu ist, gewinnt die Wochenaussage.
+    private func lockBadge(_ state: LockState) -> some View {
+        let isWeekly = state != .session
+        // Farbstufe der Skala: 80 % = Clay-Orange (mild), 100 % = Rot (kräftig)
+        let level: Double = isWeekly ? 100 : 80
+        let resetsAt = lockResetsAt(state)
 
         return VStack(alignment: .leading, spacing: 1) {
             HStack(spacing: 3) {
-                Image(systemName: "hourglass")
+                Image(systemName: isWeekly ? "lock.fill" : "hourglass")
                     .font(.system(size: 9, weight: .semibold))
-                Text(L.Dashboard.freeAgain)
-                    .font(.system(size: 10, weight: .medium))
+                Text(lockTitle(state))
+                    .font(.system(size: 10, weight: isWeekly ? .semibold : .medium))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(0.7)
             }
 
             // Eigene Zeitachse: der Countdown läuft weiter, ohne dass die
@@ -253,18 +329,31 @@ struct AccountUsageCard: View {
                     .minimumScaleFactor(0.7)
             }
         }
-        .foregroundColor(DashboardPalette.ink(100))
+        .foregroundColor(DashboardPalette.ink(level))
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(DashboardPalette.fill(100).opacity(0.14))
+                .fill(DashboardPalette.fill(level).opacity(isWeekly ? 0.20 : 0.12))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(DashboardPalette.fill(100).opacity(0.45), lineWidth: 1)
+                .strokeBorder(
+                    DashboardPalette.fill(level).opacity(isWeekly ? 0.75 : 0.40),
+                    lineWidth: isWeekly ? 1.5 : 1
+                )
         )
-        .help(resetsAt.map(fullResetDescription) ?? "")
+        .help(lockHelp(state, resetsAt: resetsAt))
+    }
+
+    /// Tooltip der Plakette: Überschrift, Klartext dazu und der genaue Zeitpunkt
+    /// der Freischaltung — der Countdown allein nennt keinen Wochentag.
+    private func lockHelp(_ state: LockState, resetsAt: Date?) -> String {
+        var text = "\(lockTitle(state))\n\n\(lockDetail(state))"
+        if let resetsAt {
+            text += "\n\n\(L.Dashboard.freeAgain): \(fullResetDescription(resetsAt))"
+        }
+        return text
     }
 
     private func countdownText(for resetsAt: Date?) -> String {

@@ -46,6 +46,9 @@ enum IconDisplayMode: String, CaseIterable, Codable {
 }
 
 /// 菜单栏图标样式模式
+/// In den Einstellungen stehen nur noch `colorTranslucent` und `monochrome` zur
+/// Wahl; `colorWithBackground` gehörte zur alten Ring-Darstellung und wird beim
+/// Laden auf `colorTranslucent` abgebildet (siehe UserSettings.init()).
 enum IconStyleMode: String, CaseIterable, Codable {
     /// 彩色通透（默认，彩色无背景）
     case colorTranslucent = "color_translucent"
@@ -53,7 +56,7 @@ enum IconStyleMode: String, CaseIterable, Codable {
     case colorWithBackground = "color_with_background"
     /// 单色（Template模式，跟随系统主题）
     case monochrome = "monochrome"
-    
+
     var localizedName: String {
         switch self {
         case .colorTranslucent:
@@ -62,17 +65,6 @@ enum IconStyleMode: String, CaseIterable, Codable {
             return L.IconStyle.colorWithBackground
         case .monochrome:
             return L.IconStyle.monochrome
-        }
-    }
-    
-    var description: String {
-        switch self {
-        case .colorTranslucent:
-            return L.IconStyle.colorTranslucentDesc
-        case .colorWithBackground:
-            return L.IconStyle.colorWithBackgroundDesc
-        case .monochrome:
-            return L.IconStyle.monochromeDesc
         }
     }
 }
@@ -365,6 +357,11 @@ class UserSettings: ObservableObject {
 
     /// customDisplayTypes 的默认值，init() 与 resetToDefaults() 共用，避免两处定义漂移不一致
     static let defaultCustomDisplayTypes: Set<LimitType> = [.fiveHour, .sevenDay]
+
+    /// Merker der einmaligen Umstellung auf die Menüleisten-Punktreihe (siehe init()).
+    /// Die zugehörigen Bedienelemente sind entfallen, deshalb wird der gespeicherte
+    /// Zustand genau einmal geradegezogen statt bei jedem Start überschrieben.
+    private static let menuBarModeMigrationKey = "didMigrateToAccountDotsMenuBar"
 
     // MARK: - Properties
 
@@ -701,14 +698,6 @@ class UserSettings: ObservableObject {
         }
     }
 
-    /// 是否在菜单栏单独显示所有形状图标（调试用，方便截图）
-    @Published var debugShowAllShapesIndividually: Bool {
-        didSet {
-            defaults.set(debugShowAllShapesIndividually, forKey: "debugShowAllShapesIndividually")
-            NotificationCenter.default.post(name: .settingsChanged, object: nil)
-        }
-    }
-
     /// 是否保持详情窗口始终打开（调试用，方便录制动画）
     @Published var debugKeepDetailWindowOpen: Bool {
         didSet {
@@ -778,16 +767,26 @@ class UserSettings: ObservableObject {
     private init() {
         // MARK: - 从UserDefaults加载非敏感设置
 
-        if let modeString = defaults.string(forKey: "iconDisplayMode"),
+        // Die Menüleiste zeigt immer die Punktreihe (ein Punkt je Konto); dafür gibt
+        // es kein Bedienelement mehr. Bestandsinstallationen werden einmalig
+        // umgestellt, damit niemand auf der alten Ring-Darstellung hängen bleibt.
+        // Danach zählt wieder der gespeicherte Wert (Debug-Builds dürfen ihn setzen).
+        let needsMenuBarMigration = !defaults.bool(forKey: Self.menuBarModeMigrationKey)
+
+        if !needsMenuBarMigration,
+           let modeString = defaults.string(forKey: "iconDisplayMode"),
            let mode = IconDisplayMode(rawValue: modeString) {
             self.iconDisplayMode = mode
         } else {
-            self.iconDisplayMode = .percentageOnly
+            self.iconDisplayMode = .accountDots
+            defaults.set(IconDisplayMode.accountDots.rawValue, forKey: "iconDisplayMode")
         }
-        
+
+        // Für die Punktreihe zählt nur noch farbig vs. einfarbig; „farbig mit
+        // Hintergrund" war eine Variante der Ringe und fällt auf farbig zurück.
         if let styleString = defaults.string(forKey: "iconStyleMode"),
            let style = IconStyleMode(rawValue: styleString) {
-            self.iconStyleMode = style
+            self.iconStyleMode = style == .colorWithBackground ? .colorTranslucent : style
         } else {
             self.iconStyleMode = .colorTranslucent  // 默认彩色通透
         }
@@ -821,12 +820,17 @@ class UserSettings: ObservableObject {
             self.timeFormatPreference = .system
         }
 
-        // 加载显示模式，默认为智能模式
-        if let modeString = defaults.string(forKey: "displayMode"),
+        // 加载显示模式，默认为智能模式。Die Auswahl „welche Limits zeige ich" ist
+        // aus den Einstellungen verschwunden; wer noch auf „benutzerdefiniert"
+        // stand, wird mit derselben einmaligen Migration auf „intelligent"
+        // zurückgeholt, sonst bliebe eine Teilauswahl ohne Bedienelement stehen.
+        if !needsMenuBarMigration,
+           let modeString = defaults.string(forKey: "displayMode"),
            let mode = DisplayMode(rawValue: modeString) {
             self.displayMode = mode
         } else {
             self.displayMode = .smart
+            defaults.set(DisplayMode.smart.rawValue, forKey: "displayMode")
         }
 
         // 加载自定义显示类型，默认为 5 小时和 7 天限制
@@ -837,7 +841,13 @@ class UserSettings: ObservableObject {
         }
 
         // 加载"自定义显示仅应用于菜单栏"开关，默认关闭（保持向后兼容）
-        self.customDisplayMenuBarOnly = defaults.bool(forKey: "customDisplayMenuBarOnly")
+        self.customDisplayMenuBarOnly = needsMenuBarMigration ? false : defaults.bool(forKey: "customDisplayMenuBarOnly")
+
+        // Migration abschließen: ab jetzt gilt wieder der gespeicherte Zustand.
+        if needsMenuBarMigration {
+            defaults.set(false, forKey: "customDisplayMenuBarOnly")
+            defaults.set(true, forKey: Self.menuBarModeMigrationKey)
+        }
 
         // Dashboard 设置：默认开启（多账户时直接看总览，单账户时本设置不生效）
         self.dashboardEnabled = defaults.object(forKey: "dashboardEnabled") as? Bool ?? true
@@ -883,7 +893,6 @@ class UserSettings: ObservableObject {
         self.debugExtraUsageLimit = defaults.object(forKey: "debugExtraUsageLimit") as? Int ?? 5000
         self.debugExtraUsagePercentage = defaults.object(forKey: "debugExtraUsagePercentage") as? Double ?? 61.0
         self.simulateUpdateAvailable = defaults.bool(forKey: "simulateUpdateAvailable")
-        self.debugShowAllShapesIndividually = defaults.bool(forKey: "debugShowAllShapesIndividually")
         self.debugKeepDetailWindowOpen = defaults.bool(forKey: "debugKeepDetailWindowOpen")
         #endif
 
@@ -959,7 +968,7 @@ class UserSettings: ObservableObject {
     /// 只重置非敏感设置，不影响认证信息
     func resetToDefaults() {
         appearance = .system
-        iconDisplayMode = .percentageOnly
+        iconDisplayMode = .accountDots
         iconStyleMode = .colorTranslucent
         refreshMode = .smart
         refreshInterval = 180  // 固定模式默认3分钟
