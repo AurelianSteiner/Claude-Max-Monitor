@@ -6,10 +6,10 @@
 //  (SystemSleepInfo), darunter die drei Terminal-Befehle zum Nachlesen und
 //  Kopieren.
 //
-//  Warum das hier steht: Die beiden Wach-Schalter im Kopf der Übersicht setzen
-//  IOKit-Power-Assertions (siehe `SleepGuard`). Die halten den Mac wach, solange
-//  die App läuft — gegen `pmset disablesleep` kommen sie aber nicht an, und
-//  zugeklappt schläft der Mac ohnehin ein. Diese stärkere Einstellung gehört dem
+//  Warum das hier steht: Der Wach-Schalter „Bleib wach" im Kopf der Übersicht
+//  setzt IOKit-Power-Assertions (siehe `SleepGuard`). Die halten den Mac wach,
+//  solange die App läuft — gegen `pmset disablesleep` kommen sie aber nicht an,
+//  und zugeklappt schläft der Mac ohnehin ein. Diese stärkere Einstellung gehört dem
 //  System, verlangt Administratorrechte und lässt sich aus einer Sandbox heraus
 //  nicht setzen. Deshalb zeigt die App die Befehle nur an und kopiert sie —
 //  ausgeführt wird hier nichts.

@@ -147,11 +147,11 @@ struct DashboardView: View {
 
     @ObservedObject private var settings = UserSettings.shared
     @StateObject private var localization = LocalizationManager.shared
-    /// Wach-Schalter im Kopf und im „…"-Menü — beobachtet, damit beide Anzeigen
-    /// sofort mitziehen, egal ob hier oder im Rechtsklick-Menü umgeschaltet wurde.
+    /// „Bleib wach" im Kopf — beobachtet, damit Schalter und Maskottchen
+    /// sofort mitziehen, egal wo umgeschaltet wurde.
     @ObservedObject private var sleepGuard = SleepGuard.shared
     /// Systemweite Schlaf-Einstellungen (pmset): Steht der Mac ohnehin auf
-    /// „nie schlafen", bekommen die Wach-Schalter eine Markierung und einen
+    /// „nie schlafen", bekommt der Wach-Schalter eine Markierung und einen
     /// erklärenden Tooltip, statt Wirkung vorzutäuschen.
     @ObservedObject private var systemSleep = SystemSleepInfo.shared
 
@@ -312,11 +312,16 @@ struct DashboardView: View {
 
             Spacer(minLength: 8)
 
-            // Etwas enger als der Rest des Kopfes: Die beschrifteten
-            // Wach-Schalter brauchen den Platz, und die Symbolknöpfe haben in
+            // Das Maskottchen: ein kleiner Arbeiter am Laptop, der zeigt, ob
+            // „Bleib wach" gerade wirkt (tippt) oder nicht (schläft). Rein
+            // dekorativ, deshalb außerhalb der Knopfgruppe.
+            AwakeMascotView()
+
+            // Etwas enger als der Rest des Kopfes: Der beschriftete
+            // Wach-Schalter braucht den Platz, und die Symbolknöpfe haben in
             // ihren 20-pt-Feldern ohnehin Luft.
             HStack(spacing: 6) {
-                sleepGuardButtons
+                stayAwakeToggle
                 sortMenu
                 refreshButton
                 actionMenu
@@ -340,67 +345,27 @@ struct DashboardView: View {
 
     // MARK: - Wach halten
 
-    /// Beide Wach-Schalter direkt im Kopf — ein Klick statt Umweg über ein Menü.
-    /// Das ist ihr einziger Platz; im „…"-Menü und im Rechtsklick-Menü der
-    /// Menüleiste standen sie früher zusätzlich und damit dreifach.
-    private var sleepGuardButtons: some View {
-        HStack(spacing: 2) {
-            sleepGuardButton(
-                isOn: sleepGuard.isDisplayAwake,
-                symbol: "sun.max",
-                caption: L.Dashboard.sleepDisplayLabel,
-                label: L.Menu.keepDisplayAwake,
-                detail: L.Dashboard.sleepDisplayHelp,
-                systemOverride: systemSleep.displaySleepMinutes == 0
-                    ? L.Dashboard.sleepDisplayOverride : nil,
-                action: { sleepGuard.toggleDisplayAwake() }
-            )
-            sleepGuardButton(
-                isOn: sleepGuard.isSystemAwake,
-                symbol: "cup.and.saucer",
-                caption: L.Dashboard.sleepSystemLabel,
-                label: L.Menu.keepMacAwake,
-                detail: L.Dashboard.sleepSystemHelp,
-                systemOverride: systemSleep.sleepDisabled == true
-                    ? L.Dashboard.sleepSystemOverride : nil,
-                action: { sleepGuard.toggleSystemAwake() }
-            )
-        }
-    }
-
-    /// Ein Wach-Schalter: Symbol *und* ein kurzes Wort daneben — ohne die
-    /// Beschriftung musste man die Symbole erst per Tooltip entziffern.
-    /// Symbol und Wort sind eine gemeinsame Schaltfläche.
-    /// Aktiv = gefülltes Symbol in Akzentfarbe auf getönter Fläche,
+    /// Der EINE Wach-Schalter direkt im Kopf: „Bleib wach" hält Bildschirm UND
+    /// Mac wach — früher zwei getrennte Schalter („Bildschirm an" / „Always
+    /// On"), aber in der Praxis wollte niemand nur eines von beidem.
+    ///
+    /// Symbol *und* die kurze Beschriftung sind eine gemeinsame Schaltfläche.
+    /// Aktiv = gefüllter Blitz in Akzentfarbe auf getönter Fläche,
     /// inaktiv = Umriss in Grau. Der Zustand ist damit ohne Häkchen und ohne
     /// Tooltip zu erkennen.
     ///
-    /// Platz: Die schmalste mögliche Ansicht ist eine Spalte — 396 pt breit,
-    /// im popover fest, beim Fenster als Mindestbreite (siehe
-    /// `DashboardWindowManager`). Mit den ausgeschriebenen Beschriftungen
-    /// („Bildschirm an" und „Always On") misst der Kopf dort rund 416 pt, ist
-    /// also etwa 20 pt zu breit. Das ist Absicht: Die Beschriftungen stehen
-    /// fest (`fixedSize`), gekürzt wird der Titel — er erklärt nichts, was
-    /// nicht ohnehin auf dem Schirm steht, die Beschriftungen dagegen schon.
-    /// Ab zwei Spalten (Standard) ist überall Platz.
-    /// `systemOverride`: Hinweistext, wenn das System das Gewünschte ohnehin
-    /// schon erzwingt (pmset). Dann bekommt der Schalter einen kleinen Punkt
-    /// als Markierung und der Tooltip den Hinweis dazu — klickbar bleibt er,
-    /// die Assertion ist harmlos und wirkt auf anders eingestellten Macs.
-    private func sleepGuardButton(
-        isOn: Bool,
-        symbol: String,
-        caption: String,
-        label: String,
-        detail: String,
-        systemOverride: String? = nil,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
+    /// Der kleine Punkt oben rechts erscheint, wenn das System per
+    /// `pmset disablesleep 1` ohnehin nie schläft — dann ist der Schalter
+    /// wirkungslos und der Tooltip sagt das dazu. Klickbar bleibt er, die
+    /// Assertions sind harmlos und wirken auf anders eingestellten Macs.
+    private var stayAwakeToggle: some View {
+        let isOn = sleepGuard.isAwake
+        let redundant = systemSleep.sleepDisabled == true
+        return Button(action: { sleepGuard.toggleAwake() }) {
             HStack(spacing: 3) {
-                Image(systemName: isOn ? "\(symbol).fill" : symbol)
+                Image(systemName: isOn ? "bolt.fill" : "bolt")
                     .font(.system(size: 12))
-                Text(caption)
+                Text(L.Dashboard.sleepLabel)
                     .font(.system(size: 10))
                     .lineLimit(1)
                     .fixedSize()
@@ -413,7 +378,7 @@ struct DashboardView: View {
                     .fill(isOn ? Color.accentColor.opacity(0.15) : Color.clear)
             )
             .overlay(alignment: .topTrailing) {
-                if systemOverride != nil {
+                if redundant {
                     Circle()
                         .fill(Color.accentColor)
                         .frame(width: 5, height: 5)
@@ -423,24 +388,24 @@ struct DashboardView: View {
         }
         .buttonStyle(.plain)
         .focusable(false)
-        .help(sleepGuardHelp(label: label, detail: detail, isOn: isOn, systemOverride: systemOverride))
-        .accessibilityLabel(label)
+        .help(stayAwakeHelp)
+        .accessibilityLabel(L.Dashboard.sleepLabel)
     }
 
-    /// Tooltip eines Wach-Schalters: Beschriftung samt aktuellem Zustand, darunter
+    /// Tooltip des Wach-Schalters: Beschriftung samt aktuellem Zustand, darunter
     /// in Klartext, was der Schalter tut — und was er ausdrücklich nicht tut.
-    /// Die Deckel-Zeile steht bei beiden Schaltern, weil beide daran enden:
-    /// zuklappen schläfert den Mac trotzdem ein. Sie entfällt, sobald das
-    /// System per `disablesleep 1` auch zugeklappt wach bleibt — dann wäre
-    /// sie falsch. Ein Systemhinweis (pmset) kommt ans Ende.
-    private func sleepGuardHelp(label: String, detail: String, isOn: Bool, systemOverride: String?) -> String {
-        let state = isOn ? L.Dashboard.sleepStateOn : L.Dashboard.sleepStateOff
-        var text = "\(label) — \(state)\n\n\(detail)"
-        if systemSleep.sleepDisabled != true {
+    /// Schläft das System per `disablesleep 1` ohnehin nie, ersetzt der
+    /// Redundanz-Hinweis die Deckel-Zeile (die wäre dann falsch: so ein Mac
+    /// bleibt auch zugeklappt wach). Sonst steht ehrlich da, dass Zuklappen
+    /// weiterhin einschläfert und nur `sudo pmset -a disablesleep 1` das
+    /// ändert — der Befehl liegt kopierbar in den Einstellungen.
+    private var stayAwakeHelp: String {
+        let state = sleepGuard.isAwake ? L.Dashboard.sleepStateOn : L.Dashboard.sleepStateOff
+        var text = "\(L.Dashboard.sleepLabel) — \(state)\n\n\(L.Dashboard.sleepHelp)"
+        if systemSleep.sleepDisabled == true {
+            text += "\n\n\(L.Dashboard.sleepSystemOverride)"
+        } else {
             text += "\n\n\(L.Dashboard.sleepLidNote)"
-        }
-        if let systemOverride {
-            text += "\n\n\(systemOverride)"
         }
         return text
     }

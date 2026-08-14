@@ -2,7 +2,7 @@
 //  SleepGuard.swift
 //  Usage4Claude
 //
-//  Hält Bildschirm bzw. Mac wach — wie Amphetamine/Caffeine, aber ohne
+//  Hält Bildschirm und Mac wach — wie Amphetamine/Caffeine, aber ohne
 //  Hilfsprogramm: IOKit-Power-Assertions (IOPMAssertionCreateWithName /
 //  IOPMAssertionRelease) brauchen weder root noch ein Extra-Entitlement und
 //  funktionieren auch in der Sandbox. Deshalb wird hier bewusst nicht auf
@@ -22,27 +22,26 @@ import Combine
 import OSLog
 import IOKit.pwr_mgt
 
-/// Wach-Wächter: verwaltet die beiden Power-Assertions der App.
+/// Wach-Wächter: verwaltet die Power-Assertions der App.
 ///
-/// Zuordnung zu den beiden Symbolknöpfen im Kopf der Übersicht
-/// (`DashboardView.sleepGuardButtons`) — die Tooltips dort erklären dasselbe
-/// in Nutzersprache:
+/// Nach außen gibt es genau EINEN Schalter — „Bleib wach“
+/// (`DashboardView.stayAwakeToggle`). Er setzt intern BEIDE Assertions
+/// gleichzeitig:
 ///
-/// - Sonne (`sun.max`) → `setDisplayAwake` → `isDisplayAwake`
-///   → `kIOPMAssertionTypeNoDisplaySleep`
-///   Der Bildschirm schaltet sich nicht von selbst aus. Solange der Bildschirm
-///   an ist, schläft auch das System nicht — der Mac bleibt also mit wach.
-/// - Tasse (`cup.and.saucer`) → `setSystemAwake` → `isSystemAwake`
-///   → `kIOPMAssertionTypePreventUserIdleSystemSleep`
-///   Das System geht bei Untätigkeit nicht in den Ruhezustand; der Bildschirm
-///   darf trotzdem dunkel werden.
+/// - `kIOPMAssertionTypeNoDisplaySleep` — der Bildschirm schaltet sich nicht
+///   von selbst aus.
+/// - `kIOPMAssertionTypePreventUserIdleSystemSleep` — das System geht bei
+///   Untätigkeit nicht in den Ruhezustand.
 ///
-/// Beides gilt nur, solange die App läuft: `releaseAll()` beim Beenden gibt die
+/// Früher waren das zwei getrennte Schalter („Bildschirm an“ / „Always On“).
+/// In der Praxis wollte niemand nur eines von beidem — wer wach halten will,
+/// will wach halten. Die alten UserDefaults-Schlüssel werden beim ersten Start
+/// still übernommen: war EINER der beiden an, startet der neue Schalter an
+/// (siehe `storedAwakeFlag()`).
+///
+/// Alles gilt nur, solange die App läuft: `releaseAll()` beim Beenden gibt die
 /// Assertions frei, danach greifen wieder die Systemeinstellungen. Zuklappen
-/// (Clamshell) schläfert den Mac in beiden Fällen ein — siehe Dateikopf.
-///
-/// Beide Zustände werden in den UserDefaults gemerkt und beim Start über
-/// `restoreFromDefaults()` erneut angefordert.
+/// (Clamshell) schläfert den Mac trotzdem ein — siehe Dateikopf.
 final class SleepGuard: ObservableObject {
 
     // MARK: - Singleton
@@ -51,10 +50,8 @@ final class SleepGuard: ObservableObject {
 
     // MARK: - Published State
 
-    /// Bildschirm wird wach gehalten
-    @Published private(set) var isDisplayAwake: Bool = false
-    /// Mac (System) wird wach gehalten
-    @Published private(set) var isSystemAwake: Bool = false
+    /// „Bleib wach“ ist an: Bildschirm UND Mac werden wach gehalten
+    @Published private(set) var isAwake: Bool = false
 
     // MARK: - Private State
 
@@ -65,8 +62,13 @@ final class SleepGuard: ObservableObject {
     private let defaults = UserDefaults.standard
 
     private enum DefaultsKey {
-        static let displayAwake = "sleepGuard.displayAwake"
-        static let systemAwake = "sleepGuard.systemAwake"
+        /// Der eine Schalter von heute
+        static let awake = "sleepGuard.awake"
+        /// Alte Schlüssel der zwei getrennten Schalter. Sie werden nur noch
+        /// gelesen (einmalige Übernahme), nie mehr geschrieben — wer auf eine
+        /// ältere Version zurückgeht, findet seine Werte unverändert vor.
+        static let legacyDisplayAwake = "sleepGuard.displayAwake"
+        static let legacySystemAwake = "sleepGuard.systemAwake"
     }
 
     /// Eigene Log-Kategorie, gleiches Muster wie `Logger.menuBar` & Co.
@@ -79,84 +81,81 @@ final class SleepGuard: ObservableObject {
 
     // MARK: - Lifecycle
 
-    /// Beim Start die gemerkten Schalter erneut anwenden.
+    /// Beim Start den gemerkten Schalter erneut anwenden.
     /// Assertions überleben den Prozess nicht, müssen also neu erzeugt werden.
     func restoreFromDefaults() {
-        if defaults.bool(forKey: DefaultsKey.displayAwake) {
-            setDisplayAwake(true)
+        if storedAwakeFlag() {
+            setAwake(true)
         }
-        if defaults.bool(forKey: DefaultsKey.systemAwake) {
-            setSystemAwake(true)
+    }
+
+    /// Liest den gemerkten Zustand — mit stiller, einmaliger Übernahme der
+    /// alten zwei Schlüssel: Gibt es den neuen Schlüssel noch nicht, gilt
+    /// „an“, wenn EINER der beiden alten Schalter an war. Das Ergebnis wird
+    /// sofort unter dem neuen Schlüssel gemerkt, danach zählt nur noch der.
+    private func storedAwakeFlag() -> Bool {
+        if defaults.object(forKey: DefaultsKey.awake) != nil {
+            return defaults.bool(forKey: DefaultsKey.awake)
         }
+        let migrated = defaults.bool(forKey: DefaultsKey.legacyDisplayAwake)
+            || defaults.bool(forKey: DefaultsKey.legacySystemAwake)
+        defaults.set(migrated, forKey: DefaultsKey.awake)
+        if migrated {
+            Self.log.notice("Alte Wach-Schalter übernommen: „Bleib wach“ startet an")
+        }
+        return migrated
     }
 
     /// Beim Beenden alle Assertions freigeben.
-    /// Die gemerkten Schalter in den UserDefaults bleiben unangetastet,
-    /// damit sie beim nächsten Start wieder greifen.
+    /// Der gemerkte Schalter in den UserDefaults bleibt unangetastet,
+    /// damit er beim nächsten Start wieder greift.
     func releaseAll() {
         releaseAssertion(&displayAssertionID, label: "NoDisplaySleep")
         releaseAssertion(&systemAssertionID, label: "PreventUserIdleSystemSleep")
-        isDisplayAwake = false
-        isSystemAwake = false
+        isAwake = false
     }
 
-    // MARK: - Toggles
+    // MARK: - Toggle
 
-    /// Bildschirm wach halten an/aus
-    func setDisplayAwake(_ enabled: Bool) {
-        guard enabled != (displayAssertionID != 0) else {
-            // Schon im gewünschten Zustand — trotzdem Flags synchron halten
-            isDisplayAwake = enabled
-            defaults.set(enabled, forKey: DefaultsKey.displayAwake)
+    /// „Bleib wach“ an/aus — setzt bzw. löst immer BEIDE Assertions.
+    func setAwake(_ enabled: Bool) {
+        let hadAssertions = displayAssertionID != 0 || systemAssertionID != 0
+        guard enabled != hadAssertions else {
+            // Schon im gewünschten Zustand — trotzdem Flag synchron halten
+            isAwake = enabled
+            defaults.set(enabled, forKey: DefaultsKey.awake)
             return
         }
 
         if enabled {
-            let created = createAssertion(
+            let displayCreated = createAssertion(
                 type: kIOPMAssertionTypeNoDisplaySleep,
                 reason: "Claude Max Monitor: Bildschirm wach halten",
                 id: &displayAssertionID
             )
-            isDisplayAwake = created
-        } else {
-            releaseAssertion(&displayAssertionID, label: "NoDisplaySleep")
-            isDisplayAwake = false
-        }
-
-        defaults.set(isDisplayAwake, forKey: DefaultsKey.displayAwake)
-    }
-
-    /// Mac wach halten an/aus (Idle-System-Sleep)
-    func setSystemAwake(_ enabled: Bool) {
-        guard enabled != (systemAssertionID != 0) else {
-            isSystemAwake = enabled
-            defaults.set(enabled, forKey: DefaultsKey.systemAwake)
-            return
-        }
-
-        if enabled {
-            let created = createAssertion(
+            let systemCreated = createAssertion(
                 type: kIOPMAssertionTypePreventUserIdleSystemSleep,
                 reason: "Claude Max Monitor: Mac wach halten",
                 id: &systemAssertionID
             )
-            isSystemAwake = created
+            isAwake = displayCreated || systemCreated
         } else {
+            releaseAssertion(&displayAssertionID, label: "NoDisplaySleep")
             releaseAssertion(&systemAssertionID, label: "PreventUserIdleSystemSleep")
-            isSystemAwake = false
+            isAwake = false
         }
 
-        defaults.set(isSystemAwake, forKey: DefaultsKey.systemAwake)
+        defaults.set(isAwake, forKey: DefaultsKey.awake)
+
+        // Die Menüleiste zeichnet die Wach-Kapsel um die Punktreihe — sie muss
+        // sofort mitziehen. `.settingsChanged` löst in `MenuBarManager` genau
+        // das aus: Icon-Cache leeren + neu zeichnen.
+        NotificationCenter.default.post(name: .settingsChanged, object: nil)
     }
 
-    /// Umschalten für Menüeinträge
-    func toggleDisplayAwake() {
-        setDisplayAwake(!isDisplayAwake)
-    }
-
-    /// Umschalten für Menüeinträge
-    func toggleSystemAwake() {
-        setSystemAwake(!isSystemAwake)
+    /// Umschalten für den Kopf der Übersicht
+    func toggleAwake() {
+        setAwake(!isAwake)
     }
 
     // MARK: - IOKit

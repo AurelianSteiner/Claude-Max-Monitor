@@ -24,8 +24,6 @@ enum L {
         static var quit: String { localized("menu.quit") }
         static var account: String { localized("menu.account") }
         static var accountPrefix: String { localized("menu.account_prefix") }
-        static var keepDisplayAwake: String { localized("menu.keep_display_awake") }
-        static var keepMacAwake: String { localized("menu.keep_mac_awake") }
     }
 
     // MARK: - Account Management
@@ -119,23 +117,21 @@ enum L {
         static var lockSessionHelp: String { localized("dashboard.lock.session_help") }
         static var lockWeeklyHelp: String { localized("dashboard.lock.weekly_help") }
 
-        // Kurze Beschriftung neben den Symbolen der beiden Wach-Schalter —
-        // ein Wort, damit man nicht erst den Tooltip abwarten muss.
-        static var sleepDisplayLabel: String { localized("dashboard.sleep.display_label") }
-        static var sleepSystemLabel: String { localized("dashboard.sleep.system_label") }
-
-        // Erklärtexte der beiden Wach-Schalter im Kopf
-        static var sleepDisplayHelp: String { localized("dashboard.sleep.display_help") }
-        static var sleepSystemHelp: String { localized("dashboard.sleep.system_help") }
-        /// Gilt für beide Schalter: Zuklappen legt den Mac trotzdem schlafen
+        // Der EINE Wach-Schalter „Bleib wach": kurze Beschriftung neben dem
+        // Symbol und der Erklärtext im Tooltip.
+        static var sleepLabel: String { localized("dashboard.sleep.label") }
+        static var sleepHelp: String { localized("dashboard.sleep.help") }
+        /// Ehrliche Zeile im Tooltip: Zuklappen legt den Mac trotzdem schlafen
         static var sleepLidNote: String { localized("dashboard.sleep.lid_note") }
         static var sleepStateOn: String { localized("dashboard.sleep.state_on") }
         static var sleepStateOff: String { localized("dashboard.sleep.state_off") }
         /// Zusatz im Tooltip, wenn das System schon per `pmset disablesleep 1`
         /// nie schläft — der Schalter ändert daran nichts
         static var sleepSystemOverride: String { localized("dashboard.sleep.system_override") }
-        /// Zusatz im Tooltip, wenn `displaysleep 0` den Bildschirm nie ausschaltet
-        static var sleepDisplayOverride: String { localized("dashboard.sleep.display_override") }
+
+        // Tooltip des Maskottchens im Kopf — je nach Wach-Zustand
+        static var mascotAwakeHelp: String { localized("dashboard.mascot.awake_help") }
+        static var mascotAsleepHelp: String { localized("dashboard.mascot.asleep_help") }
         /// Platzhalter im Ampel-Tooltip, solange für ein Fenster nichts vorliegt
         static var dotNoData: String { localized("dashboard.dot_no_data") }
         /// Zusatz im Ampel-Tooltip, wenn ein Fenster praktisch aufgebraucht ist

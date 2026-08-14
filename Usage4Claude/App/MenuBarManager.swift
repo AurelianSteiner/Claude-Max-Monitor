@@ -173,9 +173,9 @@ class MenuBarManager: ObservableObject {
         NSApplication.shared.terminate(nil)
     }
 
-    // Für die Wach-Schalter gibt es hier bewusst keine Weiterleitung mehr:
-    // Sie sitzen als Symbolknöpfe im Kopf der Übersicht und rufen `SleepGuard`
-    // direkt auf — ein Menüeintrag wäre ein zweiter Weg zur selben Sache.
+    // Für „Bleib wach" gibt es hier bewusst keine Weiterleitung: Der Schalter
+    // sitzt im Kopf der Übersicht und ruft `SleepGuard` direkt auf — ein
+    // Menüeintrag wäre ein zweiter Weg zur selben Sache.
 
     /// 处理菜单操作
     /// 关闭弹出窗口并执行相应的操作

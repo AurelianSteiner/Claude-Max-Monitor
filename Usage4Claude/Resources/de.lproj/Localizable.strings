@@ -17,11 +17,6 @@
 "menu.quit" = "Claude Max Monitor beenden";
 "menu.account" = "Account";
 "menu.account_prefix" = "Account:";
-// Lange Namen der beiden Wach-Schalter im Kopf der Übersicht (Überschrift im
-// Tooltip und Beschriftung für VoiceOver). Sie müssen wortgleich zu den kurzen
-// Beschriftungen dashboard.sleep.*_label sein.
-"menu.keep_display_awake" = "Bildschirm an";
-"menu.keep_mac_awake" = "Always On";
 
 // MARK: - Usage Detail View
 "usage.title" = "Claude Usage";
@@ -449,31 +444,32 @@
 "dashboard.lock.session_help" = "Das 5-Stunden-Fenster ist aufgebraucht. Die Woche hat noch Luft — nach dem Reset geht es sofort weiter.";
 "dashboard.lock.weekly_help" = "Das Wochenlimit ist aufgebraucht. Bis zum Wochen-Reset läuft über diesen Account nichts mehr — egal, wie frei das 5-Stunden-Fenster ist.";
 
-/* Wach-Schalter im Kopf der Übersicht — kurze Beschriftung neben dem Symbol */
-"dashboard.sleep.display_label" = "Bildschirm an";
-"dashboard.sleep.system_label" = "Always On";
-
-/* Wach-Schalter im Kopf der Übersicht */
-"dashboard.sleep.display_help" = "Der Bildschirm schaltet sich nicht mehr von selbst aus, und der Mac bleibt dabei ebenfalls wach. Gilt nur, solange Claude Max Monitor läuft.";
-"dashboard.sleep.system_help" = "Der Mac geht nicht mehr von selbst in den Ruhezustand. Der Bildschirm darf trotzdem dunkel werden. Gilt nur, solange Claude Max Monitor läuft.";
-"dashboard.sleep.lid_note" = "Zugeklappt schläft der Mac trotzdem ein. Das ließe sich nur über eine Systemeinstellung mit Administratorrechten ändern, und die verlangt diese App bewusst nicht — die Befehle dafür stehen in den Einstellungen.";
+/* Der Wach-Schalter „Bleib wach" im Kopf der Übersicht: kurze Beschriftung
+   neben dem Symbol (zugleich VoiceOver-Name) und der Erklärtext im Tooltip.
+   Er setzt BEIDE Assertions — Bildschirm und Mac. */
+"dashboard.sleep.label" = "Bleib wach";
+"dashboard.sleep.help" = "Hält Bildschirm und Mac wach, solange Claude Max Monitor läuft.";
+"dashboard.sleep.lid_note" = "Zugeklappt schläft der Mac trotzdem ein. Das ändert nur „sudo pmset -a disablesleep 1“ — der Befehl steht kopierbar in den Einstellungen.";
 "dashboard.sleep.state_on" = "Aktiv";
 "dashboard.sleep.state_off" = "Aus";
 
 /* Zusatz im Tooltip, wenn das System selbst schon nie schläft (pmset) */
 "dashboard.sleep.system_override" = "Dein Mac ist bereits systemweit auf „nie schlafen“ gestellt (sudo pmset disablesleep 1) — dieser Schalter ändert daran nichts. Er wirkt auf Macs ohne diese Systemeinstellung.";
-"dashboard.sleep.display_override" = "Der Bildschirm ist systemweit auf „nie ausschalten“ gestellt (displaysleep 0) — dieser Schalter ändert daran nichts.";
+
+/* Tooltip des kleinen Arbeiters im Kopf der Übersicht */
+"dashboard.mascot.awake_help" = "Wird wachgehalten — niemand schläft hier ein.";
+"dashboard.mascot.asleep_help" = "Schläft. „Bleib wach“ einschalten, um durchzuarbeiten.";
 
 /* Allgemeine Einstellungen: der eingeklappte Abschnitt mit den drei
    pmset-Befehlen. Nur anzeigen und kopieren — die App führt nichts aus. */
 "settings.sleep.section" = "Schlaf-Einstellungen des Systems";
-"settings.sleep.intro" = "macOS hat eine eigene, stärkere Einstellung für den Schlaf des ganzen Rechners. Die beiden Knöpfe in der Übersicht ändern sie nicht — das geht nur im Terminal.";
+"settings.sleep.intro" = "macOS hat eine eigene, stärkere Einstellung für den Schlaf des ganzen Rechners. Der Schalter „Bleib wach“ in der Übersicht ändert sie nicht — das geht nur im Terminal.";
 "settings.sleep.caption_status" = "Status ansehen";
 "settings.sleep.caption_off" = "Nie schlafen";
 "settings.sleep.caption_on" = "Wieder normal schlafen";
 "settings.sleep.copy" = "Befehl kopieren";
 "settings.sleep.copied" = "Kopiert";
-"settings.sleep.note" = "Die beiden sudo-Befehle fragen im Terminal nach dem Passwort des Kontos. Mit disablesleep = 1 haben die beiden Knöpfe in der Übersicht keine zusätzliche Wirkung.";
+"settings.sleep.note" = "Die beiden sudo-Befehle fragen im Terminal nach dem Passwort des Kontos. Mit disablesleep = 1 hat „Bleib wach“ keine zusätzliche Wirkung.";
 
 /* Live-Werte aus pmset -g, über den Befehlen */
 "settings.sleep.value_sleep_on" = "SleepDisabled: 1 — der Mac schläft nie, auch zugeklappt.";

@@ -339,6 +339,16 @@ class MenuBarIconRenderer {
         static let spacing: CGFloat = 3
         /// Platzbedarf eines Punkts inklusive Ring (7,5 + 2 × (1 + 1) = 11,5)
         static var footprint: CGFloat { fillDiameter + 2 * (ringGap + ringWidth) }
+
+        // Wach-Kapsel: Umriss um die ganze Punktreihe, solange „Bleib wach"
+        // aktiv ist — ein Blick auf die Menüleiste genügt dann.
+        /// Strichstärke der Kapsel
+        static let capsuleLineWidth: CGFloat = 1.5
+        /// Luft zwischen Punktreihe und Kapsel-Innenkante
+        static let capsuleGap: CGFloat = 2
+        /// Zusätzlicher Rand des Bilds je Seite, damit die Kapsel nicht
+        /// beschnitten wird (Luft + volle Strichstärke)
+        static var capsuleInset: CGFloat { capsuleGap + capsuleLineWidth }
     }
 
     /// Zeichnet eine Punktreihe: ein Punkt je Konto.
@@ -358,10 +368,21 @@ class MenuBarIconRenderer {
     ) -> NSImage {
         let footprint = AccountDotMetrics.footprint
         let height = metricIconSize
-        let width = CGFloat(states.count) * footprint
-            + CGFloat(max(0, states.count - 1)) * AccountDotMetrics.spacing
+        let dotsWidth = max(
+            CGFloat(states.count) * footprint
+                + CGFloat(max(0, states.count - 1)) * AccountDotMetrics.spacing,
+            footprint
+        )
 
-        let image = NSImage(size: NSSize(width: max(width, footprint), height: height))
+        // „Bleib wach" aktiv → Kapsel um die ganze Reihe. Das Bild bekommt
+        // dafür links und rechts etwas Rand, sonst würde der Strich beschnitten.
+        // Der Cache-Key in `MenuBarUI.generateCacheKey` enthält dieses Flag,
+        // sonst klebte das alte Bild nach dem Umschalten fest.
+        let keepAwake = SleepGuard.shared.isAwake
+        let inset = keepAwake ? AccountDotMetrics.capsuleInset : 0
+        let width = dotsWidth + 2 * inset
+
+        let image = NSImage(size: NSSize(width: width, height: height))
         image.lockFocus()
 
         // Dynamische Systemfarben (systemGreen, labelColor …) lösen sich nach der
@@ -370,7 +391,10 @@ class MenuBarIconRenderer {
         // zu blass.
         let appearance = button?.effectiveAppearance ?? NSApp.effectiveAppearance
         appearance.performAsCurrentDrawingAppearance {
-            drawAccountDots(states, isMonochrome: isMonochrome, height: height)
+            drawAccountDots(states, isMonochrome: isMonochrome, height: height, xOffset: inset)
+            if keepAwake {
+                drawKeepAwakeCapsule(width: width, height: height, isMonochrome: isMonochrome)
+            }
         }
 
         image.unlockFocus()
@@ -381,11 +405,30 @@ class MenuBarIconRenderer {
         return image
     }
 
-    private func drawAccountDots(_ states: [MenuBarDotState], isMonochrome: Bool, height: CGFloat) {
+    /// Kapsel-Umriss um die gesamte Punktreihe — das Menüleisten-Zeichen für
+    /// „Bleib wach". Farbe: Orange im Farbmodus (warm, passt zum Maskottchen,
+    /// kollidiert nicht mit der Grün/Blau/Rot-Ampel der Punkte), `labelColor`
+    /// im Einfarbig-/Template-Modus (macOS färbt selbst ein).
+    private func drawKeepAwakeCapsule(width: CGFloat, height: CGFloat, isMonochrome: Bool) {
+        let lineWidth = AccountDotMetrics.capsuleLineWidth
+        let capsuleHeight = AccountDotMetrics.footprint + 2 * AccountDotMetrics.capsuleGap
+        let rect = NSRect(
+            x: lineWidth / 2,
+            y: (height - capsuleHeight) / 2,
+            width: width - lineWidth,
+            height: capsuleHeight
+        )
+        let capsule = NSBezierPath(roundedRect: rect, xRadius: capsuleHeight / 2, yRadius: capsuleHeight / 2)
+        capsule.lineWidth = lineWidth
+        (isMonochrome ? NSColor.labelColor : NSColor.systemOrange).setStroke()
+        capsule.stroke()
+    }
+
+    private func drawAccountDots(_ states: [MenuBarDotState], isMonochrome: Bool, height: CGFloat, xOffset: CGFloat = 0) {
         let footprint = AccountDotMetrics.footprint
         let fill = AccountDotMetrics.fillDiameter
         let centerY = height / 2
-        var x: CGFloat = 0
+        var x: CGFloat = xOffset
 
         for state in states {
             let centerX = x + footprint / 2

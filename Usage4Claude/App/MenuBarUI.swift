@@ -654,6 +654,10 @@ class MenuBarUI {
             if !dots.isEmpty {
                 var key = "dots_\(settings.iconStyleMode.rawValue)_n\(dots.count)_"
                     + dots.map(\.cacheToken).joined(separator: "-")
+                // „Bleib wach" zeichnet eine Kapsel um die Reihe — ohne das
+                // Flag im Schlüssel bliebe nach dem Umschalten das alte Bild
+                // hängen (bzw. die Kapsel erschiene nie).
+                if SleepGuard.shared.isAwake { key += "_awake" }
                 if hasUpdate { key += "_badge" }
                 return key
             }
