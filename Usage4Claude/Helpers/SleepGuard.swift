@@ -3,16 +3,21 @@
 //  Usage4Claude
 //
 //  Hält Bildschirm und Mac wach — wie Amphetamine/Caffeine, aber ohne
-//  Hilfsprogramm: IOKit-Power-Assertions (IOPMAssertionCreateWithName /
-//  IOPMAssertionRelease) brauchen weder root noch ein Extra-Entitlement und
-//  funktionieren auch in der Sandbox. Deshalb wird hier bewusst nicht auf
-//  `caffeinate`/`pmset` ausgewichen (Sandbox verbietet das Starten fremder
-//  Prozesse ohnehin).
+//  Hilfsprogramm. Zwei Stufen:
 //
-//  Bewusst NICHT unterstützt: Wachbleiben bei geschlossenem Deckel
-//  (Clamshell). Das geht nur über `sudo pmset disablesleep 1`, verlangt also
-//  Root-Rechte bzw. ein privilegiertes Helper-Tool — beides passt weder zur
-//  Sandbox noch zum Anspruch „kein Passwort nötig“.
+//    1. IOKit-Power-Assertions (IOPMAssertionCreateWithName /
+//       IOPMAssertionRelease) — brauchen weder root noch ein Entitlement,
+//       wirken aber nur bei OFFENEM Deckel.
+//    2. Die Deckel-Stufe: `pmset -a disablesleep 1` über PrivilegedPower —
+//       hält den Mac auch ZUGEKLAPPT wach. Verlangt root; beim allerersten
+//       Einschalten fragt macOS deshalb EINMAL nach dem Passwort
+//       (sudoers-Einmal-Regel), danach schaltet es lautlos.
+//
+//  Der Schalter zeigt die ABSICHT (Assertions gesetzt); ob die Deckel-Stufe
+//  wirklich greift, sagt der Tooltip anhand von SystemSleepInfo
+//  (SleepDisabled 1/0). Wird der Passwortdialog abgebrochen, bleiben die
+//  Assertions bestehen — wach bei offenem Deckel, ehrlicher Hinweis im
+//  Tooltip, kein Fehlerdialog.
 //
 //  Copyright © 2025 f-is-h. All rights reserved.
 //
@@ -40,8 +45,9 @@ import IOKit.pwr_mgt
 /// (siehe `storedAwakeFlag()`).
 ///
 /// Alles gilt nur, solange die App läuft: `releaseAll()` beim Beenden gibt die
-/// Assertions frei, danach greifen wieder die Systemeinstellungen. Zuklappen
-/// (Clamshell) schläfert den Mac trotzdem ein — siehe Dateikopf.
+/// Assertions frei und nimmt eine selbst gesetzte Deckel-Stufe still zurück,
+/// danach greifen wieder die Systemeinstellungen. Ob Zuklappen (Clamshell)
+/// abgedeckt ist, hängt an der Deckel-Stufe — siehe Dateikopf.
 final class SleepGuard: ObservableObject {
 
     // MARK: - Singleton
@@ -83,9 +89,13 @@ final class SleepGuard: ObservableObject {
 
     /// Beim Start den gemerkten Schalter erneut anwenden.
     /// Assertions überleben den Prozess nicht, müssen also neu erzeugt werden.
+    ///
+    /// WICHTIG: `interactive: false` — beim Login darf NIE ein Passwortdialog
+    /// aufgehen. Die Deckel-Stufe wird nur still versucht (`sudo -n`): Regel
+    /// installiert → greift wieder; Regel fehlt → nur Assertions, fertig.
     func restoreFromDefaults() {
         if storedAwakeFlag() {
-            setAwake(true)
+            setAwake(true, interactive: false)
         }
     }
 
@@ -109,16 +119,34 @@ final class SleepGuard: ObservableObject {
     /// Beim Beenden alle Assertions freigeben.
     /// Der gemerkte Schalter in den UserDefaults bleibt unangetastet,
     /// damit er beim nächsten Start wieder greift.
+    ///
+    /// Die Deckel-Stufe wird dabei still zurückgenommen (synchron, `sudo -n`
+    /// antwortet in Millisekunden): `disablesleep` ist eine SYSTEM-Einstellung
+    /// und überlebt den Prozess — ohne diesen Schritt bliebe nach dem Beenden
+    /// ein Mac zurück, der nie schläft und nirgends anzeigt, warum. Beim
+    /// nächsten Start setzt `restoreFromDefaults()` sie still wieder.
+    /// War der Schalter aus, wird disablesleep NICHT angefasst — eine etwaige
+    /// 1 dort gehört dann dem Benutzer, nicht der App.
     func releaseAll() {
+        let wasAwake = isAwake
         releaseAssertion(&displayAssertionID, label: "NoDisplaySleep")
         releaseAssertion(&systemAssertionID, label: "PreventUserIdleSystemSleep")
         isAwake = false
+        if wasAwake {
+            PrivilegedPower.setSleepDisabledSilentlyAndWait(false)
+        }
     }
 
     // MARK: - Toggle
 
-    /// „Bleib wach“ an/aus — setzt bzw. löst immer BEIDE Assertions.
-    func setAwake(_ enabled: Bool) {
+    /// „Bleib wach“ an/aus — setzt bzw. löst immer BEIDE Assertions und
+    /// zieht die Deckel-Stufe (`pmset disablesleep`) mit.
+    ///
+    /// - Parameter interactive: `true` nur bei einer ausdrücklichen
+    ///   Benutzeraktion (Schalter in der Übersicht) — dann darf beim ersten
+    ///   Mal der EINE Passwortdialog erscheinen. `false` beim Start
+    ///   (Re-Apply): dort läuft die Deckel-Stufe ausschließlich still.
+    func setAwake(_ enabled: Bool, interactive: Bool = true) {
         let hadAssertions = displayAssertionID != 0 || systemAssertionID != 0
         guard enabled != hadAssertions else {
             // Schon im gewünschten Zustand — trotzdem Flag synchron halten
@@ -145,6 +173,8 @@ final class SleepGuard: ObservableObject {
             isAwake = false
         }
 
+        applyLidTier(enabled, interactive: interactive)
+
         defaults.set(isAwake, forKey: DefaultsKey.awake)
 
         // Die Menüleiste zeichnet die Wach-Kapsel um die Punktreihe — sie muss
@@ -153,9 +183,56 @@ final class SleepGuard: ObservableObject {
         NotificationCenter.default.post(name: .settingsChanged, object: nil)
     }
 
-    /// Umschalten für den Kopf der Übersicht
+    /// Umschalten für den Kopf der Übersicht — DIE Benutzeraktion, aus der
+    /// heraus die Einmal-Freigabe erscheinen darf.
     func toggleAwake() {
-        setAwake(!isAwake)
+        setAwake(!isAwake, interactive: true)
+    }
+
+    // MARK: - Deckel-Stufe (pmset disablesleep)
+
+    /// Zieht `pmset -a disablesleep` hinter dem Schalter her.
+    ///
+    /// Ergebnisbehandlung bewusst leise:
+    ///   • Erfolg → SystemSleepInfo neu lesen, damit der Tooltip sofort
+    ///     „läuft auch zugeklappt“ sagt.
+    ///   • Abbruch im Passwortdialog → KEIN Fehlerdialog. Die Assertions
+    ///     bleiben (wach bei offenem Deckel), der Tooltip erklärt die Lage
+    ///     über die Deckel-Zeile — auch dafür SystemSleepInfo auffrischen.
+    ///   • Sonstiger Fehler → nur loggen; funktional ist das derselbe
+    ///     Zustand wie der Abbruch.
+    private func applyLidTier(_ on: Bool, interactive: Bool) {
+        let refresh = { SystemSleepInfo.shared.refresh(force: true) }
+
+        // AUSschalten darf nur dann einen Admin-Dialog kosten, wenn wirklich
+        // eine 1 zurückzunehmen ist. Meldet pmset gar kein `SleepDisabled 1`
+        // (typisch: die Einmal-Freigabe wurde beim Einschalten abgebrochen,
+        // Regel und disablesleep existieren nie), wäre der Passwortdialog
+        // beim Ausschalten sinnlos — und ein Passwort-Ja an dieser Stelle
+        // würde die sudoers-Regel aus einer „mach es aus“-Geste heraus
+        // installieren. Dann reicht der stille Versuch: mit Regel räumt er
+        // auf, ohne Regel passiert schlicht nichts.
+        let nothingToUndo = !on && SystemSleepInfo.shared.sleepDisabled != true
+
+        if interactive && !nothingToUndo {
+            PrivilegedPower.setSleepDisabled(on) { result in
+                switch result {
+                case .success:
+                    Self.log.notice("Deckel-Stufe: disablesleep = \(on ? "1" : "0", privacy: .public)")
+                case .failure(.cancelled):
+                    Self.log.notice("Deckel-Stufe abgelehnt — Assertions bleiben, Deckel schläfert weiter ein")
+                case .failure(.failed(let message)):
+                    Self.log.error("Deckel-Stufe fehlgeschlagen: \(message, privacy: .public)")
+                }
+                refresh()
+            }
+        } else {
+            // Start/Re-Apply: ausschließlich still — ohne Regel passiert
+            // schlicht nichts, und genau so soll es sein.
+            PrivilegedPower.setSleepDisabledSilently(on) { _ in
+                refresh()
+            }
+        }
     }
 
     // MARK: - IOKit

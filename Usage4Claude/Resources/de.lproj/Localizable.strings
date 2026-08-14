@@ -449,12 +449,15 @@
    Er setzt BEIDE Assertions — Bildschirm und Mac. */
 "dashboard.sleep.label" = "Bleib wach";
 "dashboard.sleep.help" = "Hält Bildschirm und Mac wach, solange Claude Max Monitor läuft.";
-"dashboard.sleep.lid_note" = "Zugeklappt schläft der Mac trotzdem ein. Das ändert nur „sudo pmset -a disablesleep 1“ — der Befehl steht kopierbar in den Einstellungen.";
+"dashboard.sleep.lid_note" = "Zugeklappt schläft der Mac derzeit trotzdem ein. Beim nächsten Einschalten fragt macOS einmal nach dem Passwort — danach hält der Schalter auch den zugeklappten Mac wach.";
 "dashboard.sleep.state_on" = "Aktiv";
 "dashboard.sleep.state_off" = "Aus";
+/* Tooltip-Zeile, wenn der Schalter an ist und pmset SleepDisabled 1 meldet:
+   die privilegierte Deckel-Stufe greift. */
+"dashboard.sleep.lid_active" = "Läuft auch zugeklappt weiter.";
 
-/* Zusatz im Tooltip, wenn das System selbst schon nie schläft (pmset) */
-"dashboard.sleep.system_override" = "Dein Mac ist bereits systemweit auf „nie schlafen“ gestellt (sudo pmset disablesleep 1) — dieser Schalter ändert daran nichts. Er wirkt auf Macs ohne diese Systemeinstellung.";
+/* Zusatz im Tooltip, wenn das System nie schläft (pmset), der Schalter aber AUS ist */
+"dashboard.sleep.system_override" = "Dein Mac ist systemweit auf „nie schlafen“ gestellt (pmset disablesleep 1) — er bleibt auch ohne diesen Schalter wach, zugeklappt eingeschlossen.";
 
 /* Tooltip des kleinen Arbeiters im Kopf der Übersicht */
 "dashboard.mascot.awake_help" = "Wird wachgehalten — niemand schläft hier ein.";
@@ -463,13 +466,13 @@
 /* Allgemeine Einstellungen: der eingeklappte Abschnitt mit den drei
    pmset-Befehlen. Nur anzeigen und kopieren — die App führt nichts aus. */
 "settings.sleep.section" = "Schlaf-Einstellungen des Systems";
-"settings.sleep.intro" = "macOS hat eine eigene, stärkere Einstellung für den Schlaf des ganzen Rechners. Der Schalter „Bleib wach“ in der Übersicht ändert sie nicht — das geht nur im Terminal.";
+"settings.sleep.intro" = "macOS hat eine eigene, stärkere Einstellung für den Schlaf des ganzen Rechners (disablesleep). „Bleib wach“ in der Übersicht setzt sie inzwischen mit — nach einmaliger Passwort-Freigabe. Zum Nachlesen und für den Handbetrieb: die Befehle.";
 "settings.sleep.caption_status" = "Status ansehen";
 "settings.sleep.caption_off" = "Nie schlafen";
 "settings.sleep.caption_on" = "Wieder normal schlafen";
 "settings.sleep.copy" = "Befehl kopieren";
 "settings.sleep.copied" = "Kopiert";
-"settings.sleep.note" = "Die beiden sudo-Befehle fragen im Terminal nach dem Passwort des Kontos. Mit disablesleep = 1 hat „Bleib wach“ keine zusätzliche Wirkung.";
+"settings.sleep.note" = "Die beiden sudo-Befehle fragen im Terminal nach dem Passwort des Kontos. Die einmalige Freigabe von „Bleib wach“ entfernt „sudo rm /etc/sudoers.d/claude-max-monitor“ wieder vollständig.";
 
 /* Live-Werte aus pmset -g, über den Befehlen */
 "settings.sleep.value_sleep_on" = "SleepDisabled: 1 — der Mac schläft nie, auch zugeklappt.";

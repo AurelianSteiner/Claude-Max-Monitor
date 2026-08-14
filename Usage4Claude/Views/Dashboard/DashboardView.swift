@@ -355,12 +355,13 @@ struct DashboardView: View {
     /// Tooltip zu erkennen.
     ///
     /// Der kleine Punkt oben rechts erscheint, wenn das System per
-    /// `pmset disablesleep 1` ohnehin nie schläft — dann ist der Schalter
-    /// wirkungslos und der Tooltip sagt das dazu. Klickbar bleibt er, die
-    /// Assertions sind harmlos und wirken auf anders eingestellten Macs.
+    /// `pmset disablesleep 1` nie schläft, OBWOHL der Schalter aus ist — dann
+    /// hat der Benutzer das selbst eingestellt und der Schalter hätte nichts
+    /// mehr beizutragen. Ist der Schalter an, ist `SleepDisabled 1` dagegen
+    /// schlicht die eigene Deckel-Stufe und kein Grund für eine Markierung.
     private var stayAwakeToggle: some View {
         let isOn = sleepGuard.isAwake
-        let redundant = systemSleep.sleepDisabled == true
+        let redundant = systemSleep.sleepDisabled == true && !isOn
         return Button(action: { sleepGuard.toggleAwake() }) {
             HStack(spacing: 3) {
                 Image(systemName: isOn ? "bolt.fill" : "bolt")
@@ -392,17 +393,27 @@ struct DashboardView: View {
         .accessibilityLabel(L.Dashboard.sleepLabel)
     }
 
-    /// Tooltip des Wach-Schalters: Beschriftung samt aktuellem Zustand, darunter
-    /// in Klartext, was der Schalter tut — und was er ausdrücklich nicht tut.
-    /// Schläft das System per `disablesleep 1` ohnehin nie, ersetzt der
-    /// Redundanz-Hinweis die Deckel-Zeile (die wäre dann falsch: so ein Mac
-    /// bleibt auch zugeklappt wach). Sonst steht ehrlich da, dass Zuklappen
-    /// weiterhin einschläfert und nur `sudo pmset -a disablesleep 1` das
-    /// ändert — der Befehl liegt kopierbar in den Einstellungen.
+    /// Tooltip des Wach-Schalters: Beschriftung samt aktuellem Zustand,
+    /// darunter Klartext zur Deckel-Frage. Der Schalter zeigt die ABSICHT
+    /// (Assertions); ob der Deckel wirklich abgedeckt ist, sagt `pmset`
+    /// (SystemSleepInfo) — vier ehrliche Fälle:
+    ///
+    ///   • AN + `SleepDisabled 1` → die Deckel-Stufe greift: läuft auch
+    ///     zugeklappt weiter.
+    ///   • AN, aber ohne `SleepDisabled 1` → Freigabe fehlt (abgelehnt oder
+    ///     nie erteilt): Zuklappen schläfert weiter ein, das nächste
+    ///     Einschalten fragt einmal nach dem Passwort.
+    ///   • AUS + `SleepDisabled 1` → das System schläft aus eigenem Recht
+    ///     nie (Benutzer-Einstellung), der Schalter hätte nichts beizutragen.
+    ///   • AUS, normal schlafender Mac → Erklärtext plus Deckel-Zeile.
     private var stayAwakeHelp: String {
         let state = sleepGuard.isAwake ? L.Dashboard.sleepStateOn : L.Dashboard.sleepStateOff
         var text = "\(L.Dashboard.sleepLabel) — \(state)\n\n\(L.Dashboard.sleepHelp)"
-        if systemSleep.sleepDisabled == true {
+        if sleepGuard.isAwake {
+            text += systemSleep.sleepDisabled == true
+                ? "\n\n\(L.Dashboard.sleepLidActive)"
+                : "\n\n\(L.Dashboard.sleepLidNote)"
+        } else if systemSleep.sleepDisabled == true {
             text += "\n\n\(L.Dashboard.sleepSystemOverride)"
         } else {
             text += "\n\n\(L.Dashboard.sleepLidNote)"

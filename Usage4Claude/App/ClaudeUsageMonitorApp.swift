@@ -10,8 +10,24 @@ import SwiftUI
 import Combine
 import Sparkle
 
-/// Usage4Claude 应用主入口
+/// Echter Prozess-Einstieg.
+///
+/// Warum nicht einfach `@main` auf dem App-Struct: Beim Wegfall der App
+/// Sandbox (2.0) müssen die alten Container-UserDefaults einmalig importiert
+/// werden, BEVOR irgendein Code UserDefaults anfasst. Schon das Erzeugen des
+/// SwiftUI-App-Structs zieht aber den `@NSApplicationDelegateAdaptor` hoch —
+/// und damit Sparkle (SULastCheckTime …) und `UserSettings.shared`. Ein
+/// eigener Einstieg garantiert: Migration zuerst, dann erst SwiftUI.
 @main
+enum AppMain {
+    static func main() {
+        // ALLERERSTE Anweisung des Prozesses — vor Sparkle, UserSettings & Co.
+        SandboxedPreferencesMigrator.run()
+        ClaudeUsageMonitorApp.main()
+    }
+}
+
+/// Usage4Claude 应用主入口
 struct ClaudeUsageMonitorApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 

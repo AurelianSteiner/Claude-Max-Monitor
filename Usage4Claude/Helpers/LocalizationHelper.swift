@@ -121,12 +121,17 @@ enum L {
         // Symbol und der Erklärtext im Tooltip.
         static var sleepLabel: String { localized("dashboard.sleep.label") }
         static var sleepHelp: String { localized("dashboard.sleep.help") }
-        /// Ehrliche Zeile im Tooltip: Zuklappen legt den Mac trotzdem schlafen
+        /// Ehrliche Zeile im Tooltip: Zuklappen schläfert derzeit noch ein,
+        /// das nächste Einschalten fragt einmal nach dem Passwort
         static var sleepLidNote: String { localized("dashboard.sleep.lid_note") }
         static var sleepStateOn: String { localized("dashboard.sleep.state_on") }
         static var sleepStateOff: String { localized("dashboard.sleep.state_off") }
-        /// Zusatz im Tooltip, wenn das System schon per `pmset disablesleep 1`
-        /// nie schläft — der Schalter ändert daran nichts
+        /// Zeile im Tooltip, wenn die Deckel-Stufe greift (Schalter an,
+        /// `SleepDisabled 1`): läuft auch zugeklappt weiter
+        static var sleepLidActive: String { localized("dashboard.sleep.lid_active") }
+        /// Zusatz im Tooltip, wenn das System per `pmset disablesleep 1` nie
+        /// schläft, der Schalter aber aus ist — dann ist das die Einstellung
+        /// des Benutzers, nicht die der App
         static var sleepSystemOverride: String { localized("dashboard.sleep.system_override") }
 
         // Tooltip des Maskottchens im Kopf — je nach Wach-Zustand

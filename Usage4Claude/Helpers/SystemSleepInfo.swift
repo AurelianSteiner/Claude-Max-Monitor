@@ -5,15 +5,17 @@
 //  Liest die AKTUELLEN Schlaf-Einstellungen des Systems — `pmset -g` einmal
 //  ausführen und zwei Zeilen herausfischen:
 //
-//    • `SleepDisabled 1` → der Mac schläft nie (sudo pmset disablesleep 1),
-//      die beiden Wach-Schalter im Kopf der Übersicht ändern daran nichts.
+//    • `SleepDisabled 1` → der Mac schläft nie (pmset disablesleep 1) —
+//      gesetzt entweder vom Benutzer selbst oder von „Bleib wach“ über die
+//      Deckel-Stufe (PrivilegedPower).
 //    • `displaysleep 0` → der Bildschirm geht nie von selbst aus.
 //
-//  Wozu: Auf einem so eingestellten Mac sind die Schalter wirkungslos — die
-//  Oberfläche sagt das dann dazu (Tooltip, Markierung, Live-Werte in den
-//  Einstellungen), statt so zu tun, als schaltete sie etwas.
+//  Wozu: Der Tooltip des Wach-Schalters sagt anhand dieser Werte die
+//  Wahrheit — ob die Deckel-Stufe wirklich greift (Schalter an) bzw. ob der
+//  Mac ohnehin nie schläft (Schalter aus, Benutzer-Einstellung) — statt so
+//  zu tun, als wüsste er es.
 //
-//  Verhalten im Fehlerfall: `pmset` nicht startbar (Sandbox), Ausgabe nicht
+//  Verhalten im Fehlerfall: `pmset` nicht startbar, Ausgabe nicht
 //  lesbar, Zeile fehlt → die Werte bleiben `nil` und die Oberfläche zeigt
 //  schlicht nichts Zusätzliches an. Kein Absturz, kein Dialog.
 //
@@ -61,11 +63,16 @@ final class SystemSleepInfo: ObservableObject {
     /// Liest die Werte neu — gedacht für `onAppear` der Übersicht und der
     /// Einstellungen. Drosselt sich selbst auf einen Lauf pro Minute.
     /// **Nur vom Hauptthread aufrufen.**
-    func refresh() {
+    ///
+    /// - Parameter force: übergeht die Minuten-Drossel. Nötig, nachdem die
+    ///   App selbst `pmset disablesleep` umgestellt hat (SleepGuard) — der
+    ///   Tooltip soll sofort die Wahrheit zeigen, nicht die von vor 59
+    ///   Sekunden.
+    func refresh(force: Bool = false) {
         dispatchPrecondition(condition: .onQueue(.main))
 
         guard !isReading else { return }
-        if let last = lastReadAt, Date().timeIntervalSince(last) < Self.minimumGap { return }
+        if !force, let last = lastReadAt, Date().timeIntervalSince(last) < Self.minimumGap { return }
 
         isReading = true
         queue.async { [weak self] in
@@ -85,8 +92,8 @@ final class SystemSleepInfo: ObservableObject {
         }
     }
 
-    /// Führt `/usr/bin/pmset -g` aus. `nil`, wenn der Start scheitert (etwa
-    /// weil die Sandbox das Ausführen verbietet) oder nichts zurückkommt.
+    /// Führt `/usr/bin/pmset -g` aus. `nil`, wenn der Start scheitert oder
+    /// nichts zurückkommt.
     private static func runPMSet() -> String? {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")

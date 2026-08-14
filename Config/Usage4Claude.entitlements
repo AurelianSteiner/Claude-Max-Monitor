@@ -2,36 +2,30 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>com.apple.security.app-sandbox</key>
-	<true/>
-	<key>com.apple.security.network.client</key>
-	<true/>
 	<!--
-	  OAuth 登录在本地起一个短时 NWListener（loopback）接收系统浏览器
-	  重定向回来的授权码。App Sandbox 下监听传入连接需要此 entitlement，
-	  否则 NWListener 会进入 .failed（权限拒绝）。见 CodexOAuth/OAuthCallbackServer。
+	  KEINE App Sandbox mehr — bewusste Entscheidung ab 2.0:
+
+	  „Bleib wach“ soll auch zugeklappt wirken. Das geht nur über
+	  `pmset -a disablesleep 1`, und das verlangt root. Eine sandboxte App
+	  kann weder die Admin-Autorisierung anzeigen (osascript
+	  „with administrator privileges“) noch fremde Prozesse wie sudo/pmset
+	  starten. Deshalb läuft die App ohne Sandbox; der privilegierte Teil
+	  steckt in Helpers/PrivilegedPower.swift (einmalige sudoers-Freigabe,
+	  danach lautloses `sudo -n pmset`).
+
+	  Mit der Sandbox entfallen auch alle Schlüssel, die nur unter ihr eine
+	  Bedeutung hatten:
+	    - com.apple.security.app-sandbox
+	    - com.apple.security.network.client / .network.server
+	      (ohne Sandbox darf jeder Prozess ohnehin ins Netz und lauschen —
+	       der OAuth-NWListener auf localhost braucht nichts Besonderes mehr)
+	    - com.apple.security.temporary-exception.mach-lookup.global-name
+	      (Sparkles XPC-Umweg war eine reine Sandbox-Krücke)
+	    - com.apple.security.files.user-selected.read-write
+	      (Sichern-Dialoge funktionieren ohne Sandbox sowieso)
+
+	  Beim Umstieg werden die alten Container-Einstellungen einmalig
+	  importiert — siehe Helpers/SandboxedPreferencesMigrator.swift.
 	-->
-	<key>com.apple.security.network.server</key>
-	<true/>
-	<!--
-	  Sparkle 2.x under App Sandbox: lets the main app reach Sparkle's
-	  Installer (-spki) and Status (-spks) XPC services bundled inside
-	  the Sparkle framework. Without these the one-click install fails
-	  under the sandbox. See https://sparkle-project.org/documentation/sandboxing/
-	  (SUEnableDownloaderService is intentionally omitted — the app has
-	  network.client, so Sparkle downloads in-process.)
-	-->
-	<key>com.apple.security.temporary-exception.mach-lookup.global-name</key>
-	<array>
-		<string>$(PRODUCT_BUNDLE_IDENTIFIER)-spks</string>
-		<string>$(PRODUCT_BUNDLE_IDENTIFIER)-spki</string>
-	</array>
-	<!--
-	  Diagnose-Export: Der Bericht wird über einen Sichern-Dialog an einen
-	  selbst gewählten Ort geschrieben (DiagnosticManager). „user-selected“
-	  erlaubt unter der Sandbox genau diesen Zugriff.
-	-->
-	<key>com.apple.security.files.user-selected.read-write</key>
-	<true/>
 </dict>
 </plist>

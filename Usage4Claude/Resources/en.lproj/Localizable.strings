@@ -450,12 +450,15 @@
    It sets BOTH assertions — screen and Mac. */
 "dashboard.sleep.label" = "Stay awake";
 "dashboard.sleep.help" = "Keeps the screen and the Mac awake while Claude Max Monitor is running.";
-"dashboard.sleep.lid_note" = "Closing the lid still puts the Mac to sleep. Only \"sudo pmset -a disablesleep 1\" changes that — the command is ready to copy in the settings.";
+"dashboard.sleep.lid_note" = "Closing the lid still puts the Mac to sleep right now. The next time you turn this on, macOS asks for your password once — after that the switch also keeps a closed Mac awake.";
 "dashboard.sleep.state_on" = "On";
 "dashboard.sleep.state_off" = "Off";
+/* Tooltip line while the switch is on and pmset reports SleepDisabled 1:
+   the privileged lid tier is active. */
+"dashboard.sleep.lid_active" = "Keeps running with the lid closed.";
 
-/* Tooltip addition when the system itself already never sleeps (pmset) */
-"dashboard.sleep.system_override" = "Your Mac is already set to never sleep system-wide (sudo pmset disablesleep 1) — this switch changes nothing there. It matters on Macs without that system setting.";
+/* Tooltip addition when the system never sleeps (pmset) while the switch is OFF */
+"dashboard.sleep.system_override" = "Your Mac is set to never sleep system-wide (pmset disablesleep 1) — it stays awake even without this switch, lid closed included.";
 
 /* Tooltip of the little worker in the overview header */
 "dashboard.mascot.awake_help" = "Being kept awake — nobody dozes off here.";
@@ -464,13 +467,13 @@
 /* General settings: the collapsed section with the three pmset commands.
    Display and copy only — the app never runs them. */
 "settings.sleep.section" = "System sleep settings";
-"settings.sleep.intro" = "macOS has its own, stronger sleep setting for the whole machine. The \"Stay awake\" switch in the overview does not change it — that takes the Terminal.";
+"settings.sleep.intro" = "macOS has its own, stronger sleep setting for the whole machine (disablesleep). \"Stay awake\" in the overview now sets it too — after a one-time password approval. For reference and manual control: the commands.";
 "settings.sleep.caption_status" = "Show status";
 "settings.sleep.caption_off" = "Never sleep";
 "settings.sleep.caption_on" = "Sleep as usual again";
 "settings.sleep.copy" = "Copy command";
 "settings.sleep.copied" = "Copied";
-"settings.sleep.note" = "The two sudo commands ask for the account password in Terminal. With disablesleep = 1, \"Stay awake\" has no additional effect.";
+"settings.sleep.note" = "The two sudo commands ask for the account password in Terminal. \"sudo rm /etc/sudoers.d/claude-max-monitor\" fully removes the one-time \"Stay awake\" approval again.";
 
 /* Live values from pmset -g, above the commands */
 "settings.sleep.value_sleep_on" = "SleepDisabled: 1 — the Mac never sleeps, even with the lid closed.";
