@@ -1,5 +1,13 @@
 # Änderungen
 
+## 2.1
+
+- Die Claudies halten jetzt Abstand: Ihre Startzeiten streuen, die Lücken sind
+  unterschiedlich groß, aber nie kleiner als ein Wesen breit ist. Niemand läuft
+  mehr auf den Vordermann auf.
+- Jeder zehnte ist besonders — Partyhut, Zylinder, ein Raucher mit einem Hauch
+  Rauch, oder ein Sprinter, der sich in die Kurve legt und alle überholt.
+
 ## 2.0
 
 - Claude Always On: Der Wach-Schalter heißt jetzt so, wie er wirkt. Beim ersten
