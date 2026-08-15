@@ -3,6 +3,19 @@
     <channel>
         <title>Claude Max Monitor</title>
         <item>
+            <title>2.3</title>
+            <pubDate>Sat, 15 Aug 2026 22:31:46 +0000</pubDate>
+            <sparkle:version>2.3</sparkle:version>
+            <sparkle:shortVersionString>2.3</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[Claude Always On zeigt jetzt, was wirklich eingestellt ist: Wer 'sudo pmset -a disablesleep 1' im Terminal setzt, sieht den Schalter umspringen — beim Start und immer, wenn die App in den Vordergrund kommt. Übernommen wird nur gelesen: Die App schreibt die Einstellung ausschließlich, wenn der Schalter angeklickt wird, und nimmt beim Beenden nur zurück, was sie selbst eingeschaltet hat.]]></description>
+            <enclosure
+                url="https://github.com/AurelianSteiner/Claude-Max-Monitor/releases/download/v2.3/Claude-Max-Monitor-2.3.dmg"
+                sparkle:edSignature="kkdN6bG0eE12ecwdYpQolFKQlZeOZGjUHCGtNsDfuvRXLTkuJmL4ygFpXW1TFdDfLU2BCAzZVX00K7//tex5BA=="
+                length="5730388"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>2.2</title>
             <pubDate>Sat, 15 Aug 2026 22:18:15 +0000</pubDate>
             <sparkle:version>2.2</sparkle:version>
