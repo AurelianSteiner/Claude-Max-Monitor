@@ -4,14 +4,23 @@
 //
 //  Die Claudie-Parade im Kopf der Übersicht: Solange „Claude Always On" aktiv
 //  ist, laufen kleine korallenfarbene Pixel-Wesen von links nach rechts durch
-//  einen schmalen Streifen — am linken Rand blenden sie ein, am rechten aus.
-//  Ist der Modus aus, bleibt der Streifen leer.
+//  einen schmalen Streifen — links blenden sie ein, rechts aus. Ist der Modus
+//  aus, bleibt der Streifen leer.
+//
+//  Die kleine Parade-Engine: Jeder Läufer ist eine Nummer im unendlichen
+//  Strom. Aus der Nummer werden deterministisch (Splitmix-Hash) sein
+//  Startzeitpunkt (Abstände zufällig zwischen ~1,6 s und ~3,2 s — nie so
+//  knapp, dass zwei aufeinandersitzen) und seine Art abgeleitet: Rund 90 %
+//  laufen normal, der Rest ist besonders — Partyhut, Zylinder, ein Raucher
+//  mit einem Hauch Rauch, oder ein Sprinter, der an allen vorbeirennt.
+//  Alle Normalen laufen exakt gleich schnell, damit die Abstände stabil
+//  bleiben und niemand auf den Vordermann aufläuft.
 //
 //  Technik: `TimelineView(.periodic)` treibt eine reine Funktion der Uhrzeit —
-//  kein eigener Timer, nichts läuft, wenn die Ansicht unsichtbar ist. Im
-//  Aus-Zustand wird gar nicht erst animiert. Die Wesen sind einzelne
-//  Canvas-Rechtecke im festen Pixelraster (Zelle 2 pt) — eigenes Sprite,
-//  kein fremdes Bildmaterial, nur an Claudes Pixel-Look angelehnt.
+//  kein eigener Timer, kein gespeicherter Zustand, nichts läuft, wenn die
+//  Ansicht unsichtbar ist. Die Wesen sind einzelne Canvas-Rechtecke im festen
+//  Pixelraster (Zelle 2 pt) — eigenes Sprite, kein fremdes Bildmaterial,
+//  nur an Claudes Pixel-Look angelehnt.
 //
 //  Copyright © 2025 f-is-h. All rights reserved.
 //
@@ -40,108 +49,207 @@ struct AwakeMascotView: View {
         }
         .frame(maxWidth: Self.idealWidth)
         .frame(height: Self.height)
+        .clipped()   // Rauch & Hüte bleiben im Streifen, nichts ragt ins Dashboard
         .help(sleepGuard.isAwake ? L.Dashboard.mascotAwakeHelp : L.Dashboard.mascotAsleepHelp)
         .accessibilityLabel(sleepGuard.isAwake ? L.Dashboard.mascotAwakeHelp : L.Dashboard.mascotAsleepHelp)
     }
 }
 
-// MARK: - Zeichnung
+// MARK: - Parade-Engine
+
+/// Art eines Läufers. `internal`, damit der Vorschau-Renderer im Modul die
+/// Varianten einzeln zeichnen kann.
+enum MascotVariant {
+    case normal
+    case partyHat
+    case topHat
+    case smoker
+    case sprinter
+}
 
 /// Eine Momentaufnahme der Parade. Alle Maße leben im Pixelraster (Zelle 2 pt);
-/// die Läufer verteilen sich gleichmäßig über die tatsächliche Breite.
-private struct MascotParadeCanvas: View {
+/// die Läufer verteilen sich über die tatsächliche Breite.
+struct MascotParadeCanvas: View {
 
     let time: TimeInterval
 
-    private static let cell: CGFloat = 2
+    static let cell: CGFloat = 2
 
-    // Korallen-Pixel, an Claudes Pixel-Look angelehnt
-    private static let coral = Color(red: 0.910, green: 0.573, blue: 0.486)   // #e8927c
-    private static let coralDark = Color(red: 0.753, green: 0.416, blue: 0.333) // #c06a55
-    private static let face = Color(red: 0.227, green: 0.122, blue: 0.086)    // #3a1f16
+    // Korallen-Pixel, an Claudes Pixel-Look angelehnt, plus Deko-Töne
+    static let coral = Color(red: 0.910, green: 0.573, blue: 0.486)     // #e8927c
+    static let coralDark = Color(red: 0.753, green: 0.416, blue: 0.333) // #c06a55
+    static let faceInk = Color(red: 0.227, green: 0.122, blue: 0.086)   // #3a1f16
+    static let partyPink = Color(red: 0.855, green: 0.353, blue: 0.545) // Partyhut
+    static let partyTip = Color(red: 0.980, green: 0.800, blue: 0.235)  // Bommel
+    static let hatBlack = Color(red: 0.16, green: 0.16, blue: 0.19)     // Zylinder
+    static let smoke = Color.secondary
 
-    /// Anzahl der Läufer und ihr Lauftempo (pt/s)
-    private static let walkerCount = 5
-    private static let speed: Double = 14
-    /// Schrittfrequenz (Beinwechsel pro Sekunde) und Breite der Fade-Zonen
-    private static let stepsPerSecond: Double = 4
-    private static let fadeZone: CGFloat = 20
-    /// Sprite-Breite in pt (8 Zellen), plus Auslauf außerhalb des Streifens
-    private static let spriteWidth: CGFloat = 16
-    private static let overshoot: CGFloat = 15
+    // Taktung der Parade
+    static let baseSpeed: Double = 14        // pt/s, alle Normalen exakt gleich
+    static let sprintSpeed: Double = 40      // der Eilige
+    static let avgInterval: Double = 2.4     // mittlerer Start-Abstand (s)
+    static let minInterval: Double = 1.6     // nie enger — verhindert Aufsitzen
+    static let stepsPerSecond: Double = 4
+    static let fadeZone: CGFloat = 20
+    static let spriteWidth: CGFloat = 16
+    static let overshoot: CGFloat = 18
+
+    // MARK: Deterministischer Zufall (Splitmix64)
+
+    /// Stabiler Pseudozufall 0…1 aus Läufer-Nummer und Salz — keine gespeicherten
+    /// Zustände, dieselbe Nummer würfelt immer dasselbe.
+    static func roll(_ index: Int, _ salt: UInt64) -> Double {
+        var z = UInt64(bitPattern: Int64(index)) &+ (salt &* 0x9E37_79B9_7F4A_7C15)
+        z = (z ^ (z >> 30)) &* 0xBF58_476D_1CE4_E5B9
+        z = (z ^ (z >> 27)) &* 0x94D0_49BB_1331_11EB
+        z ^= z >> 31
+        return Double(z % 1_000_000) / 1_000_000
+    }
+
+    /// Startzeitpunkt des Läufers `index`: fixes Raster plus Jitter, der die
+    /// Lücken zwischen `minInterval` und ~2 × `avgInterval − minInterval` streut.
+    static func spawnTime(_ index: Int) -> Double {
+        let jitterMax = avgInterval - minInterval
+        return Double(index) * avgInterval + roll(index, 1) * jitterMax
+    }
+
+    /// Rund 10 % Besondere: 3 % Partyhut, 3 % Zylinder, 2 % Raucher, 2 % Sprinter.
+    static func variant(_ index: Int) -> MascotVariant {
+        let r = roll(index, 7)
+        if r < 0.03 { return .partyHat }
+        if r < 0.06 { return .topHat }
+        if r < 0.08 { return .smoker }
+        if r < 0.10 { return .sprinter }
+        return .normal
+    }
+
+    // MARK: Zeichnen
 
     var body: some View {
         Canvas { context, size in
-            let span = size.width + Self.overshoot * 2
-            guard span > 0 else { return }
+            guard size.width > 4 else { return }
+            let span = Double(size.width + Self.overshoot * 2)
 
-            for walker in 0..<Self.walkerCount {
-                // Gleichmäßig versetzt; ein Hauch Tempo-Varianz, damit die
-                // Reihe lebendig bleibt, ohne auseinanderzulaufen
-                let offset = Double(walker) * (span / Double(Self.walkerCount))
-                let pace = Self.speed * (1 + 0.06 * Double(walker % 3 - 1))
-                let x = CGFloat((time * pace + offset)
-                    .truncatingRemainder(dividingBy: Double(span))) - Self.overshoot
+            // Nur die Nummern anschauen, die jetzt überhaupt sichtbar sein können:
+            // Langsamste Reisezeit rückwärts vom aktuellen Zeitpunkt.
+            let slowestTravel = span / Self.baseSpeed
+            let newest = Int((time / Self.avgInterval).rounded(.down)) + 1
+            let oldest = Int(((time - slowestTravel - 1) / Self.avgInterval).rounded(.down))
 
-                // Beinwechsel je Läufer versetzt, sonst marschieren alle im Gleichschritt
-                let step = Int(time * Self.stepsPerSecond + Double(walker) * 0.7) % 2 == 0
+            for index in oldest...newest {
+                let spawn = Self.spawnTime(index)
+                let elapsed = time - spawn
+                guard elapsed > 0 else { continue }
+
+                let kind = Self.variant(index)
+                let speed = kind == .sprinter ? Self.sprintSpeed : Self.baseSpeed
+                let x = CGFloat(elapsed * speed) - Self.overshoot
+                guard x < size.width + Self.overshoot else { continue }
 
                 var alpha: Double = 1
                 if x < Self.fadeZone {
                     alpha = max(0, Double(x / Self.fadeZone))
                 }
-                let rightEdge = size.width - Self.fadeZone - Self.spriteWidth
-                if x > rightEdge {
+                let rightStart = size.width - Self.fadeZone - Self.spriteWidth
+                if x > rightStart {
                     alpha = min(alpha, max(0, Double((size.width - Self.spriteWidth - x) / Self.fadeZone)))
                 }
                 guard alpha > 0.02 else { continue }
 
-                drawWalker(in: context, x: x, step: step, alpha: alpha)
+                let stepRate = kind == .sprinter ? Self.stepsPerSecond * 2.2 : Self.stepsPerSecond
+                let step = Int(time * stepRate + Double(index) * 0.7) % 2 == 0
+                Self.drawWalker(in: context, x: x, step: step, alpha: alpha,
+                                variant: kind, time: time, seed: index)
             }
         }
     }
 
-    // MARK: Läufer
+    // MARK: Ein Läufer
 
-    private func drawWalker(in ctx: GraphicsContext, x: CGFloat, step: Bool, alpha: Double) {
+    /// Zeichnet einen Läufer bei `x` (linke Kante). `internal` für den
+    /// Vorschau-Renderer; die Engine oben ist der einzige echte Aufrufer.
+    static func drawWalker(in ctx: GraphicsContext, x: CGFloat, step: Bool,
+                           alpha: Double, variant: MascotVariant,
+                           time: TimeInterval, seed: Int) {
         var walker = ctx
         walker.opacity = alpha
         // Leichtes Hüpfen im Schritt-Takt; Grundlinie so, dass die Beinchen
         // am unteren Rand des 24-pt-Streifens aufsetzen
         walker.translateBy(x: x, y: step ? 7.4 : 8.2)
 
+        // Sprinter legen sich in die Kurve: obere Reihen wandern nach vorn
+        let lean: Double = variant == .sprinter ? 0.22 : 0
+
         func px(_ col: Double, _ row: Double, _ color: Color, _ w: Double = 1, _ h: Double = 1) {
-            let rect = CGRect(x: col * Self.cell, y: row * Self.cell,
-                              width: w * Self.cell, height: h * Self.cell)
+            let shift = lean * (3 - row)
+            let rect = CGRect(x: (col + shift) * cell, y: row * cell,
+                              width: w * cell, height: h * cell)
             walker.fill(Path(rect), with: .color(color))
         }
 
-        // Ohren-Nubs
-        px(1, -1, Self.coral)
-        px(6, -1, Self.coral)
+        // Ohren-Nubs (der Zylinder verdeckt sie ohnehin fast)
+        px(1, -1, coral)
+        px(6, -1, coral)
 
         // Körperblock 8 × 4, Ecken frei, Kanten dunkler
         for row in 0..<4 {
             for col in 0..<8 {
                 if row == 0 && (col == 0 || col == 7) { continue }
                 let edge = (col == 0 || col == 7 || row == 3)
-                px(Double(col), Double(row), edge ? Self.coralDark : Self.coral)
+                px(Double(col), Double(row), edge ? coralDark : coral)
             }
         }
 
         // Augen — blicken in Laufrichtung
-        px(3, 1, Self.face)
-        px(6, 1, Self.face)
+        px(3, 1, faceInk)
+        px(6, 1, faceInk)
 
         // Beinchen alternieren
         if step {
-            px(1, 4, Self.coralDark)
-            px(4.5, 4, Self.coralDark)
-            px(6.5, 4.6, Self.coralDark, 0.9, 0.7)
+            px(1, 4, coralDark)
+            px(4.5, 4, coralDark)
+            px(6.5, 4.6, coralDark, 0.9, 0.7)
         } else {
-            px(1.5, 4.6, Self.coralDark, 0.9, 0.7)
-            px(3.5, 4, Self.coralDark)
-            px(6, 4, Self.coralDark)
+            px(1.5, 4.6, coralDark, 0.9, 0.7)
+            px(3.5, 4, coralDark)
+            px(6, 4, coralDark)
+        }
+
+        // Die Besonderen
+        switch variant {
+        case .normal:
+            break
+
+        case .partyHat:
+            // Spitzer Hut mit Bommel, mittig über dem Kopf
+            px(3.6, -3.2, partyPink, 0.8, 1)
+            px(3.1, -2.3, partyPink, 1.8, 1)
+            px(2.6, -1.5, partyPink, 2.8, 0.7)
+            px(3.7, -3.8, partyTip, 0.6, 0.6)
+
+        case .topHat:
+            // Zylinder: breite Krempe, hohe Krone
+            px(1.8, -1.6, hatBlack, 4.4, 0.6)
+            px(2.6, -3.6, hatBlack, 2.8, 2.1)
+
+        case .smoker:
+            // Zigarette vorn am Gesicht plus ein Hauch aufsteigender Rauch
+            px(8, 2, Color.white.opacity(0.85), 1.2, 0.5)
+            px(9.2, 2, Color.orange, 0.4, 0.5)
+            for puff in 0..<3 {
+                let phase = (time * 0.6 + Double(puff) * 0.33 + roll(seed, 11))
+                    .truncatingRemainder(dividingBy: 1)
+                let puffAlpha = (1 - phase) * 0.45
+                guard puffAlpha > 0.04 else { continue }
+                px(9.0 + Double(puff) * 0.5 + phase * 1.2,
+                   1.2 - phase * 3.6,
+                   smoke.opacity(puffAlpha), 0.8, 0.8)
+            }
+
+        case .sprinter:
+            // Tempolinien hinter dem Eiligen
+            px(-1.6, 1, coralDark.opacity(0.35), 1.2, 0.5)
+            px(-2.6, 2.2, coralDark.opacity(0.25), 1.4, 0.5)
         }
     }
 }
