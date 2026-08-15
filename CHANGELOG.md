@@ -1,5 +1,14 @@
 # Änderungen
 
+## 2.4
+
+- Schalter und System stimmen jetzt immer überein. Ein Wächter sieht alle
+  fünfzehn Sekunden nach, was `pmset` meldet, und zieht die Anzeige nach — egal
+  ob im Terminal oder in der App geschaltet wurde. Die Anzeige kann nichts mehr
+  behaupten, was der Mac nicht tut.
+- In 2.3 lief dieser Abgleich nur beim Start: Der Takt hing an einer Run-Loop,
+  die es im Hintergrund nicht gab, und feuerte deshalb nie.
+
 ## 2.3
 
 - Claude Always On zeigt jetzt, was wirklich eingestellt ist: Wer
