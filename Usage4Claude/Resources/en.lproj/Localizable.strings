@@ -448,7 +448,8 @@
 /* The single stay-awake switch in the overview header: short label next to
    the symbol (also the VoiceOver name) and the tooltip explanation.
    It sets BOTH assertions — screen and Mac. */
-"dashboard.sleep.label" = "Stay awake";
+"dashboard.sleep.label" = "Claude Always On";
+"dashboard.sleep.info" = "Claude Always On keeps the Mac and the screen awake while the app is running. After a one-time approval (macOS asks for your password), the laptop even stays on with the lid closed — running Claude sessions simply keep working. Switch it off to end it.";
 "dashboard.sleep.help" = "Keeps the screen and the Mac awake while Claude Max Monitor is running.";
 "dashboard.sleep.lid_note" = "Closing the lid still puts the Mac to sleep right now. The next time you turn this on, macOS asks for your password once — after that the switch also keeps a closed Mac awake.";
 "dashboard.sleep.state_on" = "On";
@@ -461,8 +462,8 @@
 "dashboard.sleep.system_override" = "Your Mac is set to never sleep system-wide (pmset disablesleep 1) — it stays awake even without this switch, lid closed included.";
 
 /* Tooltip of the little worker in the overview header */
-"dashboard.mascot.awake_help" = "Being kept awake — nobody dozes off here.";
-"dashboard.mascot.asleep_help" = "Asleep. Turn on \"Stay awake\" to work through.";
+"dashboard.mascot.awake_help" = "The Claudies are marching — Claude Always On is active.";
+"dashboard.mascot.asleep_help" = "All quiet. Turn on \"Claude Always On\" and the Claudies start marching.";
 
 /* General settings: the collapsed section with the three pmset commands.
    Display and copy only — the app never runs them. */

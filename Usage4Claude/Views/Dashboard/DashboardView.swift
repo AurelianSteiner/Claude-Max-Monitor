@@ -163,6 +163,8 @@ struct DashboardView: View {
     @AppStorage("showRemainingMode") private var savedRemainingMode = false
     @State private var showRemainingMode = UserDefaults.standard.bool(forKey: "showRemainingMode")
     @State private var isSpinning = false
+    /// Info-Popover zu „Claude Always On" (das ⓘ neben dem Schalter)
+    @State private var showAwakeInfo = false
 
     // MARK: - Derived data
 
@@ -312,8 +314,8 @@ struct DashboardView: View {
 
             Spacer(minLength: 8)
 
-            // Das Maskottchen: ein kleiner Arbeiter am Laptop, der zeigt, ob
-            // „Bleib wach" gerade wirkt (tippt) oder nicht (schläft). Rein
+            // Die Claudie-Parade: Solange „Claude Always On" wirkt, laufen
+            // kleine Pixel-Wesen durch den Streifen; aus = leer. Rein
             // dekorativ, deshalb außerhalb der Knopfgruppe.
             AwakeMascotView()
 
@@ -322,6 +324,7 @@ struct DashboardView: View {
             // ihren 20-pt-Feldern ohnehin Luft.
             HStack(spacing: 6) {
                 stayAwakeToggle
+                stayAwakeInfoButton
                 sortMenu
                 refreshButton
                 actionMenu
@@ -391,6 +394,27 @@ struct DashboardView: View {
         .focusable(false)
         .help(stayAwakeHelp)
         .accessibilityLabel(L.Dashboard.sleepLabel)
+    }
+
+    /// Kleines ⓘ neben dem Schalter: ein Klick erklärt in zwei Sätzen, was
+    /// „Claude Always On" tut — vor allem, dass der Laptop nach der einmaligen
+    /// Freischaltung auch zugeklappt anbleibt.
+    private var stayAwakeInfoButton: some View {
+        Button(action: { showAwakeInfo.toggle() }) {
+            Image(systemName: "info.circle")
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+                .frame(width: 16, height: 20)
+        }
+        .buttonStyle(.plain)
+        .focusable(false)
+        .popover(isPresented: $showAwakeInfo, arrowEdge: .bottom) {
+            Text(L.Dashboard.sleepInfo)
+                .font(.system(size: 11))
+                .lineSpacing(2)
+                .padding(12)
+                .frame(width: 260)
+        }
     }
 
     /// Tooltip des Wach-Schalters: Beschriftung samt aktuellem Zustand,

@@ -224,8 +224,19 @@ with open(dst, "wb") as handle:
     plistlib.dump(resolve(plist), handle)
 ENT
 
-info "Signiere (ad-hoc)…"
-codesign --force --sign - --timestamp=none \
+# Feste Identität statt ad-hoc, wenn vorhanden: Ad-hoc-Signaturen sind bei jedem
+# Build anders, deshalb fragte der Schlüsselbund nach jedem Update neu nach den
+# gespeicherten Konten. Mit demselben selbst erstellten Zertifikat („Claude Max
+# Monitor Signing") bleibt die Identität über Versionen stabil und „Immer
+# erlauben" gilt dauerhaft. Fehlt das Zertifikat (z. B. auf CI), ad-hoc wie bisher.
+SIGN_IDENTITY="-"
+if security find-identity -v -p codesigning 2>/dev/null | grep -q "Claude Max Monitor Signing"; then
+    SIGN_IDENTITY="Claude Max Monitor Signing"
+    info "Signiere (Claude Max Monitor Signing)…"
+else
+    info "Signiere (ad-hoc)…"
+fi
+codesign --force --sign "$SIGN_IDENTITY" --timestamp=none \
     --entitlements "$RESOLVED_ENTITLEMENTS" \
     "$APP_BUNDLE" 2>&1 | sed 's/^/    /' || fail "Signieren fehlgeschlagen"
 

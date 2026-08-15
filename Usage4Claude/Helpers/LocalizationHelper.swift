@@ -124,6 +124,8 @@ enum L {
         /// Ehrliche Zeile im Tooltip: Zuklappen schläfert derzeit noch ein,
         /// das nächste Einschalten fragt einmal nach dem Passwort
         static var sleepLidNote: String { localized("dashboard.sleep.lid_note") }
+        /// Text im ⓘ-Popover neben dem Schalter
+        static var sleepInfo: String { localized("dashboard.sleep.info") }
         static var sleepStateOn: String { localized("dashboard.sleep.state_on") }
         static var sleepStateOff: String { localized("dashboard.sleep.state_off") }
         /// Zeile im Tooltip, wenn die Deckel-Stufe greift (Schalter an,

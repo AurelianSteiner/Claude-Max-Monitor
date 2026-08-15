@@ -447,7 +447,8 @@
 /* Der Wach-Schalter „Bleib wach" im Kopf der Übersicht: kurze Beschriftung
    neben dem Symbol (zugleich VoiceOver-Name) und der Erklärtext im Tooltip.
    Er setzt BEIDE Assertions — Bildschirm und Mac. */
-"dashboard.sleep.label" = "Bleib wach";
+"dashboard.sleep.label" = "Claude Always On";
+"dashboard.sleep.info" = "Claude Always On hält Mac und Bildschirm wach, solange die App läuft. Nach einer einmaligen Freischaltung (macOS fragt nach dem Passwort) bleibt der Laptop sogar zugeklappt an — laufende Claude-Sessions arbeiten dann einfach weiter. Zum Beenden den Schalter ausmachen.";
 "dashboard.sleep.help" = "Hält Bildschirm und Mac wach, solange Claude Max Monitor läuft.";
 "dashboard.sleep.lid_note" = "Zugeklappt schläft der Mac derzeit trotzdem ein. Beim nächsten Einschalten fragt macOS einmal nach dem Passwort — danach hält der Schalter auch den zugeklappten Mac wach.";
 "dashboard.sleep.state_on" = "Aktiv";
@@ -460,8 +461,8 @@
 "dashboard.sleep.system_override" = "Dein Mac ist systemweit auf „nie schlafen“ gestellt (pmset disablesleep 1) — er bleibt auch ohne diesen Schalter wach, zugeklappt eingeschlossen.";
 
 /* Tooltip des kleinen Arbeiters im Kopf der Übersicht */
-"dashboard.mascot.awake_help" = "Wird wachgehalten — niemand schläft hier ein.";
-"dashboard.mascot.asleep_help" = "Schläft. „Bleib wach“ einschalten, um durchzuarbeiten.";
+"dashboard.mascot.awake_help" = "Die Claudies laufen — Claude Always On ist aktiv.";
+"dashboard.mascot.asleep_help" = "Alles ruhig. „Claude Always On“ einschalten, und die Claudies laufen los.";
 
 /* Allgemeine Einstellungen: der eingeklappte Abschnitt mit den drei
    pmset-Befehlen. Nur anzeigen und kopieren — die App führt nichts aus. */
