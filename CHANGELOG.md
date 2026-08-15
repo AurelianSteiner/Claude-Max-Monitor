@@ -1,5 +1,14 @@
 # Änderungen
 
+## 2.3
+
+- Claude Always On zeigt jetzt, was wirklich eingestellt ist: Wer
+  `sudo pmset -a disablesleep 1` im Terminal setzt, sieht den Schalter
+  umspringen — beim Start und immer, wenn die App in den Vordergrund kommt.
+- Übernommen wird nur gelesen. Die App schreibt die Einstellung ausschließlich,
+  wenn der Schalter angeklickt wird, und nimmt beim Beenden nur zurück, was sie
+  selbst eingeschaltet hat. Eine im Terminal gesetzte Einstellung bleibt.
+
 ## 2.2
 
 - Die Claudies sind doppelt so groß und haben deutlich mehr Auslauf: Die Parade
