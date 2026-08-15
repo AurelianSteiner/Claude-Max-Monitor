@@ -1,5 +1,20 @@
 # Änderungen
 
+## 2.0
+
+- Claude Always On: Der Wach-Schalter heißt jetzt so, wie er wirkt. Beim ersten
+  Einschalten fragt macOS einmal nach dem Passwort; danach hält der Schalter den
+  Mac auch zugeklappt wach — laufende Claude-Sessions arbeiten einfach weiter.
+  Ausschalten gibt alles wieder frei, ein ⓘ daneben erklärt es in zwei Sätzen.
+- Solange Claude Always On aktiv ist, laufen kleine Pixel-Claudies durch den
+  Kopf der Übersicht — links blenden sie ein, rechts aus. Aus = leerer Streifen.
+- Die App verlässt die Sandbox (nur so darf sie den privilegierten
+  pmset-Befehl ausführen); alle Einstellungen werden beim ersten Start einmalig
+  übernommen.
+- Neue Versionen sind mit einer festen Signatur signiert. Der Schlüsselbund
+  fragt nach diesem Update ein letztes Mal („Immer erlauben") und danach nie
+  wieder.
+
 ## 1.9
 
 - Der Weg über den geteilten Ordner ist entfallen — das Team läuft ausschließlich
