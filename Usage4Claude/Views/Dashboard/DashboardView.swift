@@ -281,6 +281,10 @@ struct DashboardView: View {
             manager.activate()
             // Drosselt sich selbst auf einen Lauf pro Minute.
             systemSleep.refresh()
+            // Wurde `disablesleep` zwischenzeitlich im Terminal umgestellt,
+            // zieht der Schalter jetzt nach — die Anzeige soll nie etwas
+            // anderes behaupten als das System tut.
+            sleepGuard.adoptSystemStateIfNeeded()
         }
         .onDisappear {
             manager.deactivate()

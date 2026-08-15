@@ -22,6 +22,7 @@
 //  Copyright © 2025 f-is-h. All rights reserved.
 //
 
+import AppKit
 import Foundation
 import Combine
 import OSLog
@@ -59,6 +60,10 @@ final class SleepGuard: ObservableObject {
     /// „Bleib wach“ ist an: Bildschirm UND Mac werden wach gehalten
     @Published private(set) var isAwake: Bool = false
 
+    /// Wahr, wenn die Deckel-Stufe von außen kam (Terminal), nicht von uns.
+    /// Dann bleibt sie beim Beenden stehen — sie gehört dem Benutzer.
+    private var externallyEnabled = false
+
     // MARK: - Private State
 
     /// 0 gilt als „keine Assertion aktiv“ — IOKit vergibt nur Werte > 0
@@ -83,7 +88,20 @@ final class SleepGuard: ObservableObject {
         category: "SleepGuard"
     )
 
-    private init() {}
+    private init() {
+        // Kommt die App in den Vordergrund, könnte `disablesleep` inzwischen im
+        // Terminal umgestellt worden sein. Dann zieht der Schalter nach, ohne
+        // dass man erst die Übersicht auf- und zuklappen muss.
+        activationObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.adoptSystemStateIfNeeded()
+        }
+    }
+
+    private var activationObserver: NSObjectProtocol?
 
     // MARK: - Lifecycle
 
@@ -96,6 +114,59 @@ final class SleepGuard: ObservableObject {
     func restoreFromDefaults() {
         if storedAwakeFlag() {
             setAwake(true, interactive: false)
+        }
+        adoptSystemStateIfNeeded()
+    }
+
+    /// Gleicht den Schalter mit der Wirklichkeit ab.
+    ///
+    /// `disablesleep` lässt sich auch im Terminal setzen (`sudo pmset -a
+    /// disablesleep 1`). Zeigte der Schalter dann weiter „aus“, log er: Der Mac
+    /// schläft nicht, und die Anzeige behauptet das Gegenteil. Also folgt der
+    /// Schalter dem System — aber nur in EINE Richtung: Er übernimmt, was er
+    /// vorfindet, und schreibt dabei selbst nichts. Wer die Einstellung im
+    /// Terminal gesetzt hat, behält sie.
+    ///
+    /// Übernommen wird der Zustand nur, wenn er dem gemerkten widerspricht;
+    /// die Assertions werden passend nachgezogen, damit „an“ auch bei offenem
+    /// Deckel hält. `externallyEnabled` merkt sich, dass die Deckel-Stufe nicht
+    /// von uns stammt — dann fassen wir sie beim Beenden auch nicht an.
+    func adoptSystemStateIfNeeded() {
+        SystemSleepInfo.shared.refresh(force: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [self] in
+            guard let systemOn = SystemSleepInfo.shared.sleepDisabled else { return }
+            guard systemOn != isAwake else { return }
+
+            if systemOn {
+                // Von außen eingeschaltet: Anzeige und Assertions nachziehen,
+                // `disablesleep` NICHT anfassen (steht ja schon richtig).
+                externallyEnabled = true
+                syncAssertions(to: true)
+                Self.log.notice("Systemzustand übernommen: „Claude Always On“ steht auf an")
+            } else {
+                // Von außen ausgeschaltet: Anzeige und Assertions zurücknehmen.
+                externallyEnabled = false
+                syncAssertions(to: false)
+                Self.log.notice("Systemzustand übernommen: „Claude Always On“ steht auf aus")
+            }
+            isAwake = systemOn
+            defaults.set(systemOn, forKey: DefaultsKey.awake)
+            NotificationCenter.default.post(name: .settingsChanged, object: nil)
+        }
+    }
+
+    /// Nur die Assertions auf einen Stand bringen — ohne `pmset`, ohne Dialog.
+    private func syncAssertions(to on: Bool) {
+        if on {
+            _ = createAssertion(type: kIOPMAssertionTypeNoDisplaySleep,
+                                reason: "Claude Max Monitor: Bildschirm wach halten",
+                                id: &displayAssertionID)
+            _ = createAssertion(type: kIOPMAssertionTypePreventUserIdleSystemSleep,
+                                reason: "Claude Max Monitor: Mac wach halten",
+                                id: &systemAssertionID)
+        } else {
+            releaseAssertion(&displayAssertionID, label: "NoDisplaySleep")
+            releaseAssertion(&systemAssertionID, label: "PreventUserIdleSystemSleep")
         }
     }
 
@@ -132,7 +203,11 @@ final class SleepGuard: ObservableObject {
         releaseAssertion(&displayAssertionID, label: "NoDisplaySleep")
         releaseAssertion(&systemAssertionID, label: "PreventUserIdleSystemSleep")
         isAwake = false
-        if wasAwake {
+        // Zurückgenommen wird nur, was die App selbst eingeschaltet hat. Hat der
+        // Benutzer `disablesleep` im Terminal gesetzt und wir haben den Zustand
+        // bloß übernommen, bleibt er beim Beenden bestehen — sonst nähme die App
+        // ihm still eine Einstellung weg, die ihr nie gehört hat.
+        if wasAwake && !externallyEnabled {
             PrivilegedPower.setSleepDisabledSilentlyAndWait(false)
         }
     }
@@ -275,5 +350,8 @@ final class SleepGuard: ObservableObject {
         // Singleton lebt bis Prozessende; hier nur als Sicherheitsnetz.
         releaseAssertion(&displayAssertionID, label: "NoDisplaySleep")
         releaseAssertion(&systemAssertionID, label: "PreventUserIdleSystemSleep")
+        if let activationObserver {
+            NotificationCenter.default.removeObserver(activationObserver)
+        }
     }
 }
