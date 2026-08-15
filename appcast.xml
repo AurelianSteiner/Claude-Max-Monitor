@@ -3,6 +3,19 @@
     <channel>
         <title>Claude Max Monitor</title>
         <item>
+            <title>2.5</title>
+            <pubDate>Sat, 15 Aug 2026 23:19:48 +0000</pubDate>
+            <sparkle:version>2.5</sparkle:version>
+            <sparkle:shortVersionString>2.5</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[Der Abgleich zwischen Schalter und System ist jetzt Ende-zu-Ende nachgewiesen: Ein Wächter liest alle fünfzehn Sekunden, was pmset meldet, und zieht die Anzeige nach — in beide Richtungen, egal ob im Terminal oder in der App geschaltet wurde.]]></description>
+            <enclosure
+                url="https://github.com/AurelianSteiner/Claude-Max-Monitor/releases/download/v2.5/Claude-Max-Monitor-2.5.dmg"
+                sparkle:edSignature="rz6W5fkI1yigYtMx+khaT+SDrhkwF1Abmx6A5XB2+ctKzkznBOtJ62Xqd+wqg6wbBMfxjQoPM26ttdTZxx7DBA=="
+                length="5736688"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>2.4</title>
             <pubDate>Sat, 15 Aug 2026 23:07:16 +0000</pubDate>
             <sparkle:version>2.4</sparkle:version>
