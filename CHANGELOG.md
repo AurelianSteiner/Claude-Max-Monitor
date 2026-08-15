@@ -1,5 +1,14 @@
 # Änderungen
 
+## 2.2
+
+- Die Claudies sind doppelt so groß und haben deutlich mehr Auslauf: Die Parade
+  ist aus dem Kopf in die Statuszeile gewandert — links die Punkte je Account,
+  rechts der Laufsteg.
+- Die Sonderformen kommen jetzt zehnmal so oft vorbei, und eine ist neu: Einer
+  stapft den ganzen Weg rückwärts. Der Raucher zieht eine richtige Rauchfahne
+  hinter sich her.
+
 ## 2.1
 
 - Die Claudies halten jetzt Abstand: Ihre Startzeiten streuen, die Lücken sind
