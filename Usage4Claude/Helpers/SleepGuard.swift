@@ -89,19 +89,66 @@ final class SleepGuard: ObservableObject {
     )
 
     private init() {
-        // Kommt die App in den Vordergrund, könnte `disablesleep` inzwischen im
-        // Terminal umgestellt worden sein. Dann zieht der Schalter nach, ohne
-        // dass man erst die Übersicht auf- und zuklappen muss.
-        activationObserver = NotificationCenter.default.addObserver(
-            forName: NSApplication.didBecomeActiveNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            self?.adoptSystemStateIfNeeded()
+        startWatchdog()
+    }
+
+    // MARK: - Abgleich mit dem System
+
+    /// Der Takt, der Anzeige und Wirklichkeit zusammenhält.
+    ///
+    /// `disablesleep` lässt sich jederzeit im Terminal umstellen. Damit der
+    /// Schalter nie etwas anderes behauptet als das System tut, wird alle 15
+    /// Sekunden nachgesehen und bei Abweichung nachgezogen.
+    ///
+    /// Bewusst ein `DispatchSourceTimer` und kein `Timer`: Letzterer hängt an
+    /// der Run-Loop des erzeugenden Threads und feuert nicht, wenn das
+    /// Singleton im Hintergrund entsteht — genau daran ist eine frühere
+    /// Fassung stillschweigend gescheitert. Die Dispatch-Quelle läuft auf
+    /// ihrer eigenen Queue und ist davon unabhängig.
+    private func startWatchdog() {
+        let timer = DispatchSource.makeTimerSource(queue: watchdogQueue)
+        timer.schedule(deadline: .now() + 2, repeating: 15, leeway: .seconds(3))
+        timer.setEventHandler { [weak self] in
+            self?.checkSystemState()
+        }
+        timer.resume()
+        watchdog = timer
+    }
+
+    /// Liest `pmset` direkt (kurz, eigenständig) und zieht den Schalter nach.
+    private func checkSystemState() {
+        guard let systemOn = Self.readSleepDisabled() else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self, systemOn != self.isAwake else { return }
+            self.adopt(systemOn)
         }
     }
 
-    private var activationObserver: NSObjectProtocol?
+    /// `pmset -g` lesen und die Zeile „SleepDisabled" auswerten. `nil`, wenn
+    /// der Aufruf scheitert — dann bleibt alles, wie es ist.
+    private static func readSleepDisabled() -> Bool? {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")
+        process.arguments = ["-g"]
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = Pipe()
+        do {
+            try process.run()
+        } catch {
+            return nil
+        }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        guard let text = String(data: data, encoding: .utf8) else { return nil }
+        for line in text.split(separator: "\n") where line.contains("SleepDisabled") {
+            return line.split(whereSeparator: { $0 == " " || $0 == "\t" }).last == "1"
+        }
+        return nil
+    }
+
+    private var watchdog: DispatchSourceTimer?
+    private let watchdogQueue = DispatchQueue(label: "xyz.fi5h.Usage4Claude.sleepWatchdog", qos: .utility)
 
     // MARK: - Lifecycle
 
@@ -132,11 +179,15 @@ final class SleepGuard: ObservableObject {
     /// Deckel hält. `externallyEnabled` merkt sich, dass die Deckel-Stufe nicht
     /// von uns stammt — dann fassen wir sie beim Beenden auch nicht an.
     func adoptSystemStateIfNeeded() {
+        // Nur anstoßen. Übernommen wird in `adopt(_:)`, sobald der frische Wert
+        // eintrifft — ein festes Warten wäre ein Wettlauf: Käme die Antwort
+        // später, läse man den alten Wert und hielte alles für unverändert.
         SystemSleepInfo.shared.refresh(force: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [self] in
-            guard let systemOn = SystemSleepInfo.shared.sleepDisabled else { return }
-            guard systemOn != isAwake else { return }
+    }
 
+    /// Übernimmt einen frisch gelesenen Systemzustand.
+    private func adopt(_ systemOn: Bool) {
+        do {
             if systemOn {
                 // Von außen eingeschaltet: Anzeige und Assertions nachziehen,
                 // `disablesleep` NICHT anfassen (steht ja schon richtig).
@@ -222,6 +273,10 @@ final class SleepGuard: ObservableObject {
     ///   Mal der EINE Passwortdialog erscheinen. `false` beim Start
     ///   (Re-Apply): dort läuft die Deckel-Stufe ausschließlich still.
     func setAwake(_ enabled: Bool, interactive: Bool = true) {
+        // Ein Klick macht die Deckel-Stufe zu unserer: Ab jetzt räumen wir sie
+        // beim Beenden auch wieder weg. (Beim stillen Re-Apply nach dem Start
+        // gilt dasselbe — wir setzen sie ja selbst.)
+        externallyEnabled = false
         let hadAssertions = displayAssertionID != 0 || systemAssertionID != 0
         guard enabled != hadAssertions else {
             // Schon im gewünschten Zustand — trotzdem Flag synchron halten
@@ -350,8 +405,6 @@ final class SleepGuard: ObservableObject {
         // Singleton lebt bis Prozessende; hier nur als Sicherheitsnetz.
         releaseAssertion(&displayAssertionID, label: "NoDisplaySleep")
         releaseAssertion(&systemAssertionID, label: "PreventUserIdleSystemSleep")
-        if let activationObserver {
-            NotificationCenter.default.removeObserver(activationObserver)
-        }
+        watchdog?.cancel()
     }
 }
