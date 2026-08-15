@@ -10,16 +10,17 @@
 //  Die kleine Parade-Engine: Jeder Läufer ist eine Nummer im unendlichen
 //  Strom. Aus der Nummer werden deterministisch (Splitmix-Hash) sein
 //  Startzeitpunkt (Abstände zufällig zwischen ~1,6 s und ~3,2 s — nie so
-//  knapp, dass zwei aufeinandersitzen) und seine Art abgeleitet: Rund 90 %
-//  laufen normal, der Rest ist besonders — Partyhut, Zylinder, ein Raucher
-//  mit einem Hauch Rauch, oder ein Sprinter, der an allen vorbeirennt.
+//  knapp, dass zwei aufeinandersitzen) und seine Art abgeleitet: Die Hälfte
+//  läuft normal, die andere Hälfte fällt auf — Partyhut, Zylinder, ein
+//  Raucher mit Rauchfahne, ein Sprinter, der alle überholt, und einer, der
+//  seelenruhig rückwärts stapft.
 //  Alle Normalen laufen exakt gleich schnell, damit die Abstände stabil
 //  bleiben und niemand auf den Vordermann aufläuft.
 //
 //  Technik: `TimelineView(.periodic)` treibt eine reine Funktion der Uhrzeit —
 //  kein eigener Timer, kein gespeicherter Zustand, nichts läuft, wenn die
 //  Ansicht unsichtbar ist. Die Wesen sind einzelne Canvas-Rechtecke im festen
-//  Pixelraster (Zelle 2 pt) — eigenes Sprite, kein fremdes Bildmaterial,
+//  Pixelraster (Zelle 4 pt) — eigenes Sprite, kein fremdes Bildmaterial,
 //  nur an Claudes Pixel-Look angelehnt.
 //
 //  Copyright © 2025 f-is-h. All rights reserved.
@@ -33,8 +34,8 @@ struct AwakeMascotView: View {
 
     /// Wunschbreite des Streifens; in engen Layouts darf SwiftUI ihn stauchen,
     /// die Zeichnung richtet sich nach der tatsächlichen Breite.
-    static let idealWidth: CGFloat = 132
-    static let height: CGFloat = 24
+    static let idealWidth: CGFloat = 300
+    static let height: CGFloat = 34
 
     var body: some View {
         Group {
@@ -65,15 +66,17 @@ enum MascotVariant {
     case topHat
     case smoker
     case sprinter
+    /// Läuft verkehrt herum — kommt von rechts und schaut nach links
+    case backwards
 }
 
-/// Eine Momentaufnahme der Parade. Alle Maße leben im Pixelraster (Zelle 2 pt);
+/// Eine Momentaufnahme der Parade. Alle Maße leben im Pixelraster (Zelle 4 pt);
 /// die Läufer verteilen sich über die tatsächliche Breite.
 struct MascotParadeCanvas: View {
 
     let time: TimeInterval
 
-    static let cell: CGFloat = 2
+    static let cell: CGFloat = 4
 
     // Korallen-Pixel, an Claudes Pixel-Look angelehnt, plus Deko-Töne
     static let coral = Color(red: 0.910, green: 0.573, blue: 0.486)     // #e8927c
@@ -85,14 +88,14 @@ struct MascotParadeCanvas: View {
     static let smoke = Color.secondary
 
     // Taktung der Parade
-    static let baseSpeed: Double = 14        // pt/s, alle Normalen exakt gleich
-    static let sprintSpeed: Double = 40      // der Eilige
+    static let baseSpeed: Double = 26        // pt/s, alle Normalen exakt gleich
+    static let sprintSpeed: Double = 74      // der Eilige
     static let avgInterval: Double = 2.4     // mittlerer Start-Abstand (s)
     static let minInterval: Double = 1.6     // nie enger — verhindert Aufsitzen
     static let stepsPerSecond: Double = 4
-    static let fadeZone: CGFloat = 20
-    static let spriteWidth: CGFloat = 16
-    static let overshoot: CGFloat = 18
+    static let fadeZone: CGFloat = 34
+    static let spriteWidth: CGFloat = 32
+    static let overshoot: CGFloat = 36
 
     // MARK: Deterministischer Zufall (Splitmix64)
 
@@ -113,13 +116,14 @@ struct MascotParadeCanvas: View {
         return Double(index) * avgInterval + roll(index, 1) * jitterMax
     }
 
-    /// Rund 10 % Besondere: 3 % Partyhut, 3 % Zylinder, 2 % Raucher, 2 % Sprinter.
+    /// Je 10 % pro Sonderform, die Hälfte läuft ganz normal.
     static func variant(_ index: Int) -> MascotVariant {
         let r = roll(index, 7)
-        if r < 0.03 { return .partyHat }
-        if r < 0.06 { return .topHat }
-        if r < 0.08 { return .smoker }
-        if r < 0.10 { return .sprinter }
+        if r < 0.10 { return .partyHat }
+        if r < 0.20 { return .topHat }
+        if r < 0.30 { return .smoker }
+        if r < 0.40 { return .sprinter }
+        if r < 0.50 { return .backwards }
         return .normal
     }
 
@@ -175,10 +179,18 @@ struct MascotParadeCanvas: View {
         walker.opacity = alpha
         // Leichtes Hüpfen im Schritt-Takt; Grundlinie so, dass die Beinchen
         // am unteren Rand des 24-pt-Streifens aufsetzen
-        walker.translateBy(x: x, y: step ? 7.4 : 8.2)
+        walker.translateBy(x: x, y: step ? 12.0 : 13.0)
 
         // Sprinter legen sich in die Kurve: obere Reihen wandern nach vorn
         let lean: Double = variant == .sprinter ? 0.22 : 0
+
+        // Der Rückwärtsläufer wird gespiegelt: Er wandert mit dem Strom nach
+        // rechts, blickt und stapft dabei aber nach links — als hätte er die
+        // Richtung verpasst. Gespiegelt wird um die Sprite-Mitte (4 Zellen).
+        if variant == .backwards {
+            walker.translateBy(x: 8 * cell, y: 0)
+            walker.scaleBy(x: -1, y: 1)
+        }
 
         func px(_ col: Double, _ row: Double, _ color: Color, _ w: Double = 1, _ h: Double = 1) {
             let shift = lean * (3 - row)
@@ -220,6 +232,10 @@ struct MascotParadeCanvas: View {
         case .normal:
             break
 
+        case .backwards:
+            // Braucht keine Deko: Die Spiegelung oben erledigt den Gag schon.
+            break
+
         case .partyHat:
             // Spitzer Hut mit Bommel, mittig über dem Kopf
             px(3.6, -3.2, partyPink, 0.8, 1)
@@ -233,17 +249,19 @@ struct MascotParadeCanvas: View {
             px(2.6, -3.6, hatBlack, 2.8, 2.1)
 
         case .smoker:
-            // Zigarette vorn am Gesicht plus ein Hauch aufsteigender Rauch
-            px(8, 2, Color.white.opacity(0.85), 1.2, 0.5)
-            px(9.2, 2, Color.orange, 0.4, 0.5)
-            for puff in 0..<3 {
-                let phase = (time * 0.6 + Double(puff) * 0.33 + roll(seed, 11))
+            // Zigarette vorn am Gesicht, dahinter eine richtige Rauchfahne:
+            // vier Wolken, die aufsteigen, größer werden und verwehen.
+            px(8, 2, Color.white.opacity(0.9), 1.6, 0.6)
+            px(9.6, 2, Color.orange, 0.5, 0.6)
+            for puff in 0..<4 {
+                let phase = (time * 0.5 + Double(puff) * 0.25 + roll(seed, 11))
                     .truncatingRemainder(dividingBy: 1)
-                let puffAlpha = (1 - phase) * 0.45
+                let puffAlpha = (1 - phase) * 0.7
                 guard puffAlpha > 0.04 else { continue }
-                px(9.0 + Double(puff) * 0.5 + phase * 1.2,
-                   1.2 - phase * 3.6,
-                   smoke.opacity(puffAlpha), 0.8, 0.8)
+                let grow = 0.9 + phase * 1.4          // Wolke wächst beim Aufsteigen
+                px(9.4 + Double(puff) * 0.4 + phase * 2.2,
+                   1.4 - phase * 5.0,
+                   smoke.opacity(puffAlpha), grow, grow)
             }
 
         case .sprinter:

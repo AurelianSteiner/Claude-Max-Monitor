@@ -314,11 +314,6 @@ struct DashboardView: View {
 
             Spacer(minLength: 8)
 
-            // Die Claudie-Parade: Solange „Claude Always On" wirkt, laufen
-            // kleine Pixel-Wesen durch den Streifen; aus = leer. Rein
-            // dekorativ, deshalb außerhalb der Knopfgruppe.
-            AwakeMascotView()
-
             // Etwas enger als der Rest des Kopfes: Der beschriftete
             // Wach-Schalter braucht den Platz, und die Symbolknöpfe haben in
             // ihren 20-pt-Feldern ohnehin Luft.
@@ -456,14 +451,23 @@ struct DashboardView: View {
         if !manager.snapshots.isEmpty {
             let dots = orderedSnapshots
             let perRow = trafficDotsPerRow
-            VStack(alignment: .leading, spacing: 6) {
-                ForEach(Array(stride(from: 0, to: dots.count, by: perRow)), id: \.self) { start in
-                    HStack(spacing: 6) {
-                        ForEach(dots[start..<min(start + perRow, dots.count)]) { snapshot in
-                            trafficDot(for: snapshot)
+            // Statuszeile: links die Punkte je Konto, rechts die Claudie-Parade.
+            // Sie hat hier deutlich mehr Auslauf als früher im Kopf — man sieht
+            // die Wesen also länger, samt Hut und Rauchfahne.
+            HStack(alignment: .center, spacing: 10) {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(Array(stride(from: 0, to: dots.count, by: perRow)), id: \.self) { start in
+                        HStack(spacing: 6) {
+                            ForEach(dots[start..<min(start + perRow, dots.count)]) { snapshot in
+                                trafficDot(for: snapshot)
+                            }
                         }
                     }
                 }
+
+                Spacer(minLength: 8)
+
+                AwakeMascotView()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, DashboardMetrics.outerPadding)
@@ -511,9 +515,13 @@ struct DashboardView: View {
     /// inklusive Ring (17) + Abstand (6). Für ≤ 7 Konten passt alles in eine Zeile,
     /// erst darüber wird umgebrochen.
     private var trafficDotsPerRow: Int {
-        let available = layoutWidth - DashboardMetrics.outerPadding * 2
+        // Die Parade sitzt rechts in derselben Zeile und will ihren Platz —
+        // sonst schöben die Punkte sie aus dem Bild. In sehr schmalen Layouts
+        // bekommen die Punkte den Vorrang (mindestens vier pro Zeile).
+        let paradeSpace = AwakeMascotView.idealWidth + 10
+        let available = layoutWidth - DashboardMetrics.outerPadding * 2 - paradeSpace
         let stride = TrafficDotMetrics.footprint + 6
-        return max(1, Int(available / stride))
+        return max(4, Int(available / stride))
     }
 
     private var sortMenu: some View {
