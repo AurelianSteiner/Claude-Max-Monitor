@@ -3,6 +3,19 @@
     <channel>
         <title>Claude Max Monitor</title>
         <item>
+            <title>2.0</title>
+            <pubDate>Sat, 15 Aug 2026 21:59:19 +0000</pubDate>
+            <sparkle:version>2.0</sparkle:version>
+            <sparkle:shortVersionString>2.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[Claude Always On: Der Wach-Schalter heißt jetzt so, wie er wirkt. Beim ersten Einschalten fragt macOS einmal nach dem Passwort — danach hält er den Mac auch zugeklappt wach, laufende Claude-Sessions arbeiten einfach weiter. Solange er aktiv ist, laufen kleine Pixel-Claudies durch den Kopf der Übersicht. Außerdem: feste Signatur — der Schlüsselbund fragt nach diesem Update ein letztes Mal und danach nie wieder.]]></description>
+            <enclosure
+                url="https://github.com/AurelianSteiner/Claude-Max-Monitor/releases/download/v2.0/Claude-Max-Monitor-2.0.dmg"
+                sparkle:edSignature="JEat0zD+eOFrYBF7irPCRhcdnYMLwWuErsk7YOun3tbywwmFI0WBdMGk0ZRup5uoVKI6t+0rJxJTJ86avt9+Bw=="
+                length="5716688"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>1.9</title>
             <pubDate>Thu, 13 Aug 2026 23:14:33 +0000</pubDate>
             <sparkle:version>1.9</sparkle:version>
