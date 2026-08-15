@@ -3,6 +3,19 @@
     <channel>
         <title>Claude Max Monitor</title>
         <item>
+            <title>2.1</title>
+            <pubDate>Sat, 15 Aug 2026 22:10:12 +0000</pubDate>
+            <sparkle:version>2.1</sparkle:version>
+            <sparkle:shortVersionString>2.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[Die Claudies halten jetzt Abstand: Ihre Startzeiten streuen, die Lücken sind unterschiedlich groß, aber nie kleiner als ein Wesen breit ist — niemand läuft mehr auf den Vordermann auf. Und jeder zehnte ist besonders: Partyhut, Zylinder, ein Raucher mit einem Hauch Rauch, oder ein Sprinter, der sich in die Kurve legt und alle überholt.]]></description>
+            <enclosure
+                url="https://github.com/AurelianSteiner/Claude-Max-Monitor/releases/download/v2.1/Claude-Max-Monitor-2.1.dmg"
+                sparkle:edSignature="CXuNO7JzAwGb6DYu32I1wyOWdTVozgx/01L77RUl2f5f0bYMDRQCHtKbBgeVHX8R2wL6CmEV+eUYQNX5+zw6Bw=="
+                length="5726348"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>2.0</title>
             <pubDate>Sat, 15 Aug 2026 21:59:19 +0000</pubDate>
             <sparkle:version>2.0</sparkle:version>
