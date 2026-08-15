@@ -3,6 +3,19 @@
     <channel>
         <title>Claude Max Monitor</title>
         <item>
+            <title>2.2</title>
+            <pubDate>Sat, 15 Aug 2026 22:18:15 +0000</pubDate>
+            <sparkle:version>2.2</sparkle:version>
+            <sparkle:shortVersionString>2.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[Die Claudies sind doppelt so groß und haben viel mehr Auslauf: Die Parade ist aus dem Kopf in die Statuszeile gewandert — links die Punkte je Account, rechts der Laufsteg. Die Sonderformen kommen jetzt zehnmal so oft vorbei, und eine ist neu: Einer stapft den ganzen Weg rückwärts. Der Raucher zieht eine richtige Rauchfahne hinter sich her.]]></description>
+            <enclosure
+                url="https://github.com/AurelianSteiner/Claude-Max-Monitor/releases/download/v2.2/Claude-Max-Monitor-2.2.dmg"
+                sparkle:edSignature="RUpFXwdbCeMwcBhVZRMu9aqavZyKUPlih2WZIK7EwLV4HS+1s0vkYL38QrcFC1yGqdrLIJwI8JFqKKZnL+BEBg=="
+                length="5728287"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>2.1</title>
             <pubDate>Sat, 15 Aug 2026 22:10:12 +0000</pubDate>
             <sparkle:version>2.1</sparkle:version>
