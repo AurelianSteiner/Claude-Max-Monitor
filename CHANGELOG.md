@@ -21,11 +21,11 @@
 - Die Startabstände der Parade sind größer. Das ist die Voraussetzung dafür,
   dass Läufer stehen bleiben können, ohne dass jemand auffährt.
 - Und sehr selten — im Schnitt alle gut dreizehn Minuten — passiert auf dem
-  Laufsteg etwas: Ein Claudie bleibt mitten im Streifen stehen, seine beiden
-  Nachbarn halten an, drehen sich um und schießen ihn ab. Er kippt um,
-  zerplatzt zu orangem Matsch, und kurz darauf wächst dort ein kleiner
-  Grabstein aus dem Boden. Der steht gut drei Minuten; wer vorbeikommt, bleibt
-  kurz davor stehen und weint, bevor er weitergeht.
+  Laufsteg etwas: Ein Claudie bleibt mitten im Streifen stehen, sein Vordermann
+  hält an, dreht sich um und schießt ihn ab. Er kippt um, zerplatzt zu orangem
+  Matsch, und kurz darauf wächst dort ein kleiner Grabstein aus dem Boden. Der
+  steht gut drei Minuten; wer vorbeikommt, bleibt kurz davor stehen und weint,
+  bevor er weitergeht.
 
 ## 2.4
 
