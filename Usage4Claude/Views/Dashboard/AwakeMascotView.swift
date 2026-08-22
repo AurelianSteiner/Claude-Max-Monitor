@@ -141,10 +141,10 @@ struct MascotParadeCanvas: View {
 
     /// Je 10 % pro Sonderform, die Hälfte läuft ganz normal.
     static func variant(_ index: Int) -> MascotVariant {
-        // Opfer und Schützen eines Zwischenfalls laufen unauffällig: Ein
+        // Opfer und Schütze eines Zwischenfalls laufen unauffällig: Ein
         // Sprinter als Opfer wäre vor dem Schuss längst über alle Berge, ein
         // Rückwärtsläufer als Schütze zielte in die falsche Richtung. Die Regel
-        // hängt nur an der Nummer — die drei laufen also von Anfang an so, und
+        // hängt nur an der Nummer — die beiden laufen also von Anfang an so, und
         // beim Beginn des Vorfalls springt nichts um.
         if MascotIncident.role(of: index) != nil { return .normal }
 
@@ -221,13 +221,11 @@ struct MascotParadeCanvas: View {
                 }
                 guard alpha > 0.02 else { continue }
 
+                // Wer steht, zielt (der Schütze, nach links zum Opfer) oder
+                // trauert (alle anderen).
                 let pose: MascotPose
                 if isHolding {
-                    switch role {
-                    case .some(.shooterLeft):  pose = .aiming(facingLeft: false)
-                    case .some(.shooterRight): pose = .aiming(facingLeft: true)
-                    default:                   pose = .mourning
-                    }
+                    pose = role == .some(.shooter) ? .aiming(facingLeft: true) : .mourning
                 } else {
                     pose = .walking
                 }

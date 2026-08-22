@@ -5,11 +5,17 @@
 //  Der seltene Zwischenfall auf dem Laufsteg.
 //
 //  Sehr selten (im Schnitt alle gut dreizehn Minuten) bleibt ein Claudie mitten im
-//  Streifen stehen. Die beiden Nachbarn in der Parade halten an, drehen sich zu
-//  ihm um und schießen ihn ab. Er kippt um, zerplatzt zu orangem Matsch, und ein
-//  paar Sekunden später wächst an der Stelle ein kleiner Grabstein aus dem
-//  Boden. Der steht gut drei Minuten. Alle, die danach vorbeikommen, bleiben
-//  kurz davor stehen und weinen, bevor sie weitergehen.
+//  Streifen stehen. Der Vordermann hält an, dreht sich zu ihm um und schießt ihn
+//  ab. Er kippt um, zerplatzt zu orangem Matsch, und ein paar Sekunden später
+//  wächst an der Stelle ein kleiner Grabstein aus dem Boden. Der steht gut drei
+//  Minuten. Alle, die danach vorbeikommen, bleiben kurz davor stehen und weinen,
+//  bevor sie weitergehen.
+//
+//  Es schießt genau einer. Der Hintermann bekommt deshalb gar keine Rolle: Er
+//  ist ein gewöhnlicher Vorbeikommender, hält am frisch Gefallenen und weint wie
+//  alle nach ihm. Das ist nebenbei auch die ruhigere Variante — ein Schütze
+//  hinter dem Opfer stünde länger als ein Trauernder und nähme dem Nächsten in
+//  der Reihe den Abstand weg.
 //
 //  Warum das ohne gespeicherten Zustand geht: Die Parade ist eine reine Funktion
 //  der Uhrzeit, und dieser Zwischenfall auch. Ob eine Läufer-Nummer das Opfer
@@ -42,10 +48,9 @@ import SwiftUI
 enum MascotIncidentRole: Equatable {
     /// Bleibt in der Mitte stehen und wird abgeschossen
     case victim
-    /// Steht rechts vom Opfer (früher gestartet) und dreht sich zum Zielen um
-    case shooterRight
-    /// Steht links vom Opfer (später gestartet) und zielt nach rechts
-    case shooterLeft
+    /// Der Vordermann: früher gestartet, steht deshalb rechts vom Opfer und
+    /// dreht sich zum Zielen um. Der Einzige, der schießt.
+    case shooter
 }
 
 /// Ein gerade laufender Zwischenfall, abgeleitet aus Uhrzeit und Streifenbreite.
@@ -117,9 +122,9 @@ enum MascotIncident {
     /// So lange kennt `active` den Vorfall insgesamt
     static var lifetime: TimeInterval { total + trailingGrace }
 
-    /// So lange stehen die beiden Schützen — bis der Körper liegt, keine
-    /// Sekunde länger: Jede zusätzliche Sekunde frisst 26 pt Abstand zu dem,
-    /// der hinter ihnen kommt.
+    /// So lange steht der Schütze — bis der Körper liegt. Hinter ihm steht nur
+    /// das für immer stehende Opfer, deshalb kann diese Standzeit niemandem den
+    /// Abstand wegnehmen.
     static let shooterHold: TimeInterval = 1.9
     /// So lange bleibt ein Vorbeikommender am Grab stehen und weint
     static let mournHold: TimeInterval = 1.2
@@ -160,14 +165,13 @@ enum MascotIncident {
         return true
     }
 
-    /// Rolle dieser Nummer. Die drei Fälle schließen sich gegenseitig aus:
+    /// Rolle dieser Nummer. Die beiden Fälle schließen sich gegenseitig aus:
     /// Wegen der Sperrfrist kann neben einem Opfer kein zweites liegen.
     static func role(of index: Int) -> MascotIncidentRole? {
         if isVictim(index) { return .victim }
         // Nummer + 1 ist das Opfer → dieser hier startete früher, läuft also
         // vorneweg und steht rechts vom Opfer.
-        if isVictim(index + 1) { return .shooterRight }
-        if isVictim(index - 1) { return .shooterLeft }
+        if isVictim(index + 1) { return .shooter }
         return nil
     }
 
@@ -260,9 +264,9 @@ enum MascotIncident {
             // Das Opfer bleibt für immer stehen — dafür sorgt die Zeichenroutine.
             return nil
 
-        case .shooterLeft, .shooterRight:
-            // Nur die Nachbarn des *aktuellen* Opfers halten an.
-            guard abs(index - incident.victimIndex) == 1 else { return nil }
+        case .shooter:
+            // Nur der Vordermann des *aktuellen* Opfers hält an.
+            guard index == incident.victimIndex - 1 else { return nil }
             return (incident.start, shooterHold)
         }
     }
@@ -395,12 +399,9 @@ enum MascotIncident {
         var shots = ctx
         let cell = MascotParadeCanvas.cell
         let chestY: CGFloat = 13 + 2.2 * cell
-        // Brusthöhe des Opfers, je Seite die zugewandte Kante
-        let targetLeft = incident.x + 1.5 * cell
-        let targetRight = incident.x + 6.5 * cell
-
-        let leftMuzzle = frozenX(of: incident.victimIndex + 1, incident: incident) + 9.3 * cell
-        let rightMuzzle = frozenX(of: incident.victimIndex - 1, incident: incident) - 1.3 * cell
+        // Brusthöhe des Opfers, die dem Schützen zugewandte Kante
+        let target = incident.x + 6.5 * cell
+        let muzzle = frozenX(of: incident.victimIndex - 1, incident: incident) - 1.3 * cell
 
         func dot(_ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat, _ color: Color) {
             shots.fill(Path(CGRect(x: x, y: y, width: w, height: h)), with: .color(color))
@@ -408,17 +409,14 @@ enum MascotIncident {
 
         // Mündungsfeuer — zwei Bilder lang
         if t < shotAt + 0.14 {
-            dot(leftMuzzle, chestY - 2, 5, 5, flash)
-            dot(rightMuzzle - 5, chestY - 2, 5, 5, flash)
+            dot(muzzle - 5, chestY - 2, 5, 5, flash)
         }
 
-        // Geschosse unterwegs
+        // Geschoss unterwegs
         if t < hitAt {
             let p = CGFloat((t - shotAt) / (hitAt - shotAt))
-            let lx = leftMuzzle + (targetLeft - leftMuzzle) * p
-            let rx = rightMuzzle + (targetRight - rightMuzzle) * p
-            dot(lx, chestY, 6, 3, MascotParadeCanvas.faceInk)
-            dot(rx - 6, chestY, 6, 3, MascotParadeCanvas.faceInk)
+            let x = muzzle + (target - muzzle) * p
+            dot(x - 6, chestY, 6, 3, MascotParadeCanvas.faceInk)
         }
 
         // Einschlag: ein paar Tropfen fliegen weg
