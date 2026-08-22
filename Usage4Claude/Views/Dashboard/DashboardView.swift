@@ -162,7 +162,6 @@ struct DashboardView: View {
     /// 与详情窗口共用同一个开关，两处的"剩余 / 已用"显示保持一致
     @AppStorage("showRemainingMode") private var savedRemainingMode = false
     @State private var showRemainingMode = UserDefaults.standard.bool(forKey: "showRemainingMode")
-    @State private var isSpinning = false
     /// Info-Popover zu „Claude Always On" (das ⓘ neben dem Schalter)
     @State private var showAwakeInfo = false
 
@@ -189,12 +188,6 @@ struct DashboardView: View {
     /// und beim Fenster nur noch die Startbreite (danach entscheidet die Größe).
     private var settingColumnCount: Int {
         DashboardMetrics.columnCount(for: orderedSnapshots.count, setting: settings.dashboardColumns)
-    }
-
-    /// Breite, die dem Inhalt gerade zur Verfügung steht: im eigenen Fenster
-    /// gemessen, im popover die feste Inhaltsbreite.
-    private var layoutWidth: CGFloat {
-        isStandaloneWindow && measuredWidth > 0 ? measuredWidth : contentWidth
     }
 
     /// Spalten des Gitters. Im eigenen Fenster fließt der Inhalt in die vorhandene
@@ -251,7 +244,7 @@ struct DashboardView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-            trafficLightRow
+            mascotRow
             Divider()
             grid
             Divider()
@@ -292,29 +285,78 @@ struct DashboardView: View {
         .onChange(of: showRemainingMode) { newValue in
             savedRemainingMode = newValue
         }
-        .onChange(of: manager.isRefreshing) { refreshing in
-            isSpinning = refreshing
-        }
     }
 
     // MARK: - Header
 
+    /// Eine Dichtestufe der Kopfzeile. Von oben nach unten wird gespart:
+    /// erst schrumpfen die Wasserstände, dann fällt die Beschriftung des
+    /// Wach-Schalters weg, dann der Konto-Zähler, zuletzt der Titel.
+    private struct HeaderDensity {
+        let gauge: CGFloat
+        let showsCount: Bool
+        let showsTitle: Bool
+        let showsSleepLabel: Bool
+    }
+
+    /// Die Stufen in der Reihenfolge, in der `ViewThatFits` sie durchprobiert —
+    /// großzügig zuerst. Bewusst keine eigene Breitenrechnung: Titel und
+    /// Schalterbeschriftung sind übersetzt und in jeder Sprache anders breit,
+    /// eine Formel dafür wäre in genau einer Sprache richtig. SwiftUI misst
+    /// stattdessen selbst und nimmt die erste Stufe, die wirklich passt.
+    private static let headerDensities: [HeaderDensity] = [
+        HeaderDensity(gauge: 18, showsCount: true,  showsTitle: true,  showsSleepLabel: true),
+        HeaderDensity(gauge: 16, showsCount: true,  showsTitle: true,  showsSleepLabel: true),
+        HeaderDensity(gauge: 15, showsCount: true,  showsTitle: true,  showsSleepLabel: false),
+        HeaderDensity(gauge: 13, showsCount: false, showsTitle: true,  showsSleepLabel: false),
+        HeaderDensity(gauge: 11, showsCount: false, showsTitle: true,  showsSleepLabel: false),
+        HeaderDensity(gauge: 11, showsCount: false, showsTitle: false, showsSleepLabel: false)
+    ]
+
+    /// Kopfzeile mit den Wasserständen je Konto. Sie sind aus der Statuszeile
+    /// hier hoch gewandert — dadurch gehört die Zeile darunter komplett der
+    /// Claudie-Parade, die vorher nur rechts am Rand Platz hatte.
     private var header: some View {
+        ViewThatFits(in: .horizontal) {
+            headerRow(Self.headerDensities[0])
+            headerRow(Self.headerDensities[1])
+            headerRow(Self.headerDensities[2])
+            headerRow(Self.headerDensities[3])
+            headerRow(Self.headerDensities[4])
+            headerRow(Self.headerDensities[5])
+        }
+        .padding(.horizontal, DashboardMetrics.outerPadding)
+        .frame(height: DashboardMetrics.headerHeight)
+    }
+
+    private func headerRow(_ density: HeaderDensity) -> some View {
         HStack(spacing: 8) {
             if let icon = ImageHelper.createAppIcon(size: 18) {
                 Image(nsImage: icon).resizable().frame(width: 18, height: 18)
             }
 
-            Text(L.Dashboard.title)
-                .font(.headline)
-                .lineLimit(1)
+            if density.showsTitle {
+                Text(L.Dashboard.title)
+                    .font(.headline)
+                    .lineLimit(1)
+                    // Ohne feste Größe würde der Titel bei Platzmangel einfach
+                    // abgeschnitten — und damit läge „passt" vor, obwohl die
+                    // Zeile längst überläuft. So scheitert die Stufe ehrlich
+                    // und `ViewThatFits` geht eine Stufe enger.
+                    .fixedSize()
+            }
 
-            Text("\(orderedSnapshots.count)")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(.secondary)
-                .padding(.horizontal, 5)
-                .padding(.vertical, 1)
-                .background(Capsule().fill(Color.secondary.opacity(0.15)))
+            if density.showsCount {
+                Text("\(orderedSnapshots.count)")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 1)
+                    .background(Capsule().fill(Color.secondary.opacity(0.15)))
+                    .fixedSize()
+            }
+
+            accountGauges(diameter: density.gauge)
 
             Spacer(minLength: 8)
 
@@ -322,15 +364,43 @@ struct DashboardView: View {
             // Wach-Schalter braucht den Platz, und die Symbolknöpfe haben in
             // ihren 20-pt-Feldern ohnehin Luft.
             HStack(spacing: 6) {
-                stayAwakeToggle
+                stayAwakeToggle(showsLabel: density.showsSleepLabel)
                 stayAwakeInfoButton
                 sortMenu
-                refreshButton
                 actionMenu
             }
+            .fixedSize()
         }
-        .padding(.horizontal, DashboardMetrics.outerPadding)
-        .frame(height: DashboardMetrics.headerHeight)
+    }
+
+    /// Ein Wasserstand je Konto, in derselben Reihenfolge wie die Karten:
+    /// Pegel = Wochenfenster, roter Ring außen = Sitzung aufgebraucht.
+    /// Ohne Konten (Leerzustand) bleibt die Reihe weg.
+    @ViewBuilder
+    private func accountGauges(diameter: CGFloat) -> some View {
+        if !orderedSnapshots.isEmpty {
+            HStack(spacing: MiniGaugeMetrics.spacing) {
+                ForEach(orderedSnapshots) { snapshot in
+                    MiniWaterGauge(
+                        weeklyUtilization: snapshot.weeklyPeakUtilization,
+                        sessionExhausted: snapshot.sessionExhausted,
+                        diameter: diameter
+                    )
+                    .help(gaugeHelp(for: snapshot))
+                }
+            }
+            .fixedSize()
+        }
+    }
+
+    /// Der Laufsteg unter dem Kopf. Früher teilte sich die Zeile die Parade mit
+    /// der Punktreihe und blieb auf 300 pt beschränkt — seit die Pegel oben in
+    /// der Kopfzeile sitzen, laufen die Claudies über die volle Breite.
+    private var mascotRow: some View {
+        AwakeMascotView()
+            .padding(.horizontal, DashboardMetrics.outerPadding)
+            .padding(.top, 2)
+            .padding(.bottom, 4)
     }
 
     /// Misst die verfügbare Breite für das responsive Gitter. Nur im eigenen
@@ -356,26 +426,34 @@ struct DashboardView: View {
     /// inaktiv = Umriss in Grau. Der Zustand ist damit ohne Häkchen und ohne
     /// Tooltip zu erkennen.
     ///
+    /// In engen Kopfzeilen fällt die Beschriftung weg (`showsLabel: false`) —
+    /// „Claude Always On" ist der längste Text der Zeile, und der Blitz allein
+    /// sagt dasselbe. Der Tooltip nennt den Namen weiterhin.
+    ///
     /// Der kleine Punkt oben rechts erscheint, wenn das System per
     /// `pmset disablesleep 1` nie schläft, OBWOHL der Schalter aus ist — dann
     /// hat der Benutzer das selbst eingestellt und der Schalter hätte nichts
     /// mehr beizutragen. Ist der Schalter an, ist `SleepDisabled 1` dagegen
     /// schlicht die eigene Deckel-Stufe und kein Grund für eine Markierung.
-    private var stayAwakeToggle: some View {
+    private func stayAwakeToggle(showsLabel: Bool) -> some View {
         let isOn = sleepGuard.isAwake
         let redundant = systemSleep.sleepDisabled == true && !isOn
         return Button(action: { sleepGuard.toggleAwake() }) {
             HStack(spacing: 3) {
                 Image(systemName: isOn ? "bolt.fill" : "bolt")
                     .font(.system(size: 12))
-                Text(L.Dashboard.sleepLabel)
-                    .font(.system(size: 10))
-                    .lineLimit(1)
-                    .fixedSize()
+                if showsLabel {
+                    Text(L.Dashboard.sleepLabel)
+                        .font(.system(size: 10))
+                        .lineLimit(1)
+                        .fixedSize()
+                }
             }
             .foregroundColor(isOn ? .accentColor : .secondary)
-            .padding(.horizontal, 4)
-            .frame(height: 20)
+            .padding(.horizontal, showsLabel ? 4 : 3)
+            // Ohne Beschriftung bleibt der Knopf trotzdem 20 pt breit, damit er
+            // dieselbe Trefferfläche hat wie die Symbolknöpfe daneben.
+            .frame(minWidth: showsLabel ? 0 : 20, height: 20)
             .background(
                 RoundedRectangle(cornerRadius: 5)
                     .fill(isOn ? Color.accentColor.opacity(0.15) : Color.clear)
@@ -444,61 +522,28 @@ struct DashboardView: View {
         return text
     }
 
-    // MARK: - Ampel (Wochen-Auslastung)
+    // MARK: - Tooltip der Wasserstände
 
-    /// Kompakte Punktreihe direkt unter dem Kopf: ein Punkt je Konto in der
-    /// Reihenfolge von `orderedSnapshots`, eingefärbt nach der Wochen-Auslastung.
-    /// Bei vielen Konten bricht die Reihe in weitere Zeilen um. Bei 0 Konten
-    /// (Leerzustand) bleibt sie ganz aus.
-    @ViewBuilder
-    private var trafficLightRow: some View {
-        if !manager.snapshots.isEmpty {
-            let dots = orderedSnapshots
-            let perRow = trafficDotsPerRow
-            // Statuszeile: links die Punkte je Konto, rechts die Claudie-Parade.
-            // Sie hat hier deutlich mehr Auslauf als früher im Kopf — man sieht
-            // die Wesen also länger, samt Hut und Rauchfahne.
-            HStack(alignment: .center, spacing: 10) {
-                VStack(alignment: .leading, spacing: 6) {
-                    ForEach(Array(stride(from: 0, to: dots.count, by: perRow)), id: \.self) { start in
-                        HStack(spacing: 6) {
-                            ForEach(dots[start..<min(start + perRow, dots.count)]) { snapshot in
-                                trafficDot(for: snapshot)
-                            }
-                        }
-                    }
-                }
-
-                Spacer(minLength: 8)
-
-                AwakeMascotView()
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, DashboardMetrics.outerPadding)
-            .padding(.top, 4)
-            .padding(.bottom, 6)
-        }
-    }
-
-    private func trafficDot(for snapshot: AccountUsageSnapshot) -> some View {
-        TrafficLightDot(
-            weeklyUtilization: snapshot.weeklyPeakUtilization,
-            sessionExhausted: snapshot.sessionExhausted
-        )
-        .help(trafficDotHelp(for: snapshot))
-    }
-
-    /// Tooltip je Punkt: „Name – Woche 87 %, Sitzung 42 %". Aufgebrauchte Fenster
-    /// werden benannt, fehlende Daten ebenfalls — der Punkt allein sagt sonst nicht,
+    /// Tooltip je Pegel: „Name – Woche 87 %, Sitzung 42 %". Aufgebrauchte Fenster
+    /// werden benannt, fehlende Daten ebenfalls — der Pegel allein sagt sonst nicht,
     /// ob 0 % „frisch" oder „noch nichts geladen" heißt.
-    private func trafficDotHelp(for snapshot: AccountUsageSnapshot) -> String {
+    ///
+    /// Ist zusätzlich ein Modellkontingent voll, steht das als eigene Zeile
+    /// darunter. Es zählt bewusst nicht in den Wochenwert hinein (es sperrt das
+    /// Konto nicht), soll aber trotzdem auffindbar sein — sonst wirkt ein Konto
+    /// „frei", obwohl ein Modell nicht mehr geht.
+    private func gaugeHelp(for snapshot: AccountUsageSnapshot) -> String {
         let weekly = snapshot.weeklyPeakUtilization
         let weeklyExhausted = (weekly ?? 0) >= WeeklyTrafficLight.exhaustedThreshold
-        return L.Dashboard.dotHelp(
+        var text = L.Dashboard.dotHelp(
             snapshot.account.displayName,
-            trafficDotValue(weekly, exhausted: weeklyExhausted),
-            trafficDotValue(snapshot.sessionLimit?.percentage, exhausted: snapshot.sessionExhausted)
+            gaugeValueText(weekly, exhausted: weeklyExhausted),
+            gaugeValueText(snapshot.sessionLimit?.percentage, exhausted: snapshot.sessionExhausted)
         )
+        if let model = fullestCappedModelName(of: snapshot) {
+            text += "\n\(L.Dashboard.dotModelFull(model))"
+        }
+        return text
     }
 
     /// Ein Wert im Tooltip: „87 %", „93 % (fast aufgebraucht)", „100 % (aufgebraucht)",
@@ -507,7 +552,7 @@ struct DashboardView: View {
     /// Die Optik schlägt früher um als die Sperre: Die Füllung wird ab 90 % rot, der
     /// Ring ab 96 % — gesperrt ist ein Fenster aber erst bei 100 %. Deshalb sagt der
     /// Tooltip dazwischen „fast aufgebraucht" statt fälschlich „aufgebraucht".
-    private func trafficDotValue(_ percentage: Double?, exhausted: Bool) -> String {
+    private func gaugeValueText(_ percentage: Double?, exhausted: Bool) -> String {
         guard let percentage else { return L.Dashboard.dotNoData }
         let value = "\(Int(percentage.rounded()))%"
         guard exhausted else { return value }
@@ -515,17 +560,21 @@ struct DashboardView: View {
         return "\(value) (\(note))"
     }
 
-    /// Punkte pro Zeile aus der verfügbaren Breite: Platzbedarf eines Punkts
-    /// inklusive Ring (17) + Abstand (6). Für ≤ 7 Konten passt alles in eine Zeile,
-    /// erst darüber wird umgebrochen.
-    private var trafficDotsPerRow: Int {
-        // Die Parade sitzt rechts in derselben Zeile und will ihren Platz —
-        // sonst schöben die Punkte sie aus dem Bild. In sehr schmalen Layouts
-        // bekommen die Punkte den Vorrang (mindestens vier pro Zeile).
-        let paradeSpace = AwakeMascotView.idealWidth + 10
-        let available = layoutWidth - DashboardMetrics.outerPadding * 2 - paradeSpace
-        let stride = TrafficDotMetrics.footprint + 6
-        return max(4, Int(available / stride))
+    /// Name des vollsten Modell-Wochenkontingents, sofern eines praktisch durch
+    /// ist — sonst nil. Fehlt der Anzeigename (alte `seven_day_opus`-Felder),
+    /// tritt das Kurzlabel des erkannten Typs an seine Stelle.
+    private func fullestCappedModelName(of snapshot: AccountUsageSnapshot) -> String? {
+        guard let models = snapshot.usageData?.weeklyModels else { return nil }
+        let capped = models.enumerated()
+            .filter { $0.element.limit.percentage >= WeeklyTrafficLight.exhaustedThreshold }
+            .max { $0.element.limit.percentage < $1.element.limit.percentage }
+        guard let capped else { return nil }
+        if let name = capped.element.modelName, !name.isEmpty { return name }
+        switch LimitType.weeklyType(forModelName: nil, slot: capped.offset) {
+        case .fableWeekly:  return L.Dashboard.ringFable
+        case .sonnetWeekly: return L.Dashboard.ringSonnet
+        default:            return L.Dashboard.ringOpus
+        }
     }
 
     private var sortMenu: some View {
@@ -579,28 +628,19 @@ struct DashboardView: View {
         }
     }
 
-    private var refreshButton: some View {
-        Button(action: { manager.refresh(force: true) }) {
-            Image(systemName: "arrow.clockwise")
-                .font(.system(size: 13))
-                .foregroundColor(.secondary)
-                .rotationEffect(.degrees(isSpinning ? 360 : 0))
-                .animation(
-                    isSpinning
-                        ? .linear(duration: 1).repeatForever(autoreverses: false)
-                        : .default,
-                    value: isSpinning
-                )
-                .frame(width: 20, height: 20)
-        }
-        .buttonStyle(.plain)
-        .disabled(manager.isRefreshing)
-        .focusable(false)
-        .help(L.Usage.refresh)
-    }
-
     private var actionMenu: some View {
         Menu {
+            // „Aktualisieren" saß bis 2.5 als eigener Knopf im Kopf. Dort war er
+            // der einzige Knopf, den man selten braucht — die App holt ohnehin
+            // von selbst nach —, und er nahm den Wasserständen den Platz weg.
+            // Im Menü ist er weiter einen Klick entfernt und niemandem im Weg.
+            Button(action: { manager.refresh(force: true) }) {
+                Label(L.Usage.refresh, systemImage: "arrow.clockwise")
+            }
+            .disabled(manager.isRefreshing)
+
+            Divider()
+
             if !isStandaloneWindow {
                 Button(action: { onMenuAction?(.openDashboardWindow) }) {
                     Label(L.Dashboard.openWindow, systemImage: "macwindow")

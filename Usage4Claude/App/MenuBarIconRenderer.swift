@@ -324,8 +324,8 @@ class MenuBarIconRenderer {
     
     // MARK: - Account Dots (Punktreihe aller Konten)
 
-    /// Maße der Menüleisten-Punktreihe. Bewusst kleiner als die Ampelpunkte der
-    /// Übersicht (`TrafficDotMetrics`): hier zählt jeder Punkt Breite. Fünf Konten
+    /// Maße der Menüleisten-Punktreihe. Bewusst kleiner als die Wasserstände der
+    /// Übersicht (`MiniGaugeMetrics`): hier zählt jeder Punkt Breite. Fünf Konten
     /// belegen so ~70 pt statt ~100 pt für fünf Ringe — genau darum geht es auf
     /// MacBooks mit Notch, wo macOS zu breite Statusleisten-Symbole ausblendet.
     private enum AccountDotMetrics {

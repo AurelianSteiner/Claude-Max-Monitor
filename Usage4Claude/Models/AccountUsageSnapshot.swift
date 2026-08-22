@@ -44,25 +44,39 @@ struct AccountUsageSnapshot: Identifiable {
     /// "welcher Claude ist gerade am Ende"。nil 表示尚无数据。
     var peakUtilization: Double? { criticalLimit?.percentage }
 
-    /// Höchste Auslastung unter den **Wochen**-Limits dieses Kontos (0-100).
-    /// Treibt die Ampelpunkte oben in der Übersicht — bewusst ohne das
-    /// 5-Stunden-Fenster, das sich viel schneller wieder auffüllt.
-    /// Claude: Maximum aus 7-Tage-Limit und allen Wochen-Modelllimits (Opus/Sonnet/Fable).
+    /// Auslastung des **kontoweiten** Wochenfensters (0-100). Treibt die
+    /// Wasserstände oben in der Übersicht und die Punktreihe in der Menüleiste —
+    /// bewusst ohne das 5-Stunden-Fenster, das sich viel schneller auffüllt.
+    ///
+    /// Claude: ausschließlich das 7-Tage-Fenster (`seven_day` / `weekly_all`).
     /// Codex: das secondary-Fenster (Wochen-Äquivalent), sonst als Näherung `peakUtilization`.
-    /// nil, solange keine Daten vorliegen bzw. es keine Wochenlimits gibt.
+    ///
+    /// Die Modell-Wochenlimits (Fable, Opus, Sonnet) stecken hier absichtlich
+    /// **nicht** drin: Ein aufgebrauchtes Fable-Kontingent sperrt das Konto
+    /// nicht, es sperrt genau ein Modell — über Sonnet und Opus läuft die Woche
+    /// weiter. Solange sie mitgezählt wurden, zeigte die Übersicht ein Konto rot
+    /// und „Woche gesperrt", obwohl praktisch die ganze Woche noch offen war.
+    /// Wer den Modellstand braucht, liest `weeklyModelPeakUtilization`.
+    ///
+    /// nil, solange keine Daten vorliegen bzw. es kein Wochenfenster gibt.
     var weeklyPeakUtilization: Double? {
         switch provider {
         case .claude:
-            guard let data = usageData else { return nil }
-            var values: [Double] = []
-            if let sevenDay = data.sevenDay { values.append(sevenDay.percentage) }
-            values.append(contentsOf: data.weeklyModels.map { $0.limit.percentage })
-            return values.max()
+            return usageData?.sevenDay?.percentage
         case .codex:
             guard codexUsageData != nil else { return nil }
             if let secondary = codexUsageData?.secondary { return secondary.percentage }
             return peakUtilization
         }
+    }
+
+    /// Das vollste **Modell**-Wochenkontingent (Fable/Opus/Sonnet), 0-100.
+    /// Bewusst getrennt von `weeklyPeakUtilization`: Es beantwortet „welches
+    /// Modell ist durch", nicht „ist das Konto zu". nil ohne Daten oder ohne
+    /// Modelllimits (Codex kennt keine).
+    var weeklyModelPeakUtilization: Double? {
+        guard provider == .claude else { return nil }
+        return usageData?.weeklyModels.map { $0.limit.percentage }.max()
     }
 
     /// Schwelle, ab der ein Konto als "praktisch aufgebraucht" gilt: In der
