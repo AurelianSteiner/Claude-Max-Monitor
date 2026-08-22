@@ -451,9 +451,12 @@ struct DashboardView: View {
             }
             .foregroundColor(isOn ? .accentColor : .secondary)
             .padding(.horizontal, showsLabel ? 4 : 3)
+            .frame(height: 20)
             // Ohne Beschriftung bleibt der Knopf trotzdem 20 pt breit, damit er
-            // dieselbe Trefferfläche hat wie die Symbolknöpfe daneben.
-            .frame(minWidth: showsLabel ? 0 : 20, height: 20)
+            // dieselbe Trefferfläche hat wie die Symbolknöpfe daneben. Zwei
+            // Aufrufe, weil `minWidth` und `height` in verschiedenen
+            // frame-Überladungen liegen und sich nicht mischen lassen.
+            .frame(minWidth: showsLabel ? 0 : 20)
             .background(
                 RoundedRectangle(cornerRadius: 5)
                     .fill(isOn ? Color.accentColor.opacity(0.15) : Color.clear)
