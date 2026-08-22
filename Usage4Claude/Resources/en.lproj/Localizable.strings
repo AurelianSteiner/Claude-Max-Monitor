@@ -438,6 +438,7 @@
 "dashboard.dot_no_data" = "no data";
 "dashboard.dot_used_up" = "used up";
 "dashboard.dot_almost_used_up" = "almost used up";
+"dashboard.dot_model_full" = "%@ is used up — the other models keep running.";
 
 /* Lock badge on an account card — names the window that is actually blocked */
 "dashboard.lock.session" = "Session locked";

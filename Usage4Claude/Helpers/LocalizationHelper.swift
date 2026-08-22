@@ -145,9 +145,15 @@ enum L {
         static var dotUsedUp: String { localized("dashboard.dot_used_up") }
         static var dotAlmostUsedUp: String { localized("dashboard.dot_almost_used_up") }
 
-        /// Tooltip eines Ampelpunkts: Kontoname, Wochen- und Sitzungswert
+        /// Tooltip eines Wasserstands: Kontoname, Wochen- und Sitzungswert
         static func dotHelp(_ name: String, _ weekly: String, _ session: String) -> String {
             String(format: localized("dashboard.dot_help"), name, weekly, session)
+        }
+
+        /// Zusatzzeile im Tooltip, wenn ein Modellkontingent (Fable/Opus/Sonnet)
+        /// durch ist. Es sperrt das Konto nicht — genau das sagt der Satz.
+        static func dotModelFull(_ model: String) -> String {
+            String(format: localized("dashboard.dot_model_full"), model)
         }
 
         static func updatedAt(_ time: String) -> String {

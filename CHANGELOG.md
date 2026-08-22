@@ -1,5 +1,32 @@
 # Änderungen
 
+## 2.6
+
+- Ein volles Modellkontingent sperrt kein Konto mehr. War das Fable-Wochenlimit
+  durch, stand auf der Karte „Woche gesperrt" und der Punkt oben wurde rot,
+  obwohl über Sonnet und Opus die ganze Woche noch offen war. Gesperrt heißt ab
+  jetzt ausschließlich: das kontoweite Wochenfenster ist aufgebraucht. Welches
+  Modell durch ist, steht weiterhin in der Zeile darunter und im Tooltip.
+- Aus den Ampelpunkten sind Wasserstände geworden — dieselben Pegel wie auf den
+  Karten, nur in Miniatur: leer und blau, wenn die Woche Luft hat, randvoll und
+  rot, wenn sie durch ist. Sie sind in die Kopfzeile gewandert, ein roter Ring
+  außen zeigt wie bisher ein aufgebrauchtes 5-Stunden-Fenster. Wird die Zeile
+  eng, schrumpfen erst die Pegel, dann fällt die Beschriftung des
+  Wach-Schalters weg — die Reihe bleibt vollständig.
+- Dadurch gehört der Claudie-Parade jetzt die ganze Zeile: Sie läuft von ganz
+  links nach ganz rechts statt auf 300 pt am rechten Rand. Im Fenster sind
+  dadurch mehr Claudies gleichzeitig unterwegs als vorher.
+- „Aktualisieren" ist aus dem Kopf ins „…"-Menü gezogen und hat den Platz für
+  die Pegel frei gemacht.
+- Die Startabstände der Parade sind größer. Das ist die Voraussetzung dafür,
+  dass Läufer stehen bleiben können, ohne dass jemand auffährt.
+- Und sehr selten — im Schnitt alle gut dreizehn Minuten — passiert auf dem
+  Laufsteg etwas: Ein Claudie bleibt mitten im Streifen stehen, seine beiden
+  Nachbarn halten an, drehen sich um und schießen ihn ab. Er kippt um,
+  zerplatzt zu orangem Matsch, und kurz darauf wächst dort ein kleiner
+  Grabstein aus dem Boden. Der steht gut drei Minuten; wer vorbeikommt, bleibt
+  kurz davor stehen und weint, bevor er weitergeht.
+
 ## 2.4
 
 - Schalter und System stimmen jetzt immer überein. Ein Wächter sieht alle

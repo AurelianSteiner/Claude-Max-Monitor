@@ -82,8 +82,13 @@ enum DashboardPalette {
 
 // MARK: - Ampel (Wochen-Auslastung)
 
-/// Dreistufige Skala für die **Füllung** der Punktreihe ganz oben in der Übersicht —
+/// Dreistufige Skala für die **Füllung** der Punktreihe in der Menüleiste —
 /// sie beantwortet nur eine Frage: Ist die Woche frisch, in Benutzung oder durch?
+///
+/// In der Übersicht selbst steht seit der Kopfzeilen-Umstellung kein Punkt mehr,
+/// sondern ein echter Wasserstand (`MiniWaterGauge`) mit der vierstufigen
+/// `DashboardPalette`. Die Menüleiste hat für so etwas schlicht zu wenige Pixel
+/// und bleibt deshalb bei der groben Ampel.
 ///
 /// Schwellen (Wochen-Auslastung):
 /// · Grau  = noch keine Wochendaten (`nil`)
@@ -92,8 +97,8 @@ enum DashboardPalette {
 /// · Rot   = praktisch aufgebraucht, ab 90 % — und bleibt darüber rot (auch bei 100 %+)
 ///
 /// Das schnelle 5-Stunden-Fenster steckt bewusst **nicht** in dieser Farbe:
-/// Es hängt als roter Ring außen am Punkt (`TrafficLightDot`), damit „Woche durch"
-/// und „Sitzung durch" nicht dasselbe Signal geben.
+/// Es hängt als roter Ring außen am Punkt, damit „Woche durch" und „Sitzung
+/// durch" nicht dasselbe Signal geben — genauso wie beim Wasserstand oben.
 ///
 /// Bewusst Systemfarben, damit die Punkte in hellem und dunklem
 /// Erscheinungsbild gleichermaßen tragen.
@@ -111,49 +116,86 @@ enum WeeklyTrafficLight {
     }
 }
 
-/// Maße des Ampelpunkts. Die Punktreihe rechnet mit `footprint`, wenn sie
-/// bestimmt, wie viele Punkte in eine Zeile passen — deshalb liegen die Werte
-/// hier und nicht als Literale in der View.
-enum TrafficDotMetrics {
-    /// Durchmesser der farbigen Fläche (Wochenlage)
-    static let fillDiameter: CGFloat = 10
-    /// Luft zwischen Fläche und Ring, damit ein roter Ring auf roter Fläche
-    /// nicht zu einem Klumpen verschmilzt
-    static let ringGap: CGFloat = 1.5
+// MARK: - Wasserstand-Miniatur (Kopfzeile)
+
+/// Maße der Miniatur-Wasserstände in der Kopfzeile. Die Kopfzeile probiert
+/// mehrere Durchmesser durch (siehe `DashboardView.headerRow`), Abstand und
+/// Ringmaße bleiben dabei fest — deshalb liegen sie hier und nicht als
+/// Literale in der View.
+enum MiniGaugeMetrics {
+    /// Luft zwischen Wasserkreis und Sitzungsring, damit ein roter Ring auf
+    /// roter Wasserfläche nicht zu einem Klumpen verschmilzt
+    static let ringGap: CGFloat = 1
     /// Strichstärke des Sitzungsrings
-    static let ringWidth: CGFloat = 2
-    /// Gesamter Platzbedarf eines Punkts inklusive Ring (10 + 2 × (1,5 + 2) = 17)
-    static var footprint: CGFloat { fillDiameter + 2 * (ringGap + ringWidth) }
+    static let ringWidth: CGFloat = 1.6
+    /// Abstand zwischen zwei Miniaturen
+    static let spacing: CGFloat = 3
+
+    /// Platzbedarf einer Miniatur inklusive Ring
+    static func footprint(_ diameter: CGFloat) -> CGFloat {
+        diameter + 2 * (ringGap + ringWidth)
+    }
 }
 
-/// Ein Punkt der Ampelreihe: **Füllung = Woche, Ring = Sitzung**.
+/// Ein Konto in der Kopfzeile: **Wasserstand = Woche, Ring = Sitzung**.
 ///
-/// · volle grüne/blaue Fläche, kein Ring → Woche in Ordnung, Sitzung in Ordnung
-/// · Ring rot                            → 5-Stunden-Fenster aufgebraucht
-/// · Fläche rot                          → Woche aufgebraucht
-/// · Fläche rot + Ring rot               → beides aufgebraucht
+/// Dieselbe Aussage wie der frühere Ampelpunkt, nur nicht mehr in drei Stufen
+/// gerastert: Der Pegel steigt mit der Wochen-Auslastung und läuft dabei durch
+/// dieselbe vierstufige `DashboardPalette` wie die großen Anzeigen auf den
+/// Karten — blau, gelb, orange, ab 90 % rot und randvoll. Sechs Konten
+/// nebeneinander sagen so auf einen Blick, wie viel Woche noch übrig ist,
+/// statt nur „grün / blau / rot".
 ///
-/// Der Ring wird außen gezeichnet (`strokeBorder` auf dem vollen Platzbedarf),
-/// die Fläche behält ihre Größe — so bleibt die Reihe ruhig und der Ring kommt
-/// nicht ins Gehege mit der Farbe darunter.
-struct TrafficLightDot: View {
+/// · leerer bis halbvoller blauer Kreis → Woche hat Luft
+/// · roter, fast voller Kreis           → Woche praktisch durch
+/// · roter Ring außen                   → 5-Stunden-Fenster aufgebraucht
+/// · grauer, leerer Kreis               → noch keine Daten
+///
+/// Der Ring liegt außen auf dem vollen Platzbedarf, die Wasserfläche behält
+/// ihre Größe — so bleibt die Reihe ruhig, egal wie viele Ringe an sind.
+struct MiniWaterGauge: View {
     /// Wochen-Auslastung (0–100), `nil` = keine Daten
     let weeklyUtilization: Double?
     /// Sitzungsfenster praktisch aufgebraucht?
     let sessionExhausted: Bool
+    var diameter: CGFloat = 16
+
+    private var clamped: Double? {
+        weeklyUtilization.map { min(100, max(0, $0)) }
+    }
 
     var body: some View {
         ZStack {
-            Circle()
-                .fill(WeeklyTrafficLight.color(for: weeklyUtilization))
-                .frame(width: TrafficDotMetrics.fillDiameter, height: TrafficDotMetrics.fillDiameter)
-
+            water
             if sessionExhausted {
-                Circle()
-                    .strokeBorder(Color.red, lineWidth: TrafficDotMetrics.ringWidth)
+                Circle().strokeBorder(Color.red, lineWidth: MiniGaugeMetrics.ringWidth)
             }
         }
-        .frame(width: TrafficDotMetrics.footprint, height: TrafficDotMetrics.footprint)
+        .frame(
+            width: MiniGaugeMetrics.footprint(diameter),
+            height: MiniGaugeMetrics.footprint(diameter)
+        )
+    }
+
+    private var water: some View {
+        ZStack {
+            Circle().fill(Color(NSColor.windowBackgroundColor))
+
+            if let clamped {
+                WaterShape(level: clamped / 100.0)
+                    .fill(DashboardPalette.fill(clamped))
+                    .clipShape(Circle())
+            } else {
+                // Ohne Daten ein durchgehend mattes Grau statt eines leeren
+                // Kreises: Bei 11 pt wäre „noch nichts geladen" sonst nicht von
+                // „Woche frisch, 2 %" zu unterscheiden — beide fast leer.
+                Circle().fill(Color.secondary.opacity(0.32))
+            }
+
+            Circle().strokeBorder(Color.primary.opacity(0.16), lineWidth: 1)
+        }
+        .frame(width: diameter, height: diameter)
+        .animation(.easeInOut(duration: 0.45), value: clamped)
     }
 }
 

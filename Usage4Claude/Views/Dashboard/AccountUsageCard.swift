@@ -264,8 +264,13 @@ struct AccountUsageCard: View {
     /// Die Wochenlage entscheidet zuerst — sie ist die bindende Sperre. Ist die
     /// Woche zu, läuft über das Konto ohnehin nichts mehr; ob die Sitzung
     /// zusätzlich voll ist, ändert daran nichts und bleibt deshalb unerwähnt.
-    /// `nil` heißt: nichts ist zu, die Plakette bleibt weg. Ein volles
-    /// Extra-Kontingent allein sperrt nichts und zählt hier bewusst nicht mit.
+    /// `nil` heißt: nichts ist zu, die Plakette bleibt weg.
+    ///
+    /// Gemeint ist immer das **kontoweite** Wochenfenster. Ein aufgebrauchtes
+    /// Modellkontingent (Fable, Opus, Sonnet) sperrt das Konto nicht — es sperrt
+    /// ein Modell, während die anderen weiterlaufen — und trägt deshalb keine
+    /// Plakette. Es steht als eigene Zeile im Block darunter, dort rot getönt.
+    /// Ein volles Extra-Kontingent allein sperrt ebenfalls nichts.
     private var lockState: LockState? {
         if hasWeeklyWindow, (snapshot.weeklyPeakUtilization ?? 0) >= AccountUsageSnapshot.nearExhaustionThreshold {
             return .weekly
@@ -278,7 +283,7 @@ struct AccountUsageCard: View {
     /// eine Näherung aus dem Sitzungsfenster — die Plakette hätte sonst die Woche
     /// benannt und dazu einen leeren Countdown gezeigt, obwohl die Sitzung zu ist.
     private var hasWeeklyWindow: Bool {
-        snapshot.weeklyLimit != nil || !(snapshot.usageData?.weeklyModels.isEmpty ?? true)
+        snapshot.weeklyLimit != nil
     }
 
     private func lockTitle(_ state: LockState) -> String {
@@ -304,20 +309,12 @@ struct AccountUsageCard: View {
         }
     }
 
-    /// Ende der Wochensperre: der späteste Reset unter den aufgebrauchten
-    /// Wochenfenstern. Die Modell-Wochenlimits (Opus/Sonnet/Fable) gehören dazu,
-    /// stehen aber nicht in `snapshot.weeklyLimit` — ohne sie hinge ein volles
-    /// Opus-Fenster ohne Datum da. Fällt notfalls auf das 7-Tage-Fenster zurück.
+    /// Ende der Wochensperre: der Reset des kontoweiten Wochenfensters — genau
+    /// des Fensters, das die Plakette benennt. Die Modell-Wochenlimits zählen
+    /// hier nicht mit; sie sperren das Konto nicht und dürfen den Countdown
+    /// deshalb auch nicht verlängern.
     private var weeklyLockResetsAt: Date? {
-        let threshold = AccountUsageSnapshot.nearExhaustionThreshold
-        var dates: [Date] = []
-        if let weekly = snapshot.weeklyLimit, weekly.percentage >= threshold, let date = weekly.resetsAt {
-            dates.append(date)
-        }
-        for model in snapshot.usageData?.weeklyModels ?? [] where model.limit.percentage >= threshold {
-            if let date = model.limit.resetsAt { dates.append(date) }
-        }
-        return dates.max() ?? snapshot.weeklyLimit?.resetsAt
+        snapshot.weeklyLimit?.resetsAt
     }
 
     /// Ersetzt das frühere Ausgrauen: Statt die Karte zu dämpfen, benennt eine

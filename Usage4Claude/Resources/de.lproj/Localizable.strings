@@ -437,6 +437,7 @@
 "dashboard.dot_no_data" = "keine Daten";
 "dashboard.dot_used_up" = "aufgebraucht";
 "dashboard.dot_almost_used_up" = "fast aufgebraucht";
+"dashboard.dot_model_full" = "%@ ist ausgeschöpft – die anderen Modelle laufen weiter.";
 
 /* Sperr-Plakette auf der Konto-Karte — benennt das Fenster, das wirklich zu ist */
 "dashboard.lock.session" = "Sitzung gesperrt";
