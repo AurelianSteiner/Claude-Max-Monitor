@@ -3,6 +3,25 @@
     <channel>
         <title>Claude Max Monitor</title>
         <item>
+            <title>2.6</title>
+            <pubDate>Mon, 24 Aug 2026 18:06:03 +0000</pubDate>
+            <sparkle:version>2.6</sparkle:version>
+            <sparkle:shortVersionString>2.6</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[Wasserstände statt Punkte: Oben steht jetzt für jeden Account ein Pegel wie auf den Karten — leer und blau, solange die Woche Luft hat, randvoll und rot, wenn sie durch ist. Ein roter Ring außen heißt weiterhin: 5-Stunden-Fenster aufgebraucht.
+
+Ein volles Modellkontingent sperrt keinen Account mehr. War das Fable-Wochenlimit durch, stand fälschlich „Woche gesperrt" auf der Karte, obwohl über Sonnet und Opus die ganze Woche noch offen war. Gesperrt heißt jetzt ausschließlich: das Wochenlimit des Accounts ist aufgebraucht. Welches Modell durch ist, steht weiter in der Zeile darunter und im Tooltip.
+
+Die Claudies laufen jetzt über die volle Breite statt nur am rechten Rand, und „Aktualisieren" ist ins „…"-Menü gezogen.
+
+Und sehr selten passiert auf dem Laufsteg etwas, das hier nicht verraten wird.]]></description>
+            <enclosure
+                url="https://github.com/AurelianSteiner/Claude-Max-Monitor/releases/download/v2.6/Claude-Max-Monitor-2.6.dmg"
+                sparkle:edSignature="lIhnacbELPezfYPhW0SOhPBQT3ortQ9XzEaLDXW5PmwgDg1pcrIjrZA2Wo5erR+iEYh6IrMY8ud4k2uHY5VaBQ=="
+                length="5759707"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>2.5</title>
             <pubDate>Sat, 15 Aug 2026 23:19:48 +0000</pubDate>
             <sparkle:version>2.5</sparkle:version>
