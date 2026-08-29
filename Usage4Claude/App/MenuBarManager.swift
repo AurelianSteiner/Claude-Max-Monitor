@@ -328,6 +328,16 @@ class MenuBarManager: ObservableObject {
     @objc func togglePopover() {
         guard let button = ui.statusItem.button else { return }
 
+        // Steht die Übersicht schon als eigenes Fenster auf dem Schirm, wäre
+        // das Popover nur dieselbe Ansicht ein zweites Mal. Der Klick holt
+        // dann stattdessen das Fenster nach vorn — das Popover gibt es nur,
+        // solange kein Fenster offen ist.
+        if DashboardWindowManager.shared.isVisible {
+            if ui.popover.isShown { closePopover() }
+            openDashboardWindow()
+            return
+        }
+
         if ui.popover.isShown {
             closePopover()
         } else {
