@@ -38,10 +38,6 @@ extension Notification.Name {
 
     // MARK: - Window Related
 
-    /// 打开设置窗口通知
-    /// 发送此通知以打开设置窗口（userInfo 可带 "tab" 键指定标签页）
-    static let openSettings = Notification.Name("openSettings")
-
     // MARK: - Error Related
 
     /// 开机启动设置错误通知

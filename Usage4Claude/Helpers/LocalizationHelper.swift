@@ -236,30 +236,11 @@ enum L {
     
     // MARK: - Welcome View
     enum Welcome {
-        static var title: String { localized("welcome.title") }
+        /// Leerzustand der Übersicht (früher Untertitel des Willkommensfensters)
         static var subtitle: String { localized("welcome.subtitle") }
-        static var setupButton: String { localized("welcome.setup_button") }
-        static var laterButton: String { localized("welcome.later_button") }
-
-        // v2.0.0 Welcome Flow
-        static var credentialsTitle: String { localized("welcome_credentials_title") }
-        static var credentialsSubtitle: String { localized("welcome_credentials_subtitle") }
-        static var displaySubtitle: String { localized("welcome.display_subtitle") }
-        static var preview: String { localized("welcome.preview") }
-        static var back: String { localized("welcome.back") }
-        static var continue_: String { localized("welcome.continue") }
-        static var skip: String { localized("welcome.skip") }
-        static var finish: String { localized("welcome.finish") }
-        static var authenticationSetup: String { localized("welcome.authentication_setup") }
-        static var sessionKey: String { localized("welcome.session_key") }
-        static var sessionKeyPlaceholder: String { localized("welcome.session_key_placeholder") }
-        static var sessionKeyHint: String { localized("welcome.session_key_hint") }
+        /// Format-Prüfung des Session-Keys beim manuellen Hinzufügen
         static var validFormat: String { localized("welcome.valid_format") }
-        static var howToGetSessionKey: String { localized("welcome.how_to_get_session_key") }
         static var invalidFormat: String { localized("welcome.invalid_format") }
-        static var configuring: String { localized("welcome.configuring") }
-        static var fetchOrgIdFailed: String { localized("welcome.fetch_org_id_failed") }
-        static var multiAccountHint: String { localized("welcome.multi_account_hint") }
     }
     
     // MARK: - Update
@@ -310,7 +291,6 @@ enum L {
     // MARK: - Window Titles
     enum Window {
         static var settingsTitle: String { localized("window.settings_title") }
-        static var welcomeTitle: String { localized("window.welcome_title") }
     }
 
     // MARK: - Detail Rows

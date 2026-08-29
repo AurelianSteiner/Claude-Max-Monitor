@@ -55,9 +55,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// 菜单栏管理器，负责所有菜单栏相关功能
     private var menuBarManager: MenuBarManager!
 
-    /// 欢迎窗口，在首次启动时显示
-    private var welcomeWindow: NSWindow?
-
     /// 用户设置实例
     private let settings = UserSettings.shared
 
@@ -100,18 +97,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // überleben den Prozess nicht)
         SleepGuard.shared.restoreFromDefaults()
 
-        if settings.isFirstLaunch || !settings.hasAnyValidCredentials {
-            showWelcomeWindow()
-        } else {
+        if settings.hasAnyValidCredentials {
             menuBarManager.startRefreshing()
+        } else {
+            // Kein Willkommensfenster mehr: Ohne Konto öffnet die Übersicht
+            // mit ihrem Leerzustand — der Knopf dort führt direkt in die
+            // Konten-Einstellungen, wo alle Anmeldewege beieinander liegen.
+            // Das frühere Fenster war derselbe Inhalt ein zweites Mal.
+            menuBarManager.openDashboardWindow()
         }
-
-        // 使用 Combine 订阅通知，自动管理生命周期
-        NotificationCenter.default.publisher(for: .openSettings)
-            .sink { [weak self] notification in
-                self?.openSettingsFromNotification(notification)
-            }
-            .store(in: &cancellables)
+        if settings.isFirstLaunch {
+            settings.isFirstLaunch = false
+        }
 
         NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
             .sink { [weak self] _ in
@@ -124,15 +121,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// laufender App.
     /// Wegen LSUIElement=true gibt es kein dauerhaftes Dock-Icon, ein erneutes
     /// Starten würde sonst scheinbar nichts tun. Stattdessen die Übersicht
-    /// öffnen. Läuft das Willkommensfenster noch (Erststart), wird dieses
-    /// nach vorn geholt.
+    /// öffnen.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         NSApp.activate(ignoringOtherApps: true)
-
-        if let welcomeWindow, welcomeWindow.isVisible {
-            welcomeWindow.makeKeyAndOrderFront(nil)
-            return true
-        }
 
         // menuBarManager ist erst nach applicationDidFinishLaunching gesetzt —
         // im Zweifel direkt über den Fenster-Manager öffnen, statt zu crashen.
@@ -145,54 +136,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
-    // MARK: - Private Methods
-
-    /// 显示欢迎窗口
-    /// 在首次启动或未配置认证信息时调用
-    private func showWelcomeWindow() {
-        NSApp.setActivationPolicy(.regular)
-
-        let welcomeView = WelcomeView()
-        let hostingController = NSHostingController(rootView: welcomeView)
-
-        welcomeWindow = NSWindow(
-            contentViewController: hostingController
-        )
-        welcomeWindow?.title = L.Window.welcomeTitle
-        welcomeWindow?.styleMask = [.titled, .closable]
-        welcomeWindow?.level = .floating
-
-        if let screen = NSScreen.main {
-            let screenFrame = screen.visibleFrame
-            let windowFrame = welcomeWindow?.frame ?? NSRect.zero
-            let x = screenFrame.origin.x + (screenFrame.width - windowFrame.width) / 2
-            let y = screenFrame.origin.y + (screenFrame.height - windowFrame.height) / 2
-            welcomeWindow?.setFrameOrigin(NSPoint(x: x, y: y))
-        }
-
-        // 使用 Combine 订阅窗口关闭通知
-        NotificationCenter.default.publisher(for: NSWindow.willCloseNotification, object: welcomeWindow)
-            .sink { _ in
-                NSApp.setActivationPolicy(.accessory)
-            }
-            .store(in: &cancellables)
-
-        welcomeWindow?.makeKeyAndOrderFront(nil)
-        
-        NSApp.activate(ignoringOtherApps: true)
-    }
-    
-    /// 处理打开设置的通知
-    /// 关闭欢迎窗口并根据认证配置状态启动刷新
-    private func openSettingsFromNotification(_ notification: Notification) {
-        welcomeWindow?.close()
-        welcomeWindow = nil
-
-        if settings.hasAnyValidCredentials {
-            menuBarManager.startRefreshing()
-        }
-    }
-    
     /// 应用即将退出时调用
     /// 清理定时器和窗口资源
     /// 注意：Combine 订阅会在 cancellables 被释放时自动清理
@@ -200,8 +143,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Power-Assertions freigeben (die gemerkten Schalter bleiben erhalten)
         SleepGuard.shared.releaseAll()
         menuBarManager?.cleanup()
-        welcomeWindow?.close()
-        welcomeWindow = nil
         cancellables.removeAll()
     }
 }

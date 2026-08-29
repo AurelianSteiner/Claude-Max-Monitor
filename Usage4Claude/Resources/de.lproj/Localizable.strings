@@ -74,10 +74,7 @@
 "settings.about.copyright" = "© 2025 Alle Rechte vorbehalten";
 
 // MARK: - Welcome View
-"welcome.title" = "Willkommen bei Claude Max Monitor";
 "welcome.subtitle" = "Bitte vor dem Start die Anmeldedaten konfigurieren";
-"welcome.setup_button" = "Anmeldung konfigurieren";
-"welcome.later_button" = "Später einrichten";
 
 // MARK: - Update
 "update.ok_button" = "OK";
@@ -108,7 +105,6 @@
 
 // MARK: - Window Titles
 "window.settings_title" = "Claude Max Monitor Einstellungen";
-"window.welcome_title" = "Willkommen";
 
 // MARK: - Usage Data Formatting
 "usage_data.not_started_reset" = "Reset-Zeit wird nach Nutzungsbeginn angezeigt";
@@ -169,24 +165,8 @@
 // MARK: - Credentials Configuration (v2.0.0)
 
 // MARK: - Welcome Flow (v2.0.0)
-"welcome_credentials_title" = "Claude-Zugang konfigurieren";
-"welcome_credentials_subtitle" = "Den Session Key eingeben – die Organisations-ID wird automatisch abgerufen";
-"welcome.skip" = "Überspringen";
-"welcome.finish" = "Fertigstellen";
-"welcome.authentication_setup" = "Anmeldung einrichten";
-"welcome.session_key" = "Session Key";
-"welcome.session_key_placeholder" = "Den Session Key hier einfügen";
-"welcome.session_key_hint" = "Den vollständigen sessionKey-Cookie-Wert einfügen";
 "welcome.valid_format" = "Gültiges Format";
 "welcome.invalid_format" = "Der Session Key sollte 20–500 Zeichen lang sein";
-"welcome.display_subtitle" = "Auswählen, welche Limit-Typen angezeigt werden";
-"welcome.preview" = "Vorschau";
-"welcome.back" = "Zurück";
-"welcome.continue" = "Weiter";
-"welcome.how_to_get_session_key" = "Wie erhält man den Session Key?";
-"welcome.configuring" = "Wird konfiguriert...";
-"welcome.fetch_org_id_failed" = "Organisations-ID konnte nicht abgerufen werden, bitte später in den Einstellungen erneut versuchen";
-"welcome.multi_account_hint" = "Mehrere Accounts nötig? Nach der Einrichtung lassen sich in den Einstellungen weitere hinzufügen.";
 
 // MARK: - Detail Window - Date/Time Formats (v2.0.0)
 

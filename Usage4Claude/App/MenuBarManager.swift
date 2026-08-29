@@ -221,14 +221,6 @@ class MenuBarManager: ObservableObject {
             }
             .store(in: &cancellables)
         
-        NotificationCenter.default.publisher(for: .openSettings)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] notification in
-                let tab = notification.userInfo?["tab"] as? Int ?? 0
-                self?.openSettingsWindow(tab: tab)
-            }
-            .store(in: &cancellables)
-
         // Popover schließen, sobald irgendein Fenster der App den Fokus
         // bekommt — Übersichts-, Team- oder Einstellungsfenster ersetzen die
         // Schnellansicht. Ohne das bliebe das Popover oben rechts unter dem
