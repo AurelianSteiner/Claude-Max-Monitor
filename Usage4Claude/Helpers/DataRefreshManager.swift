@@ -62,8 +62,6 @@ class DataRefreshManager: ObservableObject {
     /// Codex 三级刷新全部失败，需要用户手动重新登录
     /// 暴露给 UI 层以显示"重新登录"按钮
     @Published private(set) var codexNeedsRelogin = false
-    /// Codex 过期通知已发送，防止重复打扰
-    private var codexSessionExpiredNotified = false
 
     private var shouldFetchClaudeUsage: Bool {
         #if DEBUG
@@ -188,14 +186,9 @@ class DataRefreshManager: ObservableObject {
             if fetchClaude {
                 switch claudeResult {
                 case .success(let data):
-                    let previousData = self.usageData
                     self.usageData = data
                     self.errorMessage = nil
                     monitoringUtilizations[.claude] = data.percentage
-
-                    if self.settings.notificationsEnabled {
-                        NotificationManager.shared.checkAndNotify(usageData: data, previousData: previousData)
-                    }
 
                     let newResetsAt = data.resetsAt
                     let hasResetChanged = hasResetTimeChanged(from: self.lastResetsAt, to: newResetsAt)
@@ -468,12 +461,8 @@ class DataRefreshManager: ObservableObject {
 
             switch result {
             case .success(let data):
-                let previousData = self.usageData
                 self.usageData = data
                 self.errorMessage = nil
-                if self.settings.notificationsEnabled {
-                    NotificationManager.shared.checkAndNotify(usageData: data, previousData: previousData)
-                }
                 self.settings.updateSmartMonitoringMode(providerUtilizations: [.claude: data.percentage])
                 let newResetsAt = data.resetsAt
                 if hasResetTimeChanged(from: self.lastResetsAt, to: newResetsAt) {
@@ -524,14 +513,10 @@ class DataRefreshManager: ObservableObject {
     }
 
     private func processCodexSuccess(_ data: CodexUsageData) {
-        let previousCodexData = codexUsageData
         codexUsageData = data
         codexErrorMessage = nil
         if let utilization = monitoringUtilization(for: data) {
             settings.updateSmartMonitoringMode(providerUtilizations: [.codex: utilization])
-        }
-        if settings.notificationsEnabled {
-            NotificationManager.shared.checkAndNotify(codexUsageData: data, previousData: previousCodexData)
         }
         let newCodexResetsAt = data.primary?.resetsAt
         if hasResetTimeChanged(from: lastCodexResetsAt, to: newCodexResetsAt) {
@@ -621,25 +606,17 @@ class DataRefreshManager: ObservableObject {
     /// 重置重登状态（用户主动刷新时调用，允许再次尝试三级刷新链）
     private func resetCodexReloginState() {
         codexNeedsRelogin = false
-        codexSessionExpiredNotified = false
     }
 
-    /// 级别 3：标记需要重登，发送系统通知（仅一次）
+    /// 级别 3：标记需要重登
     private func markCodexNeedsRelogin() {
         codexNeedsRelogin = true
-        if !codexSessionExpiredNotified {
-            codexSessionExpiredNotified = true
-            if settings.notificationsEnabled {
-                NotificationManager.shared.sendCodexSessionExpiredNotification()
-            }
-        }
         codexErrorMessage = UsageError.sessionExpired.localizedDescription
         clearCodexUsageState(clearError: false)
         Logger.menuBar.error("Codex 三级刷新均已失败，需要用户重新登录")
     }
 
-    /// 账户切换后只清理并刷新对应 Provider，避免跨账号 previousData 误判重置。
-    /// 通知去重状态按账号隔离，切换账号时保留，删除账号时再由 UserSettings 精准清理。
+    /// 账户切换后只清理并刷新对应 Provider。
     func handleAccountChanged(provider: ProviderType?) {
         switch provider {
         case .claude:
@@ -660,7 +637,6 @@ class DataRefreshManager: ObservableObject {
         case .none:
             clearClaudeUsageState()
             clearCodexUsageState()
-            NotificationManager.shared.resetAllNotificationStates()
             fetchUsage()
         }
     }

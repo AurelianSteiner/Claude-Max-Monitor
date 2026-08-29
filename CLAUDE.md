@@ -6,7 +6,7 @@ A macOS menu bar app that monitors Claude / Codex subscription usage. Swift + Sw
 
 - Unit tests: `swift test` (SwiftPM only tests pure functions, runs in seconds; `Package.swift` uses a sources allowlist — newly extracted pure-function files must be added manually before they're testable)
 - Full build: `./scripts/build.sh --config Debug` (`.xcodeproj` is the authoritative build; SwiftPM exists only for testing)
-- Localization consistency: `python3 scripts/check_l10n.py` (checks key sync across 7 languages; enforced in CI)
+- Localization consistency: `python3 scripts/check_l10n.py` (checks key sync across en/de; enforced in CI)
 
 ## Architecture Map
 
@@ -18,7 +18,7 @@ A macOS menu bar app that monitors Claude / Codex subscription usage. Swift + Sw
   split out into `AccountStore`/`SmartRefreshPolicy`/`LaunchAtLoginManager`/`AppearanceManager`
 - `Helpers/DataRefreshManager.swift`: scheduled refresh, Codex's three-tier token refresh chain, reset verification
 - Localization: `L.xxx` accessors (`Helpers/LocalizationHelper.swift`) → `Resources/*.lproj/Localizable.strings`;
-  new keys must be synced across all 7 languages (de/en/fr/ja/ko/zh-Hans/zh-Hant)
+  new keys must be synced across both languages (de/en)
 - `Tests/`: SwiftPM test target, only covers pure-function files listed in `Package.swift`'s sources
 - `.agents/skills/`: ready-made skills exist for release and screenshot capture (capture-usage4claude-screenshots)
 

@@ -12,8 +12,6 @@
 "menu.about" = "Über";
 "menu.claude_status" = "Claude Status";
 "menu.codex_status" = "OpenAI Status";
-"menu.coffee" = "Buy Me A Coffee";
-"menu.github_sponsor" = "GitHub Sponsor";
 "menu.quit" = "Claude Max Monitor beenden";
 "menu.account" = "Account";
 "menu.account_prefix" = "Account:";
@@ -23,12 +21,10 @@
 "usage.not_started" = "Anzeige nach Nutzungsbeginn";
 "usage.reset_in" = "Reset in";
 "usage.remaining" = "Verbleibend";
-"usage.available" = "Verfügbar";
 "usage.loading" = "Lade...";
 "usage.not_configured" = "Anmeldung nicht konfiguriert";
 "usage.go_to_settings" = "Gehe zu den Einstellungen";
 "usage.reset_time" = "Reset-Zeit";
-"usage.used" = "Verwendet";
 "usage.five_hour_limit" = "5-Stunden-Limit";
 "usage.seven_day_limit" = "7-Tage-Limit";
 "usage.five_hour_limit_short" = "5h";
@@ -36,7 +32,6 @@
 "usage.reset_date" = "Reset-Datum";
 "usage.refresh" = "Aktualisieren";
 "usage.refresh_cooldown" = "Moment kurz";
-"usage.run_diagnostic" = "Diagnose starten";
 "usage.codex_title" = "Codex Usage";
 "usage.codex_relogin" = "Neu anmelden";
 
@@ -79,8 +74,6 @@
 "settings.about.license" = "Lizenz";
 "settings.about.license_value" = "MIT-Lizenz";
 "settings.about.github" = "GitHub-Repository besuchen";
-"settings.about.coffee" = "Buy Me A Coffee";
-"settings.about.github_sponsor" = "GitHub Sponsor";
 "settings.about.copyright" = "© 2025 Alle Rechte vorbehalten";
 
 // MARK: - Welcome View
@@ -114,11 +107,6 @@
 
 // MARK: - Language Names
 "language.english" = "English";
-"language.japanese" = "日本語";
-"language.chinese" = "中文（简体）";
-"language.chinese_traditional" = "中文（繁體）";
-"language.korean" = "한국어";
-"language.french" = "Français";
 "language.german" = "Deutsch";
 
 // MARK: - Window Titles
@@ -158,68 +146,12 @@
 "launch.error.disable" = "Start beim Login konnte nicht deaktiviert werden";
 
 // MARK: - Diagnostics
-"diagnostic.test_button" = "Verbindung testen";
-"diagnostic.view_details_button" = "Details";
-"diagnostic.export_button" = "Exportieren";
-"diagnostic.testing_connection" = "Verbindung wird getestet...";
-"diagnostic.test_completed" = "Test abgeschlossen";
-"diagnostic.test_success" = "Verbindungstest erfolgreich";
-"diagnostic.test_failed" = "Verbindungstest fehlgeschlagen";
-"diagnostic.result_success" = "Verbindung erfolgreich";
-"diagnostic.result_failed" = "Verbindung fehlgeschlagen";
-"diagnostic.http_status" = "HTTP-Status";
-"diagnostic.response_time" = "Antwortzeit";
-"diagnostic.response_type" = "Antworttyp";
-"diagnostic.cloudflare_detected" = "Cloudflare-Challenge erkannt";
-"diagnostic.diagnosis" = "Diagnose";
-"diagnostic.suggestions" = "Vorschläge";
-"diagnostic.privacy_notice" = "Alle sensiblen Daten werden zum Schutz der Privatsphäre automatisch geschwärzt";
-"diagnostic.detailed_report_title" = "Detaillierter Diagnosebericht";
-"diagnostic.no_report_available" = "Kein Bericht verfügbar. Bitte zuerst einen Test durchführen.";
-"diagnostic.copy_to_clipboard" = "In die Zwischenablage kopieren";
-"diagnostic.export_title" = "Diagnosebericht exportieren";
-"diagnostic.export_message" = "Dieser Bericht enthält keine sensiblen Informationen und kann gefahrlos geteilt werden.";
-"diagnostic.export_success_title" = "Export erfolgreich";
-"diagnostic.export_success_message" = "Diagnosebericht wurde gespeichert unter:";
-"diagnostic.export_error_title" = "Export fehlgeschlagen";
 
 // Diagnosis messages
-"diagnostic.diagnosis_success" = "Die Verbindung funktioniert einwandfrei. Die API hat gültige Nutzungsdaten zurückgegeben.";
-"diagnostic.diagnosis_cloudflare" = "Die Anfrage wurde vom Cloudflare-Sicherheitssystem blockiert. Mögliche Ursachen sind die IP-Reputation oder die Netzwerkkonfiguration.";
-"diagnostic.diagnosis_decoding" = "Der Server hat Daten zurückgegeben, die nicht verarbeitet werden konnten. Das bedeutet meist, dass die Anmeldedaten falsch sind oder nicht zusammenpassen.";
-"diagnostic.diagnosis_network" = "Netzwerkverbindung fehlgeschlagen. Bitte die Internetverbindung prüfen.";
-"diagnostic.diagnosis_no_credentials" = "Es sind keine Anmeldedaten konfiguriert.";
-"diagnostic.diagnosis_invalid_url" = "Ungültiges Format der Organisations-ID.";
-"diagnostic.diagnosis_unknown" = "Ein unbekannter Fehler ist aufgetreten. Bitte diesen Bericht exportieren und mit den Entwicklern teilen.";
 
 // Suggestion messages
-"diagnostic.suggestion_success" = "Alles funktioniert korrekt. Es ist nichts zu tun.";
-"diagnostic.suggestion_visit_browser" = "claude.ai im Browser aufrufen und etwaige Sicherheits-Challenges abschließen";
-"diagnostic.suggestion_wait_and_retry" = "5–10 Minuten warten und es erneut versuchen";
-"diagnostic.suggestion_check_vpn" = "Prüfen, ob ein VPN oder Proxy die Verbindung beeinträchtigt";
-"diagnostic.suggestion_use_smart_mode" = "Den intelligenten Aktualisierungsmodus nutzen, um die Anfragehäufigkeit zu reduzieren";
-"diagnostic.suggestion_verify_credentials" = "Sicherstellen, dass Organisations-ID und Session Key korrekt sind";
-"diagnostic.suggestion_update_session_key" = "Der Session Key ist möglicherweise abgelaufen. Bitte aus dem Browser aktualisieren";
-"diagnostic.suggestion_check_browser" = "Prüfen, ob claude.ai/settings/usage im Browser aufrufbar ist";
-"diagnostic.suggestion_check_internet" = "Die Internetverbindung prüfen";
-"diagnostic.suggestion_check_firewall" = "Die Firewall- oder Antiviren-Einstellungen prüfen";
-"diagnostic.suggestion_retry_later" = "Es später erneut versuchen";
-"diagnostic.suggestion_configure_auth" = "Bitte Organisations-ID und Session Key in den Feldern oben konfigurieren";
-"diagnostic.suggestion_check_org_id" = "Prüfen, ob das Format der Organisations-ID korrekt ist (sollte eine UUID sein)";
-"diagnostic.suggestion_export_and_share" = "Diesen Diagnosebericht exportieren und über GitHub Issues teilen";
-"diagnostic.suggestion_contact_support" = "Entwickler für Hilfe unter github.com/AurelianSteiner/Claude-Max-Monitor/issues kontaktieren";
-"diagnostic.open_log_folder" = "Log-Ordner öffnen";
 
 // MARK: - Limit Types (v2.0.0)
-"five_hour_limit" = "5-Stunden-Limit";
-"seven_day_limit" = "7-Tage-Limit";
-"opus_weekly_limit" = "Opus 7-Tage-Limit";
-"sonnet_weekly_limit" = "Sonnet 7-Tage-Limit";
-"fable_weekly_limit" = "Fable 7-Tage-Limit";
-"extra_usage" = "Zusätzliche Nutzung";
-"codex_primary_limit" = "Codex 5-Stunden-Limit";
-"codex_secondary_limit" = "Codex 7-Tage-Limit";
-"codex_extra_usage" = "Codex zusätzliche Nutzung";
 
 // MARK: - Detail Row Labels
 "detail_row.five_hour_limit" = "5-Stunden-Limit";
@@ -236,30 +168,12 @@
 "display_options.account_dots_description" = "Die Menüleiste zeigt einen Punkt je Account: grau ohne Daten, grün frisch, blau in Benutzung, rot aufgebraucht. Ein roter Ring markiert ein volles 5-Stunden-Fenster.";
 
 // MARK: - Theme Selection (v2.0.0)
-"theme_selection" = "Theme";
-"monochrome_theme" = "Einfarbiges Theme";
-"colored_theme" = "Farbiges Theme";
-"colored_theme_unavailable_reason" = "Nicht verfügbar: Nur unterstützt, wenn 2 oder weniger kreisförmige Anzeigen dargestellt werden";
 
 // MARK: - Credentials Configuration (v2.0.0)
-"credentials" = "Anmeldedaten";
-"session_key_hint" = "In den Browser-DevTools zu finden → Anwendung → Cookies → claude.ai";
-"session_key_help" = "Der Session Key wird sicher im macOS-Schlüsselbund gespeichert";
-"session_key_required" = "Session Key ist erforderlich";
-"fetching" = "Wird abgerufen...";
-"refetch" = "Erneut abrufen";
-"configuring" = "Wird konfiguriert...";
-"credentials_saved" = "Anmeldedaten erfolgreich gespeichert";
-"save" = "Speichern";
-"back" = "Zurück";
-"continue" = "Weiter";
 
 // MARK: - Welcome Flow (v2.0.0)
 "welcome_credentials_title" = "Claude-Zugang konfigurieren";
 "welcome_credentials_subtitle" = "Den Session Key eingeben – die Organisations-ID wird automatisch abgerufen";
-"welcome_display_title" = "Anzeigeoptionen wählen";
-"welcome_display_subtitle" = "Auswählen, welche Nutzungslimits in der Menüleiste angezeigt werden";
-"preview" = "Vorschau";
 "welcome.skip" = "Überspringen";
 "welcome.finish" = "Fertigstellen";
 "welcome.authentication_setup" = "Anmeldung einrichten";
@@ -278,22 +192,12 @@
 "welcome.multi_account_hint" = "Mehrere Accounts nötig? Nach der Einrichtung lassen sich in den Einstellungen weitere hinzufügen.";
 
 // MARK: - Detail Window - Date/Time Formats (v2.0.0)
-"today" = "Heute";
-"today_time" = "Heute %@";
-"month_day" = "%d.%d.";
-"extra_usage_format" = "$%d/$%d";
 
 // MARK: - Detail Window - Remaining Time (v2.0.0)
-"extra_usage_remaining" = "Verbleibend $%@";
-"remaining_days_hours" = "Noch %d Tage %d Stunden";
-"remaining_hours_minutes" = "Noch %d Stunden %d Minuten";
-"remaining_minutes" = "Noch %d Minuten";
 
 // MARK: - Settings Window (v2.0.0)
-"settings" = "Einstellungen";
 
 // MARK: - General (v2.0.0)
-"unknown" = "Unbekannt";
 
 // MARK: - Usage Data - Compact Remaining Formats
 "usage_data.compact_resetting_soon" = "Reset in Kürze";
@@ -314,17 +218,8 @@
 "extra_usage.detail_credits_remaining" = "%d Credits verbleibend";
 
 // MARK: - Loading Animation
-"loading_animation.rainbow" = "Regenbogen-Verlauf";
-"loading_animation.dashed" = "Gestrichelte Rotation";
-"loading_animation.pulse" = "Pulseffekt";
-"loading_animation.current" = "Ladeanimation: %@";
 
 // MARK: - Time Format
-"time_format.system" = "System";
-"time_format.twelve_hour" = "12-Stunden (2:30 PM)";
-"time_format.twenty_four_hour" = "24-Stunden (14:30)";
-"settings.general.time_format_section" = "Zeitformat";
-"settings.general.time_format_preview" = "Vorschau";
 
 // MARK: - Appearance
 "appearance.system" = "System";
@@ -351,15 +246,6 @@
 "account.multi_org_added" = "%d Organisationen gefunden. Für jede wurde ein Account erstellt. Aliase lassen sich in den Account-Details festlegen.";
 
 // MARK: - Usage Notifications
-"notification.section" = "Benachrichtigungen";
-"notification.hint" = "Benachrichtigen, wenn die Nutzung einen Schwellenwert erreicht oder zurückgesetzt wird";
-"notification.enable" = "Nutzungsbenachrichtigungen aktivieren";
-"notification.warning_title" = "Nutzungswarnung";
-"notification.warning_body" = "%@ hat %d%% Nutzung erreicht";
-"notification.reset_title" = "Nutzung zurückgesetzt";
-"notification.reset_body" = "Die Nutzung von %@ wurde zurückgesetzt";
-"notification.codex_session_expired_title" = "Codex-Sitzung abgelaufen";
-"notification.codex_session_expired_body" = "Bitte erneut anmelden, um die Codex-Nutzung weiter zu überwachen";
 
 // MARK: - Web Login (v2.2.0)
 "weblogin.window_title" = "Bei Claude anmelden";

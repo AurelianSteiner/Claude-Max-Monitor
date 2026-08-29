@@ -8,112 +8,14 @@
 
 import SwiftUI
 
-// MARK: - Detail Usage Ring Helpers
+// MARK: - Usage Ring Helpers
 
-struct UsageRingTrimRange: Equatable {
-    let from: CGFloat
-    let to: CGFloat
-}
-
+/// Rest des früheren Detailfenster-Ringpakets: Nur das Klemmen auf 0…100
+/// wird noch gebraucht (UnifiedLimitRow), alles andere ist mit dem
+/// Einzelkonto-Detailfenster verschwunden.
 enum UsageRingDisplay {
     static func clampedPercentage(_ percentage: Double) -> Double {
         min(100, max(0, percentage))
-    }
-
-    static func displayedPercentage(usedPercentage: Double, showRemainingMode: Bool) -> Double {
-        let used = clampedPercentage(usedPercentage)
-        return showRemainingMode ? 100 - used : used
-    }
-
-    static func usedFraction(_ usedPercentage: Double) -> CGFloat {
-        CGFloat(clampedPercentage(usedPercentage) / 100.0)
-    }
-
-    static func displayedTrimRange(usedPercentage: Double, showRemainingMode: Bool) -> UsageRingTrimRange {
-        let used = usedFraction(usedPercentage)
-
-        if showRemainingMode {
-            return UsageRingTrimRange(from: used, to: 1)
-        }
-
-        return UsageRingTrimRange(from: 0, to: used)
-    }
-}
-
-/// 大圆环中心百分比与语义标签。
-struct DetailUsageRingCenterText: View {
-    let usedPercentage: Double
-    let showRemainingMode: Bool
-
-    private var displayPercentage: Double {
-        UsageRingDisplay.displayedPercentage(
-            usedPercentage: usedPercentage,
-            showRemainingMode: showRemainingMode
-        )
-    }
-
-    private var modeLabel: String {
-        showRemainingMode ? L.Usage.available : L.Usage.used
-    }
-
-    var body: some View {
-        VStack(spacing: 2) {
-            Text("\(Int(displayPercentage))%")
-                .font(.system(size: 28, weight: .bold))
-            Text(modeLabel)
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-        .id(showRemainingMode ? "remaining" : "used")
-        .transition(.scale(scale: 0.92).combined(with: .opacity))
-    }
-}
-
-/// 剩余/已用模式切换时的一次性外侧扫光。
-struct DetailUsageRingSweep: View {
-    let trigger: Int
-    let diameter: CGFloat
-    let lineWidth: CGFloat
-    let color: Color
-
-    @State private var rotation: Double = -90
-    @State private var opacity: Double = 0
-
-    var body: some View {
-        Circle()
-            .trim(from: 0, to: 0.18)
-            .stroke(
-                AngularGradient(
-                    gradient: Gradient(colors: [
-                        color.opacity(0.0),
-                        color.opacity(0.35),
-                        Color.white.opacity(0.95),
-                        color.opacity(0.85),
-                        color.opacity(0.0)
-                    ]),
-                    center: .center
-                ),
-                style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
-            )
-            .frame(width: diameter, height: diameter)
-            .rotationEffect(.degrees(rotation))
-            .opacity(opacity)
-            .scaleEffect(opacity > 0 ? 1.03 : 0.98)
-            .allowsHitTesting(false)
-            .onChange(of: trigger) { newValue in
-                guard newValue > 0 else { return }
-                runSweep()
-            }
-    }
-
-    private func runSweep() {
-        rotation = -90
-        opacity = 1
-
-        withAnimation(.easeOut(duration: 0.45)) {
-            rotation = 270
-            opacity = 0
-        }
     }
 }
 
@@ -143,33 +45,6 @@ struct MiniProgressIcon: View {
             context.draw(text, at: CGPoint(x: canvasSize.width / 2, y: canvasSize.height / 2))
         }
         .frame(width: size, height: size)
-    }
-}
-
-// MARK: - Animation Type Hint View
-
-/// 动画类型切换提示（长按圆环后显示），Claude 列和 Codex 列共用
-struct AnimationTypeHintView: View {
-    let animationTypeName: String
-
-    private let rainbowColors: [Color] = [.red, .orange, .yellow, .green, .blue, .purple]
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "wand.and.stars")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(
-                    LinearGradient(colors: rainbowColors, startPoint: .leading, endPoint: .trailing)
-                )
-            Text(L.LoadingAnimation.current(animationTypeName))
-                .font(.system(size: 12, weight: .medium))
-                .lineLimit(1)
-                .foregroundStyle(
-                    LinearGradient(colors: rainbowColors, startPoint: .leading, endPoint: .trailing)
-                )
-        }
-        .padding(.horizontal, 12)
-        .fixedSize(horizontal: true, vertical: true)
     }
 }
 

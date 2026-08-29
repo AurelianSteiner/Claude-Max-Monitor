@@ -2,10 +2,10 @@
 //  GeneralSettingsAppearanceSection.swift
 //  Usage4Claude
 //
-//  Eine Karte für alles Optische: App-Erscheinungsbild, Menüleisten-Stil,
-//  Zeitformat und Sprache. Früher vier einzelne Karten mit Radio-Gruppen —
-//  als kompakte Auswahlmenüs passt das in einen Block, ohne dass die
-//  Einstellungen zur Scrollstrecke werden.
+//  Eine Karte für alles Optische: App-Erscheinungsbild, Menüleisten-Stil
+//  und Sprache. Früher einzelne Karten mit Radio-Gruppen — als kompakte
+//  Auswahlmenüs passt das in einen Block, ohne dass die Einstellungen zur
+//  Scrollstrecke werden.
 //  Copyright © 2025 f-is-h. All rights reserved.
 //
 
@@ -43,17 +43,6 @@ struct GeneralSettingsAppearanceSection: View {
                 }
 
                 caption(L.DisplayOptions.accountDotsDescription)
-
-                // Zeitformat inklusive Vorschau der aktuellen Uhrzeit
-                settingRow(label: L.SettingsGeneralTimeFormat.section) {
-                    Picker("", selection: $settings.timeFormatPreference) {
-                        ForEach(TimeFormatPreference.allCases, id: \.self) { format in
-                            Text(format.localizedName).tag(format)
-                        }
-                    }
-                }
-
-                caption("\(L.SettingsGeneralTimeFormat.preview): \(TimeFormatHelper.formatTimeOnly(Date()))")
 
                 // Oberflächensprache
                 settingRow(label: L.SettingsGeneral.interfaceLanguage) {

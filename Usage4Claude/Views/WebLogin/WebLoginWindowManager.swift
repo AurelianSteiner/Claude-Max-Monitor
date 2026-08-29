@@ -110,22 +110,6 @@ final class WebLoginWindowManager {
 
     // MARK: - Private
 
-    private func makeWindow<V: View>(title: String, content: V) -> NSWindow {
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 800, height: 700),
-            styleMask: [.titled, .closable, .resizable],
-            backing: .buffered,
-            defer: false
-        )
-        window.contentView = NSHostingView(rootView: content)
-        window.title = title
-        window.minSize = NSSize(width: 600, height: 500)
-        window.center()
-        window.isReleasedWhenClosed = false
-        window.level = .floating
-        return window
-    }
-
     /// 固定尺寸的小窗口（用于 OAuth 进度展示，不可缩放）
     private func makeCompactWindow<V: View>(title: String, content: V, width: CGFloat, height: CGFloat) -> NSWindow {
         let window = NSWindow(

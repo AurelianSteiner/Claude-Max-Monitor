@@ -10,7 +10,7 @@ import SwiftUI
 import ServiceManagement
 
 /// 通用设置页面
-/// 卡片顺序：总览 → 刷新 → 通知 → 外观（含菜单栏/时间/语言）→ 开机启动 → 系统睡眠
+/// 卡片顺序：总览 → 刷新 → 外观（含菜单栏/语言）→ 开机启动 → 系统睡眠
 /// 各卡片内容按主题拆到 GeneralSettings*Section.swift，保持本文件体量可控
 struct GeneralSettingsView: View {
     @ObservedObject private var settings = UserSettings.shared
@@ -56,24 +56,6 @@ struct GeneralSettingsView: View {
                             }
                             .padding(.leading, 20)
                         }
-                    }
-                }
-
-                // 通知设置卡片
-                SettingCard(
-                    icon: "bell.badge",
-                    iconColor: .red,
-                    title: L.SettingsNotification.section,
-                    hint: L.SettingsNotification.hint
-                ) {
-                    HStack {
-                        Toggle("", isOn: $settings.notificationsEnabled)
-                            .toggleStyle(.switch)
-                            .controlSize(.mini)
-                            .focusable(false)
-                            .labelsHidden()
-                        Text(L.SettingsNotification.enable)
-                        Spacer()
                     }
                 }
 

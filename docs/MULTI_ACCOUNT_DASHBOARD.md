@@ -44,9 +44,9 @@ Models/AccountUsageSnapshot.swift       Zustand pro Konto
 
 ### Abgrenzung zu `DataRefreshManager`
 
-`DataRefreshManager` bleibt unverändert zuständig für Menüleisten-Symbol,
-Benachrichtigungen und das klassische Detailfenster — und sieht weiterhin **nur das
-aktive Konto**. `DashboardRefreshManager` ist eine separate, parallele Datenschicht, die
+`DataRefreshManager` bleibt zuständig für das Menüleisten-Symbol des aktiven
+Kontos, die Smart-Refresh-Steuerung und die Codex-Token-Kette — und sieht
+weiterhin **nur das aktive Konto**. `DashboardRefreshManager` ist eine separate, parallele Datenschicht, die
 für **jedes** Konto eine eigene, an dieses Konto gebundene Service-Instanz hält. Ist die
 Übersicht nicht sichtbar, sendet sie keine Requests (`activate()` / `deactivate()` per
 Referenzzählung aus `onAppear` / `onDisappear`).

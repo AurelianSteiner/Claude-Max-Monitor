@@ -418,7 +418,7 @@ enum MascotIncident {
         let t = incident.elapsed
         guard t >= shotAt, t < hitAt + 0.35 else { return }
 
-        var shots = ctx
+        let shots = ctx
         let cell = MascotParadeCanvas.cell
         let chestY: CGFloat = 13 + 2.2 * cell
         // Brusthöhe des Opfers, die dem Schützen zugewandte Kante

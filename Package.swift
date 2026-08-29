@@ -33,7 +33,6 @@ let package = Package(
                 "Services/OAuthTokenCache.swift",
                 "Helpers/SensitiveDataRedactor.swift",
                 "Helpers/ResetTimeChange.swift",
-                "Helpers/NotificationDecisionEngine.swift",
                 "Models/CodexUsageData.swift",
                 "Helpers/NotificationNames.swift",
                 "Models/TeamReport.swift",

@@ -39,13 +39,8 @@ extension Notification.Name {
     // MARK: - Window Related
 
     /// 打开设置窗口通知
-    /// 发送此通知以打开设置窗口
+    /// 发送此通知以打开设置窗口（userInfo 可带 "tab" 键指定标签页）
     static let openSettings = Notification.Name("openSettings")
-
-    /// 打开设置窗口并导航到指定标签页通知
-    /// userInfo 包含 "tab" 键，值为标签页索引（Int）
-    /// - Example: NotificationCenter.default.post(name: .openSettingsWithTab, object: nil, userInfo: ["tab": 1])
-    static let openSettingsWithTab = Notification.Name("openSettingsWithTab")
 
     // MARK: - Error Related
 
@@ -61,10 +56,6 @@ extension Notification.Name {
 extension Notification {
     /// UserInfo 键名枚举
     enum UserInfoKey {
-        /// 标签页索引键
-        /// 用于 openSettingsWithTab 通知，值类型为 Int
-        static let tab = "tab"
-
         /// 账户变更的 Provider 键
         /// 用于 accountChanged 通知，值类型为 ProviderType.rawValue
         static let provider = "provider"

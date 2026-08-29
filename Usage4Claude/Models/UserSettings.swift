@@ -166,30 +166,6 @@ enum LimitType: String, CaseIterable, Codable {
         return self == .sevenDay || self == .codexSecondary
     }
 
-    /// 显示名称
-    var displayName: String {
-        switch self {
-        case .fiveHour:
-            return L.LimitTypes.fiveHour
-        case .sevenDay:
-            return L.LimitTypes.sevenDay
-        case .opusWeekly:
-            return L.LimitTypes.opusWeekly
-        case .sonnetWeekly:
-            return L.LimitTypes.sonnetWeekly
-        case .fableWeekly:
-            return L.LimitTypes.fableWeekly
-        case .extraUsage:
-            return L.LimitTypes.extraUsage
-        case .codexPrimary:
-            return L.LimitTypes.codexPrimary
-        case .codexSecondary:
-            return L.LimitTypes.codexSecondary
-        case .codexExtraUsage:
-            return L.LimitTypes.codexExtraUsage
-        }
-    }
-
     /// 把一个每周模型限制（来自 `UsageData.weeklyModels`）解析为对应的限制类型。
     /// 优先按 API 返回的模型显示名（大小写不敏感）匹配 Fable / Opus / Sonnet；
     /// 名称缺失或无法识别时，退回旧的按槽位奇偶判定（slot % 2 == 0 → Opus，否则 Sonnet），
@@ -256,27 +232,6 @@ enum DashboardSortMode: String, CaseIterable, Codable {
             return L.Dashboard.sortByOrder
         case .availability:
             return L.Dashboard.sortByAvailability
-        }
-    }
-}
-
-/// 时间格式偏好
-enum TimeFormatPreference: String, CaseIterable, Codable {
-    /// 跟随系统
-    case system = "system"
-    /// 12 小时制
-    case twelveHour = "twelve_hour"
-    /// 24 小时制
-    case twentyFourHour = "twenty_four_hour"
-
-    var localizedName: String {
-        switch self {
-        case .system:
-            return L.TimeFormat.system
-        case .twelveHour:
-            return L.TimeFormat.twelveHour
-        case .twentyFourHour:
-            return L.TimeFormat.twentyFourHour
         }
     }
 }
@@ -469,14 +424,6 @@ class UserSettings: ObservableObject {
         set { appearanceManager.appearance = newValue }
     }
 
-    /// 时间格式偏好
-    @Published var timeFormatPreference: TimeFormatPreference {
-        didSet {
-            defaults.set(timeFormatPreference.rawValue, forKey: "timeFormatPreference")
-            NotificationCenter.default.post(name: .settingsChanged, object: nil)
-        }
-    }
-
     /// 显示模式（智能显示/自定义显示）
     @Published var displayMode: DisplayMode {
         didSet {
@@ -509,15 +456,6 @@ class UserSettings: ObservableObject {
     }
 
     // MARK: - Dashboard（多账户总览）
-
-    /// 点击菜单栏图标时是否直接展示多账户总览（存在多于一个账户时才生效）。
-    /// 关掉后恢复原来的单账户详情窗口，总览仍可通过菜单单独打开。
-    @Published var dashboardEnabled: Bool {
-        didSet {
-            defaults.set(dashboardEnabled, forKey: "dashboardEnabled")
-            NotificationCenter.default.post(name: .settingsChanged, object: nil)
-        }
-    }
 
     /// Dashboard 卡片的排序方式
     @Published var dashboardSortMode: DashboardSortMode {
@@ -563,13 +501,6 @@ class UserSettings: ObservableObject {
         }
     }
     
-    /// 是否启用用量通知
-    @Published var notificationsEnabled: Bool {
-        didSet {
-            defaults.set(notificationsEnabled, forKey: "notificationsEnabled")
-        }
-    }
-
     /// 开机启动的注册/注销/状态同步都在 LaunchAtLoginManager 里，这里只做门面转发。
     /// isEnabled 直接派生自 SMAppService.mainApp.status（唯一事实来源），
     /// 不再需要存储 Bool + 标志位防递归，失败时 Toggle 会随 status 不变而自动弹回。
@@ -812,14 +743,6 @@ class UserSettings: ObservableObject {
 
         // 外观模式的加载已搬进 AppearanceManager.init()
 
-        // 加载时间格式偏好，默认跟随系统
-        if let timeFormatString = defaults.string(forKey: "timeFormatPreference"),
-           let timeFormat = TimeFormatPreference(rawValue: timeFormatString) {
-            self.timeFormatPreference = timeFormat
-        } else {
-            self.timeFormatPreference = .system
-        }
-
         // 加载显示模式，默认为智能模式。Die Auswahl „welche Limits zeige ich" ist
         // aus den Einstellungen verschwunden; wer noch auf „benutzerdefiniert"
         // stand, wird mit derselben einmaligen Migration auf „intelligent"
@@ -850,7 +773,6 @@ class UserSettings: ObservableObject {
         }
 
         // Dashboard 设置：默认开启（多账户时直接看总览，单账户时本设置不生效）
-        self.dashboardEnabled = defaults.object(forKey: "dashboardEnabled") as? Bool ?? true
         if let sortRaw = defaults.string(forKey: "dashboardSortMode"),
            let sortMode = DashboardSortMode(rawValue: sortRaw) {
             self.dashboardSortMode = sortMode
@@ -870,7 +792,6 @@ class UserSettings: ObservableObject {
         }
         
         // 加载通知设置，默认开启
-        self.notificationsEnabled = defaults.object(forKey: "notificationsEnabled") as? Bool ?? true
 
         // 开机启动状态的加载已搬进 LaunchAtLoginManager.init()
 
@@ -973,12 +894,9 @@ class UserSettings: ObservableObject {
         refreshMode = .smart
         refreshInterval = 180  // 固定模式默认3分钟
         language = Self.detectSystemLanguage()
-        timeFormatPreference = .system
         displayMode = .smart
         customDisplayTypes = Self.defaultCustomDisplayTypes
         customDisplayMenuBarOnly = false
-        notificationsEnabled = true
-        dashboardEnabled = true
         dashboardSortMode = .availability
         dashboardColumns = 2
 

@@ -94,9 +94,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
 
-        // 请求通知权限
-        NotificationManager.shared.requestPermission()
-
         menuBarManager = MenuBarManager()
 
         // Gemerkte „wach halten“-Schalter erneut anfordern (Power-Assertions

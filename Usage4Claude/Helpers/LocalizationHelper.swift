@@ -65,12 +65,10 @@ enum L {
         static var notStarted: String { localized("usage.not_started") }
         static var resetIn: String { localized("usage.reset_in") }
         static var remaining: String { localized("usage.remaining") }
-        static var available: String { localized("usage.available") }
         static var loading: String { localized("usage.loading") }
         static var notConfigured: String { localized("usage.not_configured") }
         static var goToSettings: String { localized("usage.go_to_settings") }
         static var resetTime: String { localized("usage.reset_time") }
-        static var used: String { localized("usage.used") }
         static var fiveHourLimit: String { localized("usage.five_hour_limit") }
         static var sevenDayLimit: String { localized("usage.seven_day_limit") }
         static var fiveHourLimitShort: String { localized("usage.five_hour_limit_short") }
@@ -78,7 +76,6 @@ enum L {
         static var resetDate: String { localized("usage.reset_date") }
         static var refresh: String { localized("usage.refresh") }
         static var refreshCooldown: String { localized("usage.refresh_cooldown") }
-        static var runDiagnostic: String { localized("usage.run_diagnostic") }
         static var codexTitle: String { localized("usage.codex_title") }
         static var codexRelogin: String { localized("usage.codex_relogin") }
     }
@@ -327,19 +324,6 @@ enum L {
         static var welcomeTitle: String { localized("window.welcome_title") }
     }
 
-    // MARK: - Limit Types
-    enum Limit {
-        static var fiveHour: String { localized("five_hour_limit") }
-        static var sevenDay: String { localized("seven_day_limit") }
-        static var opusWeekly: String { localized("opus_weekly_limit") }
-        static var sonnetWeekly: String { localized("sonnet_weekly_limit") }
-        static var fableWeekly: String { localized("fable_weekly_limit") }
-        static var extraUsage: String { localized("extra_usage") }
-        static var codexPrimary: String { localized("codex_primary_limit") }
-        static var codexSecondary: String { localized("codex_secondary_limit") }
-        static var codexExtraUsage: String { localized("codex_extra_usage") }
-    }
-
     // MARK: - Detail Rows
     enum DetailRow {
         static var fiveHour: String { localized("detail_row.five_hour_limit") }
@@ -413,76 +397,6 @@ enum L {
         }
     }
 
-    // MARK: - Diagnostics
-    enum Diagnostic {
-        static var testButton: String { localized("diagnostic.test_button") }
-        static var viewDetailsButton: String { localized("diagnostic.view_details_button") }
-        static var exportButton: String { localized("diagnostic.export_button") }
-        static var testingConnection: String { localized("diagnostic.testing_connection") }
-        static var testCompleted: String { localized("diagnostic.test_completed") }
-        static var testSuccess: String { localized("diagnostic.test_success") }
-        static var testFailed: String { localized("diagnostic.test_failed") }
-        static var resultSuccess: String { localized("diagnostic.result_success") }
-        static var resultFailed: String { localized("diagnostic.result_failed") }
-        static var httpStatus: String { localized("diagnostic.http_status") }
-        static var responseTime: String { localized("diagnostic.response_time") }
-        static var responseType: String { localized("diagnostic.response_type") }
-        static var cloudflareDetected: String { localized("diagnostic.cloudflare_detected") }
-        static var diagnosis: String { localized("diagnostic.diagnosis") }
-        static var suggestions: String { localized("diagnostic.suggestions") }
-        static var privacyNotice: String { localized("diagnostic.privacy_notice") }
-        static var detailedReportTitle: String { localized("diagnostic.detailed_report_title") }
-        static var noReportAvailable: String { localized("diagnostic.no_report_available") }
-        static var copyToClipboard: String { localized("diagnostic.copy_to_clipboard") }
-        static var exportTitle: String { localized("diagnostic.export_title") }
-        static var exportMessage: String { localized("diagnostic.export_message") }
-        static var exportSuccessTitle: String { localized("diagnostic.export_success_title") }
-        static var exportSuccessMessage: String { localized("diagnostic.export_success_message") }
-        static var exportErrorTitle: String { localized("diagnostic.export_error_title") }
-
-        // Diagnosis messages
-        static var diagnosisSuccess: String { localized("diagnostic.diagnosis_success") }
-        static var diagnosisCloudflare: String { localized("diagnostic.diagnosis_cloudflare") }
-        static var diagnosisDecoding: String { localized("diagnostic.diagnosis_decoding") }
-        static var diagnosisNetwork: String { localized("diagnostic.diagnosis_network") }
-        static var diagnosisNoCredentials: String { localized("diagnostic.diagnosis_no_credentials") }
-        static var diagnosisInvalidUrl: String { localized("diagnostic.diagnosis_invalid_url") }
-        static var diagnosisUnknown: String { localized("diagnostic.diagnosis_unknown") }
-
-        // Suggestion messages
-        static var suggestionSuccess: String { localized("diagnostic.suggestion_success") }
-        static var suggestionVisitBrowser: String { localized("diagnostic.suggestion_visit_browser") }
-        static var suggestionWaitAndRetry: String { localized("diagnostic.suggestion_wait_and_retry") }
-        static var suggestionCheckVPN: String { localized("diagnostic.suggestion_check_vpn") }
-        static var suggestionUseSmartMode: String { localized("diagnostic.suggestion_use_smart_mode") }
-        static var suggestionVerifyCredentials: String { localized("diagnostic.suggestion_verify_credentials") }
-        static var suggestionUpdateSessionKey: String { localized("diagnostic.suggestion_update_session_key") }
-        static var suggestionCheckBrowser: String { localized("diagnostic.suggestion_check_browser") }
-        static var suggestionCheckInternet: String { localized("diagnostic.suggestion_check_internet") }
-        static var suggestionCheckFirewall: String { localized("diagnostic.suggestion_check_firewall") }
-        static var suggestionRetryLater: String { localized("diagnostic.suggestion_retry_later") }
-        static var suggestionConfigureAuth: String { localized("diagnostic.suggestion_configure_auth") }
-        static var suggestionCheckOrgId: String { localized("diagnostic.suggestion_check_org_id") }
-        static var suggestionExportAndShare: String { localized("diagnostic.suggestion_export_and_share") }
-        static var suggestionContactSupport: String { localized("diagnostic.suggestion_contact_support") }
-
-        // Log folder access
-        static var openLogFolder: String { localized("diagnostic.open_log_folder") }
-    }
-
-    // MARK: - Limit Types (v2.0.0)
-    enum LimitTypes {
-        static var fiveHour: String { localized("five_hour_limit") }
-        static var sevenDay: String { localized("seven_day_limit") }
-        static var opusWeekly: String { localized("opus_weekly_limit") }
-        static var sonnetWeekly: String { localized("sonnet_weekly_limit") }
-        static var fableWeekly: String { localized("fable_weekly_limit") }
-        static var extraUsage: String { localized("extra_usage") }
-        static var codexPrimary: String { localized("codex_primary_limit") }
-        static var codexSecondary: String { localized("codex_secondary_limit") }
-        static var codexExtraUsage: String { localized("codex_extra_usage") }
-    }
-
     // MARK: - Display Options (v2.0.0)
     enum DisplayOptions {
         static var smartDisplay: String { localized("smart_display") }
@@ -525,23 +439,6 @@ enum L {
         private static func displayCredits(_ balance: Double) -> Int {
             max(0, Int(balance.rounded(.down)))
         }
-    }
-
-    // MARK: - Loading Animation
-    enum LoadingAnimation {
-        static var rainbow: String { localized("loading_animation.rainbow") }
-        static var dashed: String { localized("loading_animation.dashed") }
-        static var pulse: String { localized("loading_animation.pulse") }
-        static func current(_ name: String) -> String {
-            String(format: localized("loading_animation.current"), name)
-        }
-    }
-
-    // MARK: - Time Format
-    enum TimeFormat {
-        static var system: String { localized("time_format.system") }
-        static var twelveHour: String { localized("time_format.twelve_hour") }
-        static var twentyFourHour: String { localized("time_format.twenty_four_hour") }
     }
 
     // MARK: - Appearance
@@ -593,33 +490,6 @@ enum L {
         static var codexOAuthPortBusy: String { localized("weblogin.codex_oauth_port_busy") }
         static var codexOAuthReopenBrowser: String { localized("weblogin.codex_oauth_reopen_browser") }
         static var codexOAuthRetry: String { localized("weblogin.codex_oauth_retry") }
-    }
-
-    // MARK: - Settings Notification
-    enum SettingsNotification {
-        static var section: String { localized("notification.section") }
-        static var hint: String { localized("notification.hint") }
-        static var enable: String { localized("notification.enable") }
-    }
-
-    // MARK: - Usage Notification
-    enum UsageNotification {
-        static var warningTitle: String { localized("notification.warning_title") }
-        static func warningBody(_ type: String, _ percentage: Int) -> String {
-            String(format: localized("notification.warning_body"), type, percentage)
-        }
-        static var resetTitle: String { localized("notification.reset_title") }
-        static func resetBody(_ type: String) -> String {
-            String(format: localized("notification.reset_body"), type)
-        }
-        static var codexSessionExpiredTitle: String { localized("notification.codex_session_expired_title") }
-        static var codexSessionExpiredBody: String { localized("notification.codex_session_expired_body") }
-    }
-
-    // MARK: - Settings General (Time Format)
-    enum SettingsGeneralTimeFormat {
-        static var section: String { localized("settings.general.time_format_section") }
-        static var preview: String { localized("settings.general.time_format_preview") }
     }
 
     // MARK: - Team-Übersicht

@@ -251,7 +251,6 @@ final class AccountStore: ObservableObject {
 
         let wasCurrentAccount = (currentAccountId == account.id)
         accounts.remove(at: index)
-        NotificationManager.shared.resetNotificationStates(for: .claude, accountId: account.id)
 
         // 如果删除的是当前账户，切换到第一个账户
         if wasCurrentAccount {
@@ -372,7 +371,6 @@ final class AccountStore: ObservableObject {
         guard let index = codexAccounts.firstIndex(where: { $0.id == account.id }) else { return }
         let wasCurrent = (currentCodexAccountId == account.id)
         codexAccounts.remove(at: index)
-        NotificationManager.shared.resetNotificationStates(for: .codex, accountId: account.id)
         if wasCurrent {
             currentCodexAccountId = codexAccounts.first?.id
             postAccountChanged(provider: .codex)

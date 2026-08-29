@@ -168,19 +168,11 @@ enum TimeFormatHelper {
 
     // MARK: - Detection
 
-    /// 检测当前是否应该使用 24 小时格式
-    /// - Returns: true 表示使用 24 小时制，false 表示使用 12 小时制
+    /// 检测当前是否应该使用 24 小时格式 — 恒跟随系统/区域设置。
+    /// Die frühere 12h/24h-Einstellung ist entfernt; wer sie gesetzt hatte,
+    /// fällt auf die automatische Erkennung zurück.
     static var uses24HourFormat: Bool {
-        let preference = UserSettings.shared.timeFormatPreference
-
-        switch preference {
-        case .system:
-            return detectSystem24HourFormat()
-        case .twelveHour:
-            return false
-        case .twentyFourHour:
-            return true
-        }
+        detectSystem24HourFormat()
     }
 
     /// 检测系统是否使用 24 小时制
