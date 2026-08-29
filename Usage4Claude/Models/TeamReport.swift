@@ -3,12 +3,9 @@
 //  Usage4Claude
 //
 //  Team-Übersicht — das Format einer Meldung. So liefert sie der Team-Server
-//  (GET /reports), und so schreibt sie das Melde-Skript
-//  (scripts/team-report.sh) als kleine JSON-Datei. Dateiname:
-//
-//      report-<TEAMID>-<slug>.json          z. B. report-K7QP2M9X-aurelian.json
-//
-//  Inhalt:
+//  (GET /reports), und so schreibt sie der Auto-Reporter (`TeamAutoReporter`)
+//  dorthin — der Server ist der einzige Weg, das frühere Melde-Skript und der
+//  Ordner-Austausch sind Geschichte. Inhalt:
 //
 //      {
 //        "schema": 1,
@@ -16,10 +13,13 @@
 //        "person": "Aurelian",
 //        "reportedAt": "2026-08-13T09:12:00Z",
 //        "limits": [
-//          { "label": "5 Stunden", "percent": 42, "resetsAt": "2026-08-13T14:00:00Z" },
-//          { "label": "7 Tage",    "percent": 88, "resetsAt": "2026-08-18T09:00:00Z" }
+//          { "label": "5 Stunden", "percent": 42, "resetsAt": "2026-08-13T14:00:00Z", "kind": "session" },
+//          { "label": "7 Tage",    "percent": 88, "resetsAt": "2026-08-18T09:00:00Z", "kind": "weekly" }
 //        ]
 //      }
+//
+//  `kind` ist optional und additiv (siehe `TeamLimitKind`) — alte Meldungen
+//  ohne das Feld bleiben gültig.
 //
 //  Gelesen wird betont misstrauisch: Die Meldungen kommen von fremden
 //  Rechnern, irgendwann ist auch Müll dabei. Unbekannte Schlüssel werden

@@ -25,6 +25,12 @@
 //   DELETE /v1/teams/:id/members/:memberId      Mitglied entfernen                super
 //   POST   /v1/reports                          Meldung speichern                 jede Rolle (member: nur als sich selbst)
 //   GET    /v1/teams/:id/reports                Meldungen lesen                   super/admin: alle, member: nur die eigene
+//   GET    /v1/teams/:id/members/:mid/history   Verlauf (?days=7, max 30)         super/admin: jeder, member: nur eigener
+//
+// Verlauf: Jede angenommene Meldung wird zusätzlich als eine Zeile
+// {t, limits:[{label, kind?, percent}]} an history/<memberId>.ndjson
+// angehängt und beim Schreiben auf 30 Tage / 3000 Zeilen gestutzt —
+// die Grundlage für Auslastungs-Verläufe in der App.
 //
 
 const http = require("http");
@@ -152,6 +158,78 @@ function readBody(req, callback) {
   req.on("error", (error) => callback(error, null));
 }
 
+// ------------------------------------------------------------------ Verlauf
+
+const HISTORY_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 Tage
+const HISTORY_MAX_LINES = 3000; // weit über 30 Tagen à <=96 Meldungen
+
+function historyPath(teamId, fileId) {
+  return path.join(teamDir(teamId), "history", `${fileId}.ndjson`);
+}
+
+/// Eine angenommene Meldung als kompakte Verlaufszeile anhängen. Scheitert
+/// das, ist nur der Verlauf lückenhaft — die Meldung selbst ist gespeichert.
+function appendHistory(teamId, fileId, report) {
+  const sample = {
+    t: report.receivedAt,
+    limits: (report.limits || []).map((limit) => ({
+      label: limit.label,
+      ...(typeof limit.kind === "string" ? { kind: limit.kind } : {}),
+      percent: Number(limit.percent),
+    })),
+  };
+  const file = historyPath(teamId, fileId);
+  try {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.appendFileSync(file, JSON.stringify(sample) + "\n");
+    pruneHistory(file);
+  } catch (error) {
+    console.error("Verlauf schreiben fehlgeschlagen:", error.message);
+  }
+}
+
+/// Beim Schreiben stutzen: Bei höchstens ~96 Meldungen pro Tag ist das
+/// Neuschreiben der kleinen Datei billiger als jede Buchhaltung daneben.
+function pruneHistory(file) {
+  const cutoff = Date.now() - HISTORY_MAX_AGE_MS;
+  const lines = fs.readFileSync(file, "utf8").split("\n").filter(Boolean);
+  const kept = lines
+    .filter((line) => {
+      try {
+        const t = Date.parse(JSON.parse(line).t);
+        return Number.isFinite(t) && t >= cutoff;
+      } catch {
+        return false;
+      }
+    })
+    .slice(-HISTORY_MAX_LINES);
+  if (kept.length !== lines.length) {
+    fs.writeFileSync(file, kept.length ? kept.join("\n") + "\n" : "");
+  }
+}
+
+function readHistory(teamId, memberId, days) {
+  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+  const file = historyPath(teamId, memberId);
+  const samples = [];
+  try {
+    if (!fs.existsSync(file)) return samples;
+    for (const line of fs.readFileSync(file, "utf8").split("\n")) {
+      if (!line) continue;
+      try {
+        const sample = JSON.parse(line);
+        const t = Date.parse(sample.t);
+        if (Number.isFinite(t) && t >= cutoff) samples.push(sample);
+      } catch {
+        // kaputte Zeile überspringen
+      }
+    }
+  } catch (error) {
+    console.error("Verlauf lesen fehlgeschlagen:", error.message);
+  }
+  return samples;
+}
+
 function readReports(teamId) {
   const dir = path.join(teamDir(teamId), "reports");
   const reports = [];
@@ -217,6 +295,7 @@ const server = http.createServer((req, res) => {
         console.error("Schreiben fehlgeschlagen:", writeError.message);
         return send(res, 500, { error: "Speichern fehlgeschlagen" });
       }
+      appendHistory(report.teamId, fileId, report);
       return send(res, 200, { ok: true, person: report.person });
     });
   }
@@ -297,6 +376,18 @@ const server = http.createServer((req, res) => {
     return send(res, 200, { members });
   }
 
+  // GET /v1/teams/:id/members/:memberId/history?days=7 — Verlauf eines
+  // Mitglieds. Mitglieder sehen nur den eigenen, wie bei den Meldungen.
+  const historyMatch = rest.match(/^\/members\/([a-z0-9-]{1,64})\/history$/);
+  if (req.method === "GET" && historyMatch) {
+    const memberId = historyMatch[1];
+    if (who.role === "member" && (!who.member || who.member.id !== memberId)) {
+      return send(res, 403, { error: "nur der eigene Verlauf" });
+    }
+    const days = Math.min(30, Math.max(1, Number(url.searchParams.get("days")) || 7));
+    return send(res, 200, { memberId, days, samples: readHistory(teamId, memberId, days) });
+  }
+
   // DELETE /v1/teams/:id/members/:memberId — Mitglied entfernen (nur Super-Admin)
   const memberMatch = rest.match(/^\/members\/([a-z0-9-]{1,64})$/);
   if (req.method === "DELETE" && memberMatch) {
@@ -306,8 +397,9 @@ const server = http.createServer((req, res) => {
     if (remaining.length === members.length) return send(res, 404, { error: "Mitglied nicht gefunden" });
     try {
       writeMembers(teamId, remaining);
-      // Die Meldung des Mitglieds gleich mit entfernen
+      // Meldung und Verlauf des Mitglieds gleich mit entfernen
       fs.rmSync(path.join(teamDir(teamId), "reports", `${memberMatch[1]}.json`), { force: true });
+      fs.rmSync(historyPath(teamId, memberMatch[1]), { force: true });
     } catch (writeError) {
       console.error("Mitglied entfernen fehlgeschlagen:", writeError.message);
       return send(res, 500, { error: "Speichern fehlgeschlagen" });
