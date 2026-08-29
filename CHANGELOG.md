@@ -1,5 +1,51 @@
 # Änderungen
 
+## 2.7 (in Arbeit)
+
+Großer Aufräum- und Ausbau-Durchgang.
+
+- **Wasserstände in der Menüleiste.** Die Punktreihe der Konten zeigt jetzt
+  dieselben Miniatur-Pegel wie die Kopfzeile der Übersicht: Der Pegel steigt
+  mit der Wochen-Auslastung durch die vierstufige Farbskala, der rote Ring
+  außen bleibt das Zeichen für ein aufgebrauchtes 5-Stunden-Fenster. Im
+  Einfarbig-Modus kodiert die Füllhöhe den Stand — mehr Aussage, als der alte
+  volle/hohle Punkt je hatte.
+- **Ein Klick, ein Ort.** Ist das Übersichtsfenster offen, holt der Klick aufs
+  Menüleisten-Symbol dieses Fenster nach vorn, statt das identische Popover
+  darüberzulegen. Und das Popover bleibt nicht mehr oben rechts stehen, wenn
+  man in ein Fenster wechselt.
+- **Team-Ansicht in der Übersicht.** Das dritte Fenster ist weg: Das Team ist
+  jetzt ein Modus der Übersicht (Knopf mit den drei Figuren im Kopf, Eintrag im
+  Rechtsklick-Menü). Neu als zwei Ebenen: kompakte Zeilen je Person mit
+  Mini-Pegel — und ein Klick öffnet das Detail mit Sitzungs-Wasserstand,
+  Wochenwert und jeder gemeldeten Limit-Zeile samt sichtbarer Reset-Zeit.
+  Mitglieder ohne Meldung erscheinen für Inhaber/Admins als gedämpfte
+  „Noch keine Meldung"-Zeilen; die Kopfzahl wird zum ehrlichen
+  „n von m gemeldet". Sortiert wird nach der Woche (der bindenden Sperre),
+  Veraltetes sinkt ans Ende und zählt nicht mehr in „Fast am Limit".
+- **Meldungen tragen jetzt eine maschinenlesbare Art** (`kind`: Sitzung, Woche,
+  Modell-Woche, Konto-Woche) — Auswertung und Gruppierung hängen nicht mehr am
+  freien Beschriftungstext. Additiv und abwärtskompatibel.
+- **Der Team-Server führt Verlauf**: Jede Meldung wird zusätzlich als kompakte
+  Zeile je Mitglied angehängt (30 Tage), abrufbar über einen neuen, nach Rollen
+  gesicherten History-Endpunkt — die Grundlage für Auslastungs-Verläufe.
+- **Sheriff auf dem Laufsteg.** Alle anderthalb Minuten patrouilliert ein
+  Sheriff-Claudie (Cowboyhut, goldener Stern) hüpfend durch die Parade.
+  Ungefähr jeder fünfte zieht — der Zwischenfall ist damit häufiger als
+  vorher, und der Grabstein steht nur noch eine knappe Minute statt drei.
+- **Einstellungen entschlackt.** Ein Menüeintrag „Einstellungen …" statt der
+  verwirrenden zwei (es war immer dasselbe Fenster mit anderem Reiter); die
+  Statusseiten-Links, die Benachrichtigungen samt Schalter, das
+  Zeitformat und die doppelte Sortier-/Spalten-Karte sind weg. Cookie- und
+  Handeingabe-Login stehen eingeklappt unter „Weitere Anmeldewege".
+- **Willkommensfenster entfernt.** Der Erststart öffnet die Übersicht mit ihrem
+  Leerzustand — der Knopf dort führt direkt in die Konten-Einstellungen.
+- **Totes Gewicht raus**: das komplette, unerreichbare Diagnose-Subsystem
+  (~1.900 Zeilen), die Überreste des alten Einzelkonto-Detailfensters, der tote
+  Codex-Cookie-Login, ungenutzte Refresh-Verwaltung und über 100 verwaiste
+  Übersetzungs-Schlüssel. Das Schließen der Einstellungen wirft dem noch
+  offenen Übersichtsfenster nicht mehr das Dock-Symbol weg.
+
 ## 2.6
 
 - Ein volles Modellkontingent sperrt kein Konto mehr. War das Fable-Wochenlimit
