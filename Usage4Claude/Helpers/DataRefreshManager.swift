@@ -38,8 +38,6 @@ class DataRefreshManager: ObservableObject {
     @Published var errorMessage: String?
     /// Codex 错误消息（独立于 Claude，避免双 Provider 时被静默隐藏）
     @Published var codexErrorMessage: String?
-    /// 刷新状态管理器
-    let refreshState = RefreshState()
 
     // MARK: - Private State
 
@@ -47,14 +45,8 @@ class DataRefreshManager: ObservableObject {
     private var lastResetsAt: Date?
     /// Codex 上次的重置时间
     private var lastCodexResetsAt: Date?
-    /// 上次手动刷新时间
-    private var lastManualRefreshTime: Date?
     /// 上次API请求时间
     private var lastAPIFetchTime: Date?
-    /// 刷新动画开始时间（用于确保动画最小显示时长）
-    private var refreshAnimationStartTime: Date?
-    /// 动画最小显示时长（秒）
-    private let minimumAnimationDuration: TimeInterval = 1.0
     /// App Nap 防护活动令牌
     private var refreshActivity: NSObjectProtocol?
     /// 系统唤醒观察者令牌
@@ -137,7 +129,6 @@ class DataRefreshManager: ObservableObject {
 
         guard fetchClaude || fetchCodex else {
             isLoading = false
-            endRefreshAnimationWithMinimumDuration { }
             errorMessage = UsageError.noCredentials.localizedDescription
             return
         }
@@ -155,7 +146,6 @@ class DataRefreshManager: ObservableObject {
 
             guard let self = self else { return }
             self.isLoading = false
-            self.endRefreshAnimationWithMinimumDuration { }
 
             var monitoringUtilizations: [ProviderType: Double] = [:]
             if fetchCodex {
@@ -260,20 +250,6 @@ class DataRefreshManager: ObservableObject {
         endRefreshActivity()
     }
 
-    /// 启动 Popover 刷新定时器
-    /// 用于在 popover 打开时以 1 秒间隔触发 UI 更新
-    /// - Parameter updateHandler: 每秒调用的更新闭包
-    func startPopoverRefreshTimer(updateHandler: @escaping () -> Void) {
-        timerManager.schedule(TimerID.popoverRefresh, interval: 1.0, repeats: true) {
-            updateHandler()
-        }
-    }
-
-    /// 停止 Popover 刷新定时器
-    func stopPopoverRefreshTimer() {
-        timerManager.invalidate(TimerID.popoverRefresh)
-    }
-
     /// 重启刷新定时器
     /// 根据用户设置的刷新频率重新创建定时器
     private func restartTimer() {
@@ -357,93 +333,6 @@ class DataRefreshManager: ObservableObject {
         fetchUsage()
     }
 
-    /// 处理手动刷新
-    /// 防抖机制：10秒内只能刷新一次
-    func handleManualRefresh() {
-        let now = Date()
-
-        // 防抖检查：10秒内只能刷新一次
-        if let lastManual = lastManualRefreshTime,
-           now.timeIntervalSince(lastManual) < 10 {
-            return
-        }
-
-        // 用户主动刷新，强制切换到活跃模式（1分钟刷新）
-        if settings.refreshMode == .smart {
-            let wasIdle = settings.currentMonitoringMode != .active
-            settings.currentMonitoringMode = .active
-            settings.unchangedCount = 0
-            // 同 refreshOnPopoverOpen：若之前是空闲模式，需要重启定时器
-            if wasIdle {
-                restartTimer()
-                Logger.menuBar.debug("用户主动刷新，从空闲模式切换到活跃模式，重启定时器")
-            } else {
-                Logger.menuBar.debug("用户主动刷新，已在活跃模式")
-            }
-        }
-
-        // 更新状态
-        lastManualRefreshTime = now
-        refreshAnimationStartTime = now  // 记录动画开始时间
-        refreshState.refreshingProvider = nil
-        refreshState.isRefreshing = true
-        resetCodexReloginState()  // 用户主动刷新，允许重新尝试 token 刷新
-
-        // 设置防抖
-        refreshState.canRefresh = false
-        // 10秒后解除防抖
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
-            self?.refreshState.canRefresh = true
-        }
-
-        // 触发刷新
-        fetchUsage()
-    }
-
-    /// 仅刷新 Claude 数据（Claude 圆环点击触发）
-    func handleClaudeOnlyRefresh() {
-        guard shouldFetchClaudeUsage else { return }
-        let now = Date()
-        if let lastManual = lastManualRefreshTime,
-           now.timeIntervalSince(lastManual) < 10 { return }
-        if settings.refreshMode == .smart {
-            let wasIdle = settings.currentMonitoringMode != .active
-            settings.currentMonitoringMode = .active
-            settings.unchangedCount = 0
-            if wasIdle { restartTimer() }
-        }
-        lastManualRefreshTime = now
-        refreshAnimationStartTime = now
-        refreshState.refreshingProvider = .claude
-        refreshState.isRefreshing = true
-        refreshState.canRefresh = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
-            self?.refreshState.canRefresh = true
-        }
-        fetchClaudeOnly()
-    }
-
-    /// 仅刷新 Codex 数据（Codex 圆环点击触发）
-    func handleCodexOnlyRefresh() {
-        guard shouldFetchCodexUsage else {
-            clearCodexUsageState()
-            return
-        }
-        let now = Date()
-        if let lastManual = lastManualRefreshTime,
-           now.timeIntervalSince(lastManual) < 10 { return }
-        lastManualRefreshTime = now
-        refreshAnimationStartTime = now
-        refreshState.refreshingProvider = .codex
-        refreshState.isRefreshing = true
-        refreshState.canRefresh = false
-        resetCodexReloginState()  // 用户主动刷新，允许重新尝试 token 刷新
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
-            self?.refreshState.canRefresh = true
-        }
-        fetchCodexOnly()
-    }
-
     private func fetchClaudeOnly() {
         guard shouldFetchClaudeUsage else {
             clearClaudeUsageState()
@@ -457,7 +346,6 @@ class DataRefreshManager: ObservableObject {
         apiService.fetchUsage { [weak self] result in
             guard let self = self else { return }
             self.isLoading = false
-            self.endRefreshAnimationWithMinimumDuration { }
 
             switch result {
             case .success(let data):
@@ -492,8 +380,7 @@ class DataRefreshManager: ObservableObject {
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 self.isLoading = false
-                self.endRefreshAnimationWithMinimumDuration { }
-
+    
                 switch result {
                 case .success(let data):
                     self.processCodexSuccess(data)
@@ -591,8 +478,7 @@ class DataRefreshManager: ObservableObject {
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.isLoading = false
-                self.endRefreshAnimationWithMinimumDuration { }
-                switch usageResult {
+                    switch usageResult {
                 case .success(let data):
                     self.processCodexSuccess(data)
                 case .failure(let error):
@@ -641,37 +527,6 @@ class DataRefreshManager: ObservableObject {
         }
     }
 
-    /// 结束刷新动画，确保至少显示最小时长
-    /// - Parameter completion: 动画结束后的回调
-    private func endRefreshAnimationWithMinimumDuration(completion: @escaping () -> Void) {
-        guard let startTime = refreshAnimationStartTime else {
-            // 没有记录开始时间，直接结束
-            refreshState.isRefreshing = false
-            refreshState.refreshingProvider = nil
-            completion()
-            return
-        }
-
-        let elapsed = Date().timeIntervalSince(startTime)
-        let remaining = minimumAnimationDuration - elapsed
-
-        if remaining > 0 {
-            // 动画时间不足，延迟剩余时间后再结束
-            DispatchQueue.main.asyncAfter(deadline: .now() + remaining) { [weak self] in
-                self?.refreshState.isRefreshing = false
-                self?.refreshState.refreshingProvider = nil
-                completion()
-            }
-        } else {
-            // 动画时间已足够，直接结束
-            refreshState.isRefreshing = false
-            refreshState.refreshingProvider = nil
-            completion()
-        }
-
-        // 清除开始时间记录
-        refreshAnimationStartTime = nil
-    }
 
     // MARK: - Reset Verification
 

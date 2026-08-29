@@ -99,24 +99,6 @@ class TimerManager {
         }
     }
 
-    /// 检查指定定时器是否活跃
-    /// - Parameter identifier: 定时器标识符
-    /// - Returns: 如果定时器存在且有效返回 true
-    func isActive(_ identifier: String) -> Bool {
-        return queue.sync {
-            return timers[identifier]?.isValid ?? false
-        }
-    }
-
-    /// 获取当前活跃的定时器列表
-    /// - Returns: 活跃定时器的标识符数组
-    /// - Note: 主要用于调试和诊断
-    func activeTimers() -> [String] {
-        return queue.sync {
-            return timers.keys.filter { timers[$0]?.isValid == true }
-        }
-    }
-
     // MARK: - Deinit
 
     deinit {
@@ -133,8 +115,6 @@ extension TimerManager {
     enum Identifier {
         /// 主数据刷新定时器
         static let mainRefresh = "mainRefresh"
-        /// 弹出窗口实时刷新定时器（1秒间隔）
-        static let popoverRefresh = "popoverRefresh"
         /// 重置验证定时器 - 重置后1秒
         static let resetVerify1 = "resetVerify1"
         /// 重置验证定时器 - 重置后10秒

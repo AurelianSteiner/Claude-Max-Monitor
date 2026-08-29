@@ -16,11 +16,8 @@ enum L {
     // MARK: - Menu Items
     enum Menu {
         static var generalSettings: String { localized("menu.general_settings") }
-        static var authSettings: String { localized("menu.auth_settings") }
         static var checkUpdates: String { localized("menu.check_updates") }
         static var about: String { localized("menu.about") }
-        static var claudeStatus: String { localized("menu.claude_status") }
-        static var codexStatus: String { localized("menu.codex_status") }
         static var quit: String { localized("menu.quit") }
         static var account: String { localized("menu.account") }
         static var accountPrefix: String { localized("menu.account_prefix") }
@@ -163,14 +160,6 @@ enum L {
                 ? localized("dashboard.columns_one")
                 : String(format: localized("dashboard.columns_other"), count)
         }
-    }
-
-    // MARK: - Settings Dashboard
-    enum SettingsDashboard {
-        static var section: String { localized("settings.dashboard.section") }
-        static var hint: String { localized("settings.dashboard.hint") }
-        static var sortLabel: String { localized("settings.dashboard.sort_label") }
-        static var columnsLabel: String { localized("settings.dashboard.columns_label") }
     }
 
     // MARK: - Settings Tabs

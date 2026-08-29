@@ -12,31 +12,6 @@ import Combine
 import OSLog
 import Sparkle
 
-/// 刷新状态管理器
-/// 用于在视图间同步刷新状态，支持响应式更新
-class RefreshState: ObservableObject {
-    /// 是否正在刷新
-    @Published var isRefreshing = false
-    /// 当前正在刷新的 Provider；nil 表示全量刷新
-    @Published var refreshingProvider: ProviderType?
-    /// 是否可以刷新（防抖控制）
-    @Published var canRefresh = true
-    /// 通知消息
-    @Published var notificationMessage: String?
-    /// 通知类型
-    @Published var notificationType: NotificationType = .loading
-    
-    /// 通知类型
-    enum NotificationType {
-        case loading          // 彩虹加载动画
-        case updateAvailable  // 彩虹文字通知
-    }
-
-    func isRefreshingProvider(_ provider: ProviderType) -> Bool {
-        isRefreshing && (refreshingProvider == nil || refreshingProvider == provider)
-    }
-}
-
 /// 菜单栏管理器
 /// 负责协调 UI 和数据层，管理设置窗口
 class MenuBarManager: ObservableObject {
@@ -61,25 +36,12 @@ class MenuBarManager: ObservableObject {
     @Published var usageData: UsageData?
     /// Codex 用量数据（从 dataManager 同步）
     @Published var codexUsageData: CodexUsageData?
-    /// 加载状态（从 dataManager 同步）
-    @Published var isLoading = false
-    /// 错误消息（从 dataManager 同步）
-    @Published var errorMessage: String?
-    /// Codex 错误消息（独立于 Claude）
-    @Published var codexErrorMessage: String?
-    /// Codex 三级刷新均失败，需要用户手动重新登录
-    @Published var codexNeedsRelogin = false
     /// 是否有可用更新（由 Sparkle 的 SPUUpdaterDelegate 回调驱动）
     @Published var hasAvailableUpdate = false
     /// 最新版本号（来自 Sparkle 发现的 appcast 条目）
     @Published var latestVersion: String?
     /// 用户已确认的版本号（点击检查更新后记录）
     private var acknowledgedVersion: String?
-
-    /// 刷新状态管理器（从 dataManager 引用）
-    var refreshState: RefreshState {
-        return dataManager.refreshState
-    }
 
     /// 是否应该显示徽章和通知（用户未确认时才显示）
     var shouldShowUpdateBadge: Bool {
@@ -117,17 +79,6 @@ class MenuBarManager: ObservableObject {
             }
             .store(in: &cancellables)
 
-        dataManager.$isLoading
-            .assign(to: &$isLoading)
-
-        dataManager.$errorMessage
-            .assign(to: &$errorMessage)
-
-        dataManager.$codexErrorMessage
-            .assign(to: &$codexErrorMessage)
-
-        dataManager.$codexNeedsRelogin
-            .assign(to: &$codexNeedsRelogin)
     }
     
     /// 处理菜单栏图标点击事件
@@ -156,18 +107,6 @@ class MenuBarManager: ObservableObject {
     
     
     // MARK: - Menu Actions
-    
-    @objc func openClaudeStatus() {
-        if let url = URL(string: "https://status.claude.com") {
-            NSWorkspace.shared.open(url)
-        }
-    }
-
-    @objc func openCodexStatus() {
-        if let url = URL(string: "https://status.openai.com/") {
-            NSWorkspace.shared.open(url)
-        }
-    }
 
     @objc func quitApp() {
         NSApplication.shared.terminate(nil)
@@ -181,12 +120,6 @@ class MenuBarManager: ObservableObject {
     /// 关闭弹出窗口并执行相应的操作
     private func handleMenuAction(_ action: MenuAction) {
         switch action {
-        case .refresh:
-            dataManager.handleManualRefresh()
-        case .refreshClaude:
-            dataManager.handleClaudeOnlyRefresh()
-        case .refreshCodex:
-            dataManager.handleCodexOnlyRefresh()
         case .generalSettings:
             closePopover()
             openSettingsWindow(tab: 0)
@@ -199,15 +132,6 @@ class MenuBarManager: ObservableObject {
         case .about:
             closePopover()
             openSettingsWindow(tab: 2)
-        case .claudeStatus:
-            closePopover()
-            openClaudeStatus()
-        case .codexStatus:
-            closePopover()
-            openCodexStatus()
-        case .codexRelogin:
-            closePopover()
-            WebLoginWindowManager.shared.showCodexLoginWindow()
         case .openDashboardWindow:
             closePopover()
             openDashboardWindow()
@@ -371,9 +295,6 @@ class MenuBarManager: ObservableObject {
         // 智能刷新数据
         dataManager.refreshOnPopoverOpen()
 
-        // 显示更新通知（如果有）
-        showUpdateNotificationIfNeeded()
-
         // Immer die Mehrkonten-Übersicht: Es gibt keine Einzelkonto-Detailansicht mehr.
         // Ohne Konten zeigt die Übersicht selbst einen freundlichen Leerzustand.
         // Der Inhalt wird vom DashboardRefreshManager eigenständig versorgt (er lädt
@@ -392,24 +313,9 @@ class MenuBarManager: ObservableObject {
         ui.openPopover(relativeTo: button)
     }
 
-    /// 显示更新通知（如果需要）
-    private func showUpdateNotificationIfNeeded() {
-        guard shouldShowUpdateBadge else { return }
-
-        dataManager.refreshState.notificationMessage = L.Update.Notification.available
-        dataManager.refreshState.notificationType = .updateAvailable
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
-            self?.dataManager.refreshState.notificationMessage = nil
-        }
-    }
-
     /// 关闭弹出窗口
     private func closePopover() {
         ui.closePopover()
-
-        // 清理刷新定时器
-        dataManager.stopPopoverRefreshTimer()
     }
 
     // MARK: - Data Fetching
@@ -421,16 +327,8 @@ class MenuBarManager: ObservableObject {
     
     // MARK: - Settings Window
     
-    @objc func openSettings() {
-        openSettingsWindow(tab: 0)
-    }
-
     @objc func openGeneralSettings() {
         openSettingsWindow(tab: 0)
-    }
-
-    @objc func openAuthSettings() {
-        openSettingsWindow(tab: 1)
     }
 
     @objc func openAbout() {
@@ -572,9 +470,6 @@ class MenuBarManager: ObservableObject {
     /// 清理所有资源
     /// 在应用退出时调用，停止所有定时器并移除所有观察者
     func cleanup() {
-        // 停止 popover 刷新定时器
-        dataManager.stopPopoverRefreshTimer()
-
         // 清理窗口观察者
         if let observer = windowCloseObserver {
             NotificationCenter.default.removeObserver(observer)

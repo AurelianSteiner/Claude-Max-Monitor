@@ -335,7 +335,9 @@ class MenuBarUI {
             menu.addItem(NSMenuItem.separator())
         }
 
-        // 通用设置
+        // Ein Einstellungen-Eintrag statt „Allgemein" + „Konten": Beide öffneten
+        // dasselbe Fenster, nur mit anderem vorgewähltem Reiter — zwei Einträge
+        // suggerierten zwei Fenster und haben mehr verwirrt als abgekürzt.
         let generalItem = NSMenuItem(
             title: L.Menu.generalSettings,
             action: #selector(MenuBarManager.openGeneralSettings),
@@ -344,17 +346,6 @@ class MenuBarUI {
         generalItem.target = target
         setMenuItemIcon(generalItem, systemName: "gearshape")
         menu.addItem(generalItem)
-
-        // 认证信息
-        let authItem = NSMenuItem(
-            title: L.Menu.authSettings,
-            action: #selector(MenuBarManager.openAuthSettings),
-            keyEquivalent: "a"
-        )
-        authItem.target = target
-        authItem.keyEquivalentModifierMask = [.command, .shift] as NSEvent.ModifierFlags
-        setMenuItemIcon(authItem, systemName: "key.horizontal")
-        menu.addItem(authItem)
 
         // 检查更新
         let updateItem = NSMenuItem(
@@ -405,37 +396,9 @@ class MenuBarUI {
         menu.addItem(aboutItem)
 
         // Die Wach-Schalter stehen als Symbolknöpfe im Kopf der Übersicht —
-        // hier würden sie dieselbe Sache ein zweites Mal anbieten.
-
-        // Statusseiten der Anbieter: eigener Abschnitt samt Trennlinie, aber nur,
-        // wenn er auch Einträge bekommt. Seit die Wach-Schalter hier weg sind,
-        // stünden bei einem noch kontenlosen Start sonst zwei Trennlinien
-        // unmittelbar untereinander (NSMenu fasst die nicht von selbst zusammen).
-        if !settings.accounts.isEmpty || !settings.codexAccounts.isEmpty {
-            menu.addItem(NSMenuItem.separator())
-
-            if !settings.accounts.isEmpty {
-                let claudeStatusItem = NSMenuItem(
-                    title: L.Menu.claudeStatus,
-                    action: #selector(MenuBarManager.openClaudeStatus),
-                    keyEquivalent: ""
-                )
-                claudeStatusItem.target = target
-                setMenuItemIcon(claudeStatusItem, systemName: "safari")
-                menu.addItem(claudeStatusItem)
-            }
-
-            if !settings.codexAccounts.isEmpty {
-                let codexStatusItem = NSMenuItem(
-                    title: L.Menu.codexStatus,
-                    action: #selector(MenuBarManager.openCodexStatus),
-                    keyEquivalent: ""
-                )
-                codexStatusItem.target = target
-                setMenuItemIcon(codexStatusItem, systemName: "safari.fill")
-                menu.addItem(codexStatusItem)
-            }
-        }
+        // hier würden sie dieselbe Sache ein zweites Mal anbieten. Die
+        // Statusseiten-Links (status.claude.com / status.openai.com) sind
+        // ersatzlos gestrichen: kaum genutzt, und im Browser einen Klick weit.
 
         menu.addItem(NSMenuItem.separator())
 

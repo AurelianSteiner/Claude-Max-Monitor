@@ -7,12 +7,9 @@
 */
 
 // MARK: - Menu Items
-"menu.general_settings" = "General Settings";
-"menu.auth_settings" = "Authentication Settings";
+"menu.general_settings" = "Settings…";
 "menu.check_updates" = "Check for Updates";
 "menu.about" = "About";
-"menu.claude_status" = "Claude Status";
-"menu.codex_status" = "OpenAI Status";
 "menu.quit" = "Quit Claude Max Monitor";
 "menu.account" = "Account";
 "menu.account_prefix" = "Account:";
@@ -306,10 +303,6 @@
 "dashboard.updated_at" = "Updated %@";
 "dashboard.columns_one" = "1 column";
 "dashboard.columns_other" = "%d columns";
-"settings.dashboard.section" = "Overview (multiple accounts)";
-"settings.dashboard.hint" = "The overview shows every account you added side by side, so you can tell at a glance which one still has room.";
-"settings.dashboard.sort_label" = "Sorting";
-"settings.dashboard.columns_label" = "Columns";
 "dashboard.ring_extra" = "Extra";
 "dashboard.ring_opus" = "Opus";
 "dashboard.ring_sonnet" = "Sonnet";

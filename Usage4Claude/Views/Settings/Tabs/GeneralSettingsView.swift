@@ -10,7 +10,7 @@ import SwiftUI
 import ServiceManagement
 
 /// 通用设置页面
-/// 卡片顺序：总览 → 刷新 → 外观（含菜单栏/语言）→ 开机启动 → 系统睡眠
+/// 卡片顺序：刷新 → 外观（含菜单栏/语言）→ 开机启动 → 系统睡眠
 /// 各卡片内容按主题拆到 GeneralSettings*Section.swift，保持本文件体量可控
 struct GeneralSettingsView: View {
     @ObservedObject private var settings = UserSettings.shared
@@ -20,8 +20,6 @@ struct GeneralSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                GeneralSettingsDashboardSection()
-
                 // 刷新设置卡片
                 SettingCard(
                     icon: "clock.arrow.trianglehead.2.counterclockwise.rotate.90",
@@ -59,7 +57,7 @@ struct GeneralSettingsView: View {
                     }
                 }
 
-                // 外观卡片（应用主题 + 菜单栏样式 + 时间格式 + 语言）
+                // 外观卡片（应用主题 + 菜单栏样式 + 语言）
                 GeneralSettingsAppearanceSection()
 
                 // 开机启动设置卡片

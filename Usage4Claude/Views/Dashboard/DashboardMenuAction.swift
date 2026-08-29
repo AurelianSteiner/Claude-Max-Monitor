@@ -16,13 +16,7 @@ enum MenuAction {
     case authSettings
     case checkForUpdates
     case about
-    case claudeStatus
-    case codexStatus
     case quit
-    case refresh
-    case refreshClaude
-    case refreshCodex
-    case codexRelogin
     /// Übersicht in einem eigenständigen Fenster öffnen
     case openDashboardWindow
     /// Team-Übersicht in einem eigenständigen Fenster öffnen

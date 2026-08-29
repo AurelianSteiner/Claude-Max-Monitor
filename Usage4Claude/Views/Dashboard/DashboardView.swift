@@ -656,34 +656,18 @@ struct DashboardView: View {
                 Label(L.Dashboard.openTeamWindow, systemImage: "person.3")
             }
             Divider()
+            // Ein Einstellungen-Eintrag statt zwei: „Allgemein" und „Konten"
+            // waren nur zwei Reiter desselben Fensters — der zweite Eintrag hat
+            // mehr verwirrt als abgekürzt. Konto-Tiefenlinks (.authSettings)
+            // gibt es weiterhin aus den Leerzuständen heraus.
             Button(action: { onMenuAction?(.generalSettings) }) {
                 Label(L.Menu.generalSettings, systemImage: "gearshape")
-            }
-            Button(action: { onMenuAction?(.authSettings) }) {
-                Label(L.Menu.authSettings, systemImage: "key")
             }
             Button(action: { onMenuAction?(.checkForUpdates) }) {
                 Label(L.Menu.checkUpdates, systemImage: "arrow.triangle.2.circlepath")
             }
             Button(action: { onMenuAction?(.about) }) {
                 Label(L.Menu.about, systemImage: "info.circle")
-            }
-            // Die Wach-Schalter liegen als Symbolknöpfe im Kopf und tauchen
-            // hier bewusst nicht noch einmal auf. Die Trennlinie gehört zu den
-            // Statusseiten und erscheint nur mit ihnen — ohne Konto stünden
-            // sonst zwei Trennlinien direkt untereinander.
-            if !settings.accounts.isEmpty || !settings.codexAccounts.isEmpty {
-                Divider()
-                if !settings.accounts.isEmpty {
-                    Button(action: { onMenuAction?(.claudeStatus) }) {
-                        Label(L.Menu.claudeStatus, systemImage: "safari")
-                    }
-                }
-                if !settings.codexAccounts.isEmpty {
-                    Button(action: { onMenuAction?(.codexStatus) }) {
-                        Label(L.Menu.codexStatus, systemImage: "safari.fill")
-                    }
-                }
             }
             Divider()
             Button(action: { onMenuAction?(.quit) }) {
