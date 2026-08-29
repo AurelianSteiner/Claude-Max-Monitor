@@ -5,13 +5,13 @@
 //  Datenquelle der Menüleisten-Punktreihe (`IconDisplayMode.accountDots`).
 //
 //  Der klassische Menüleisten-Pfad (`DataRefreshManager`) kennt nur das *aktuelle*
-//  Konto. Für „ein Punkt je Konto" braucht es alle Konten — die liegen bereits in
-//  `DashboardRefreshManager.shared.snapshots`. Diese Klasse abonniert sie einmalig,
+//  Konto. Für „ein Wasserstand je Konto" braucht es alle Konten — die liegen bereits
+//  in `DashboardRefreshManager.shared.snapshots`. Diese Klasse abonniert sie einmalig,
 //  bringt sie über `AccountUsageSnapshot.ordered(_:mode:)` in *dieselbe* Reihenfolge
 //  wie die Übersicht, destilliert jeden Snapshot auf das, was ein Punkt tatsächlich
-//  zeigt (Wochen-Ampelstufe + Sitzung aufgebraucht), und legt das Ergebnis hinter
-//  einem Lock ab: Der Renderer darf so von jedem Thread lesen, ohne den Main-Thread
-//  zu blockieren oder `@Published`-State nebenläufig anzufassen.
+//  zeigt (gerasterter Wochenpegel + Sitzung aufgebraucht), und legt das Ergebnis
+//  hinter einem Lock ab: Der Renderer darf so von jedem Thread lesen, ohne den
+//  Main-Thread zu blockieren oder `@Published`-State nebenläufig anzufassen.
 //
 //  Copyright © 2025 f-is-h. All rights reserved.
 //
@@ -21,39 +21,30 @@ import Combine
 
 // MARK: - Zustand eines Punkts
 
-/// Was ein einzelner Menüleisten-Punkt anzeigt — bewusst schon auf die
-/// Ampelstufe reduziert (statt roher Prozentzahlen), damit der Icon-Cache
-/// nur dann verworfen wird, wenn sich das *Bild* wirklich ändert.
+/// Was ein einzelner Menüleisten-Wasserstand anzeigt — der Wochenpegel wird
+/// beim Erzeugen auf 2-%-Stufen gerastert (statt roher Prozentzahlen), damit
+/// der Icon-Cache nur dann verworfen wird, wenn sich das *Bild* wirklich
+/// ändert: Feiner als 2 % ist bei ~10 pt Durchmesser ohnehin nichts zu sehen.
 struct MenuBarDotState: Equatable {
 
-    /// Dieselbe dreistufige Skala wie `WeeklyTrafficLight` in der Übersicht —
-    /// die Schwellen werden von dort übernommen, damit Menüleiste und Übersicht
-    /// nie unterschiedliche Farben für dasselbe Konto zeigen.
-    enum WeeklyBucket: String {
-        /// noch keine Wochendaten → grau
-        case noData = "n"
-        /// frisch/unbenutzt (bis einschließlich 5 %) → grün
-        case fresh = "g"
-        /// in Benutzung (über 5 % und unter 90 %) → blau
-        case inUse = "b"
-        /// praktisch aufgebraucht (ab 90 %) → rot
-        case exhausted = "r"
-
-        static func bucket(for utilization: Double?) -> WeeklyBucket {
-            guard let value = utilization else { return .noData }
-            if value <= WeeklyTrafficLight.freshThreshold { return .fresh }
-            if value < WeeklyTrafficLight.exhaustedThreshold { return .inUse }
-            return .exhausted
-        }
-    }
-
-    /// Füllung des Punkts: Wochenlage des Kontos
-    let bucket: WeeklyBucket
+    /// Wochen-Auslastung des Kontos in Prozent, gerastert auf 2-%-Stufen;
+    /// `nil` = noch keine Wochendaten (mattes Grau, wie `MiniWaterGauge`).
+    let weeklyUtilization: Double?
     /// Roter Ring außen: das 5-Stunden-Fenster (bzw. Codex primary) ist aufgebraucht
     let sessionExhausted: Bool
 
-    /// Kürzel für den Icon-Cache-Key in `MenuBarUI` („g", „b!", …)
-    var cacheToken: String { sessionExhausted ? "\(bucket.rawValue)!" : bucket.rawValue }
+    /// Rastert auf ganze 2-%-Stufen — abrundend, damit die Schwellen der
+    /// `DashboardPalette` (50/75/90) exakt beim echten Überschreiten kippen
+    /// und Menüleiste und Kopfzeile nie verschiedene Farben zeigen.
+    static func quantized(_ utilization: Double?) -> Double? {
+        utilization.map { min(100, max(0, ($0 / 2).rounded(.down) * 2)) }
+    }
+
+    /// Kürzel für den Icon-Cache-Key in `MenuBarUI` („42", „100!", „n", …)
+    var cacheToken: String {
+        let level = weeklyUtilization.map { String(Int($0)) } ?? "n"
+        return sessionExhausted ? "\(level)!" : level
+    }
 }
 
 // MARK: - Store
@@ -151,7 +142,7 @@ final class MenuBarAccountDots {
         let next: [MenuBarDotState] = hasAnyData
             ? ordered.map {
                 MenuBarDotState(
-                    bucket: .bucket(for: $0.weeklyPeakUtilization),
+                    weeklyUtilization: MenuBarDotState.quantized($0.weeklyPeakUtilization),
                     sessionExhausted: $0.sessionExhausted
                 )
             }

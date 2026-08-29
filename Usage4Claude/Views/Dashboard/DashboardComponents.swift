@@ -40,11 +40,18 @@ enum DashboardPalette {
 
     /// Flächenton (Wasser, Balken)
     static func fill(_ percentage: Double) -> Color {
+        Color(nsColor: nsFill(percentage))
+    }
+
+    /// Flächenton als NSColor — für AppKit-Zeichnung (Wasserstände in der
+    /// Menüleiste). Löst sich wie alle Töne hier dynamisch nach der beim
+    /// Zeichnen aktiven Appearance auf.
+    static func nsFill(_ percentage: Double) -> NSColor {
         switch Level.forPercentage(percentage) {
-        case .calm:     return dynamic(light: 0x5E86C4, dark: 0x6E96D4)
-        case .moderate: return dynamic(light: 0xE0A93F, dark: 0xE8B855)
-        case .high:     return dynamic(light: 0xD97757, dark: 0xE08767)
-        case .full:     return dynamic(light: 0xC9503F, dark: 0xD9604F)
+        case .calm:     return dynamicNS(light: 0x5E86C4, dark: 0x6E96D4)
+        case .moderate: return dynamicNS(light: 0xE0A93F, dark: 0xE8B855)
+        case .high:     return dynamicNS(light: 0xD97757, dark: 0xE08767)
+        case .full:     return dynamicNS(light: 0xC9503F, dark: 0xD9604F)
         }
     }
 
@@ -64,10 +71,14 @@ enum DashboardPalette {
     /// Hex-Paar als NSColor mit Dynamic Provider: heller und dunkler Modus je eigener
     /// Wert, damit die Töne in beiden Erscheinungsbildern tragen.
     private static func dynamic(light: Int, dark: Int) -> Color {
-        Color(nsColor: NSColor(name: nil) { appearance in
+        Color(nsColor: dynamicNS(light: light, dark: dark))
+    }
+
+    private static func dynamicNS(light: Int, dark: Int) -> NSColor {
+        NSColor(name: nil) { appearance in
             let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
             return nsColor(isDark ? dark : light)
-        })
+        }
     }
 
     private static func nsColor(_ hex: Int) -> NSColor {
@@ -80,40 +91,18 @@ enum DashboardPalette {
     }
 }
 
-// MARK: - Ampel (Wochen-Auslastung)
+// MARK: - Wochen-Schwellen
 
-/// Dreistufige Skala für die **Füllung** der Punktreihe in der Menüleiste —
-/// sie beantwortet nur eine Frage: Ist die Woche frisch, in Benutzung oder durch?
+/// Die eine geteilte Schwelle der Wochen-Auslastung: Ab wann gilt eine Woche
+/// als praktisch aufgebraucht? Übersicht, Menüleiste und Team-Ansicht fragen
+/// alle hier nach, damit „durch" überall dasselbe heißt.
 ///
-/// In der Übersicht selbst steht seit der Kopfzeilen-Umstellung kein Punkt mehr,
-/// sondern ein echter Wasserstand (`MiniWaterGauge`) mit der vierstufigen
-/// `DashboardPalette`. Die Menüleiste hat für so etwas schlicht zu wenige Pixel
-/// und bleibt deshalb bei der groben Ampel.
-///
-/// Schwellen (Wochen-Auslastung):
-/// · Grau  = noch keine Wochendaten (`nil`)
-/// · Grün  = frisch/unbenutzt, 0 % bis einschließlich 5 %
-/// · Blau  = in Benutzung, über 5 % und unter 90 %
-/// · Rot   = praktisch aufgebraucht, ab 90 % — und bleibt darüber rot (auch bei 100 %+)
-///
-/// Das schnelle 5-Stunden-Fenster steckt bewusst **nicht** in dieser Farbe:
-/// Es hängt als roter Ring außen am Punkt, damit „Woche durch" und „Sitzung
-/// durch" nicht dasselbe Signal geben — genauso wie beim Wasserstand oben.
-///
-/// Bewusst Systemfarben, damit die Punkte in hellem und dunklem
-/// Erscheinungsbild gleichermaßen tragen.
+/// Die frühere dreistufige Ampel (Grün/Blau/Rot) ist Geschichte — Menüleiste
+/// und Kopfzeile zeigen inzwischen beide echte Wasserstände mit der
+/// vierstufigen `DashboardPalette`.
 enum WeeklyTrafficLight {
-    /// Bis einschließlich hier gilt die Woche als frisch/unbenutzt → grün
-    static let freshThreshold: Double = 5
     /// Ab hier gilt die Woche als praktisch aufgebraucht → rot
     static let exhaustedThreshold: Double = 90
-
-    static func color(for utilization: Double?) -> Color {
-        guard let value = utilization else { return Color.secondary.opacity(0.35) }
-        if value <= freshThreshold { return .green }
-        if value < exhaustedThreshold { return .blue }
-        return .red
-    }
 }
 
 // MARK: - Wasserstand-Miniatur (Kopfzeile)

@@ -60,8 +60,9 @@ class MenuBarIconRenderer {
         if settings.iconDisplayMode == .accountDots {
             let dots = MenuBarAccountDots.shared.currentStates()
             if !dots.isEmpty {
-                // Für die Punkte zählt allein die Theme-Wahl: die Farben sind unsere
-                // eigene Ampel, nicht die limitabhängige Palette der Ringe.
+                // Für die Wasserstände zählt allein die Theme-Wahl: die Farben
+                // kommen aus der `DashboardPalette`, nicht aus der limitabhängigen
+                // Palette der Ringe.
                 let dotsMonochrome = settings.iconStyleMode == .monochrome
                 var icon = createAccountDotsIcon(states: dots, isMonochrome: dotsMonochrome, button: button)
                 if hasUpdate { icon = addBadgeToImage(icon) }
@@ -324,13 +325,14 @@ class MenuBarIconRenderer {
     
     // MARK: - Account Dots (Punktreihe aller Konten)
 
-    /// Maße der Menüleisten-Punktreihe. Bewusst kleiner als die Wasserstände der
-    /// Übersicht (`MiniGaugeMetrics`): hier zählt jeder Punkt Breite. Fünf Konten
-    /// belegen so ~70 pt statt ~100 pt für fünf Ringe — genau darum geht es auf
-    /// MacBooks mit Notch, wo macOS zu breite Statusleisten-Symbole ausblendet.
+    /// Maße der Menüleisten-Wasserstände. Bewusst kleiner als die Wasserstände
+    /// der Übersicht (`MiniGaugeMetrics`): hier zählt jeder Punkt Breite. Fünf
+    /// Konten belegen so ~85 pt — kompakt genug für MacBooks mit Notch, wo
+    /// macOS zu breite Statusleisten-Symbole ausblendet, aber groß genug, dass
+    /// der Pegel als Pegel lesbar ist.
     private enum AccountDotMetrics {
-        /// Durchmesser der farbigen Fläche (Wochenlage)
-        static let fillDiameter: CGFloat = 7.5
+        /// Durchmesser der Wasserfläche (Wochenpegel)
+        static let fillDiameter: CGFloat = 10.5
         /// Luft zwischen Fläche und Sitzungsring
         static let ringGap: CGFloat = 1
         /// Strichstärke des Sitzungsrings
@@ -351,15 +353,17 @@ class MenuBarIconRenderer {
         static var capsuleInset: CGFloat { capsuleGap + capsuleLineWidth }
     }
 
-    /// Zeichnet eine Punktreihe: ein Punkt je Konto.
+    /// Zeichnet eine Wasserstand-Reihe: ein kleines Gefäß je Konto, der Pegel
+    /// steigt mit der Wochen-Auslastung — dieselbe Darstellung wie die
+    /// Kopfzeile der Übersicht, nur kleiner.
     ///
     /// Die Reihenfolge kommt fertig sortiert aus `MenuBarAccountDots` und ist
     /// **dieselbe wie in der Übersicht** (`AccountUsageSnapshot.ordered(_:mode:)`):
     /// im Standardmodus das freieste Konto links, das vollste rechts. Hier wird
     /// nur noch von links nach rechts gezeichnet, nicht mehr umsortiert.
     /// - Parameters:
-    ///   - states: Zustände aus `MenuBarAccountDots` (bereits auf Ampelstufe reduziert
-    ///     und in Anzeigereihenfolge)
+    ///   - states: Zustände aus `MenuBarAccountDots` (gerasterter Wochenpegel,
+    ///     in Anzeigereihenfolge)
     ///   - isMonochrome: Einfarbig-Modus → Template-Bild ohne Farbe
     private func createAccountDotsIcon(
         states: [MenuBarDotState],
@@ -405,9 +409,9 @@ class MenuBarIconRenderer {
         return image
     }
 
-    /// Kapsel-Umriss um die gesamte Punktreihe — das Menüleisten-Zeichen für
-    /// „Bleib wach". Farbe: Orange im Farbmodus (warm, passt zum Maskottchen,
-    /// kollidiert nicht mit der Grün/Blau/Rot-Ampel der Punkte), `labelColor`
+    /// Kapsel-Umriss um die gesamte Wasserstand-Reihe — das Menüleisten-Zeichen
+    /// für „Bleib wach". Farbe: Orange im Farbmodus (warm, passt zum Maskottchen,
+    /// kollidiert nicht mit der Blau-bis-Rot-Palette der Pegel), `labelColor`
     /// im Einfarbig-/Template-Modus (macOS färbt selbst ein).
     private func drawKeepAwakeCapsule(width: CGFloat, height: CGFloat, isMonochrome: Bool) {
         let lineWidth = AccountDotMetrics.capsuleLineWidth
@@ -438,33 +442,54 @@ class MenuBarIconRenderer {
                 width: fill,
                 height: fill
             )
-            let fillPath = NSBezierPath(ovalIn: fillRect)
 
-            if isMonochrome {
-                // Ohne Farbe trägt die Füllung die Aussage:
-                // voller Punkt = Woche aufgebraucht, hohler Punkt = noch Luft,
-                // dünner hohler Punkt = noch keine Daten.
-                switch state.bucket {
-                case .exhausted:
+            // Wasserstand wie in der Kopfzeile der Übersicht (`MiniWaterGauge`):
+            // ein Gefäß-Umriss, in dem der Pegel mit der Wochen-Auslastung von
+            // unten nach oben steigt — dieselbe vierstufige `DashboardPalette`,
+            // damit Menüleiste und Übersicht nie verschiedene Farben zeigen.
+            // NSBezierPath zeichnet y-aufwärts, „von unten füllen" ist hier also
+            // schlicht ein Rechteck ab `minY`. Die Welle der großen Anzeigen
+            // entfällt: Bei ~10 pt wäre sie kleiner als ein halbes Pixel.
+            if let utilization = state.weeklyUtilization {
+                let level = min(100, max(0, utilization)) / 100
+                let water = NSRect(
+                    x: fillRect.minX,
+                    y: fillRect.minY,
+                    width: fillRect.width,
+                    height: fillRect.height * CGFloat(level)
+                )
+
+                NSGraphicsContext.saveGraphicsState()
+                NSBezierPath(ovalIn: fillRect).addClip()
+                if isMonochrome {
+                    // Template-Bild: macOS wertet nur die Deckkraft aus und
+                    // färbt selbst ein — der Pegel bleibt trotzdem ablesbar.
                     NSColor.labelColor.setFill()
-                    fillPath.fill()
-                case .fresh, .inUse:
-                    NSColor.labelColor.setStroke()
-                    fillPath.lineWidth = 1.4
-                    fillPath.stroke()
-                case .noData:
-                    NSColor.labelColor.withAlphaComponent(0.5).setStroke()
-                    fillPath.lineWidth = 0.8
-                    fillPath.stroke()
+                } else {
+                    DashboardPalette.nsFill(utilization).setFill()
                 }
+                NSBezierPath(rect: water).fill()
+                NSGraphicsContext.restoreGraphicsState()
+
+                let rim = NSBezierPath(ovalIn: fillRect.insetBy(dx: 0.5, dy: 0.5))
+                rim.lineWidth = 1
+                NSColor.labelColor.withAlphaComponent(isMonochrome ? 0.45 : 0.32).setStroke()
+                rim.stroke()
             } else {
-                weeklyDotColor(for: state.bucket).setFill()
-                fillPath.fill()
+                // Noch keine Daten → durchgehend mattes Grau statt eines leeren
+                // Gefäßes, wie beim `MiniWaterGauge`: „nichts geladen" darf
+                // nicht aussehen wie „Woche frisch, 2 %".
+                if isMonochrome {
+                    NSColor.labelColor.withAlphaComponent(0.35).setFill()
+                } else {
+                    NSColor.secondaryLabelColor.withAlphaComponent(0.5).setFill()
+                }
+                NSBezierPath(ovalIn: fillRect).fill()
             }
 
             if state.sessionExhausted {
                 // Sitzungsfenster aufgebraucht → Ring außen, genau wie beim
-                // Ampelpunkt der Übersicht: Füllung = Woche, Ring = Sitzung.
+                // Wasserstand der Übersicht: Pegel = Woche, Ring = Sitzung.
                 let ringDiameter = footprint - AccountDotMetrics.ringWidth
                 let ringRect = NSRect(
                     x: centerX - ringDiameter / 2,
@@ -479,17 +504,6 @@ class MenuBarIconRenderer {
             }
 
             x += footprint + AccountDotMetrics.spacing
-        }
-    }
-
-    /// Farben der Punktreihe — dieselbe Ampel wie `WeeklyTrafficLight` in der
-    /// Übersicht, nur als `NSColor`, weil hier mit `NSBezierPath` gezeichnet wird.
-    private func weeklyDotColor(for bucket: MenuBarDotState.WeeklyBucket) -> NSColor {
-        switch bucket {
-        case .noData: return NSColor.secondaryLabelColor.withAlphaComponent(0.5)
-        case .fresh: return .systemGreen
-        case .inUse: return .systemBlue
-        case .exhausted: return .systemRed
         }
     }
 
