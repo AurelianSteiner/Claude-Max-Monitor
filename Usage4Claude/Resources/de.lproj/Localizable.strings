@@ -55,6 +55,7 @@
 
 // MARK: - Settings - Authentication
 "settings.auth.session_key_label" = "Session Key";
+"settings.auth.more_login_paths" = "Weitere Anmeldewege";
 "settings.auth.session_key_placeholder" = "Session Key einfügen";
 "settings.auth.session_key_hint" = "Den vollständigen sessionKey-Cookie-Wert einfügen (beginnt meist mit sk-ant-sid)";
 "settings.auth.configured" = "Anmeldung konfiguriert";

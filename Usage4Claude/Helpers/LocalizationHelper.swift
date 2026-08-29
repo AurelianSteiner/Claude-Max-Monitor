@@ -211,6 +211,8 @@ enum L {
     // MARK: - Settings Authentication
     enum SettingsAuth {
         static var sessionKeyLabel: String { localized("settings.auth.session_key_label") }
+        /// Eingeklappte Notnagel-Anmeldewege (Cookie, Handeingabe)
+        static var moreLoginPaths: String { localized("settings.auth.more_login_paths") }
         static var sessionKeyPlaceholder: String { localized("settings.auth.session_key_placeholder") }
         static var sessionKeyHint: String { localized("settings.auth.session_key_hint") }
         static var configured: String { localized("settings.auth.configured") }

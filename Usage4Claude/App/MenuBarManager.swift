@@ -406,9 +406,18 @@ class MenuBarManager: ObservableObject {
                 forName: NSWindow.willCloseNotification,
                 object: settingsWindow,
                 queue: .main
-            ) { [weak self] _ in
-                // 窗口关闭时切换回 accessory 模式（不显示在 Dock）
-                NSApp.setActivationPolicy(.accessory)
+            ) { [weak self] notification in
+                // Zurück zu accessory (kein Dock-Symbol) — aber nur, wenn kein
+                // anderes Fenster mehr offen ist. Vorher fiel die Policy hier
+                // bedingungslos zurück und riss einem noch offenen
+                // Übersichtsfenster Dock-Symbol und Menüleiste weg.
+                let closing = notification.object as? NSWindow
+                let hasOtherWindows = NSApp.windows.contains {
+                    $0.isVisible && $0.canBecomeMain && $0 !== closing
+                }
+                if !hasOtherWindows {
+                    NSApp.setActivationPolicy(.accessory)
+                }
 
                 self?.settingsWindow = nil
                 if self?.settings.hasAnyValidCredentials == true

@@ -150,6 +150,10 @@ struct AuthSettingsView: View {
                 .fontWeight(.semibold)
                 .foregroundColor(.secondary)
 
+            // Der Normalweg: ein Browser-Login je Anbieter. Cookie- und
+            // Handeingabe sind Notnägel für den Fall, dass OAuth klemmt —
+            // als drei gleichrangige Knöpfe haben sie mehr verwirrt als
+            // geholfen, deshalb stehen sie eingeklappt darunter.
             HStack(spacing: 10) {
                 addAccountActionButton(
                     provider: .claude,
@@ -160,27 +164,6 @@ struct AuthSettingsView: View {
                 }
 
                 addAccountActionButton(
-                    provider: .claude,
-                    title: L.WebLogin.cookieLogin,
-                    help: L.WebLogin.cookieLoginHelp
-                ) {
-                    WebLoginWindowManager.shared.showCookieLoginWindow()
-                }
-
-                addAccountActionButton(
-                    provider: .claude,
-                    title: L.WebLogin.manualInput,
-                    help: L.SettingsAuth.manualInputClaudeOnlyHelp
-                ) {
-                    withAnimation {
-                        isAddingAccount = true
-                        newSessionKey = ""
-                        newAlias = ""
-                        validationError = nil
-                    }
-                }
-
-                addAccountActionButton(
                     provider: .codex,
                     title: L.WebLogin.browserLogin,
                     help: "\(ProviderType.codex.displayName) \(L.WebLogin.browserLogin)"
@@ -188,6 +171,36 @@ struct AuthSettingsView: View {
                     WebLoginWindowManager.shared.showCodexLoginWindow()
                 }
             }
+
+            DisclosureGroup(L.SettingsAuth.moreLoginPaths) {
+                HStack(spacing: 10) {
+                    addAccountActionButton(
+                        provider: .claude,
+                        title: L.WebLogin.cookieLogin,
+                        help: L.WebLogin.cookieLoginHelp
+                    ) {
+                        WebLoginWindowManager.shared.showCookieLoginWindow()
+                    }
+
+                    addAccountActionButton(
+                        provider: .claude,
+                        title: L.WebLogin.manualInput,
+                        help: L.SettingsAuth.manualInputClaudeOnlyHelp
+                    ) {
+                        withAnimation {
+                            isAddingAccount = true
+                            newSessionKey = ""
+                            newAlias = ""
+                            validationError = nil
+                        }
+                    }
+
+                    Spacer(minLength: 0)
+                }
+                .padding(.top, 6)
+            }
+            .font(.caption)
+            .foregroundColor(.secondary)
         }
         .padding(.top, 8)
     }
