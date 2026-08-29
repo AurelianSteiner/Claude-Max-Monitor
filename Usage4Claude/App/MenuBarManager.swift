@@ -304,6 +304,27 @@ class MenuBarManager: ObservableObject {
             }
             .store(in: &cancellables)
 
+        // Popover schließen, sobald irgendein Fenster der App den Fokus
+        // bekommt — Übersichts-, Team- oder Einstellungsfenster ersetzen die
+        // Schnellansicht. Ohne das bliebe das Popover oben rechts unter dem
+        // Menüleisten-Symbol stehen, wenn man in ein Fenster wechselt: Seine
+        // Auto-Schließ-Mechanismen (globaler Klick-Monitor, didResignActive,
+        // .semitransient) greifen alle nur bei Klicks in *andere* Apps.
+        NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self, self.ui.popover.isShown else { return }
+                guard let window = notification.object as? NSWindow else { return }
+                // Klicks ins Popover machen dessen eigenes Fenster key —
+                // das darf es natürlich nicht selbst schließen.
+                if window === self.ui.popover.contentViewController?.view.window { return }
+                #if DEBUG
+                if UserSettings.shared.debugKeepDetailWindowOpen { return }
+                #endif
+                self.closePopover()
+            }
+            .store(in: &cancellables)
+
         // 监听账户变更通知
         NotificationCenter.default.publisher(for: .accountChanged)
             .receive(on: DispatchQueue.main)
@@ -506,23 +527,9 @@ class MenuBarManager: ObservableObject {
                 }
             }
 
-            // 添加窗口获得焦点观察者 - 当设置窗口成为 key window 时关闭 popover
-            NotificationCenter.default.addObserver(
-                forName: NSWindow.didBecomeKeyNotification,
-                object: settingsWindow,
-                queue: .main
-            ) { [weak self] _ in
-                #if DEBUG
-                // Debug模式：如果开启了"保持详情窗口打开"，则不自动关闭
-                if UserSettings.shared.debugKeepDetailWindowOpen {
-                    return
-                }
-                #endif
-
-                if self?.ui.popover.isShown == true {
-                    self?.closePopover()
-                }
-            }
+            // Das Popover-Schließen beim Fokuswechsel übernimmt der globale
+            // didBecomeKey-Beobachter in setupSettingsObservers — der frühere
+            // Beobachter nur für dieses Fenster leckte bei jedem Neuaufbau.
 
             // 移除旧的语言变化观察者（如果存在）
             if let observer = languageChangeObserver {
