@@ -17,7 +17,9 @@
 //  knapp, dass zwei aufeinandersitzen) und seine Art abgeleitet: Die Hälfte
 //  läuft normal, die andere Hälfte fällt auf — Partyhut, Zylinder, ein
 //  Raucher mit Rauchfahne, ein Sprinter, der alle überholt, und einer, der
-//  seelenruhig rückwärts stapft.
+//  seelenruhig rückwärts stapft. Dazu patrouilliert alle anderthalb Minuten
+//  ein hüpfender Sheriff — und ungefähr jeder fünfte zieht
+//  (siehe `MascotIncident`).
 //  Alle Normalen laufen exakt gleich schnell, damit die Abstände stabil
 //  bleiben und niemand auf den Vordermann aufläuft.
 //
@@ -76,6 +78,9 @@ enum MascotVariant {
     case sprinter
     /// Läuft verkehrt herum — kommt von rechts und schaut nach links
     case backwards
+    /// Der Sheriff: Cowboyhut, goldener Stern, hüpft beim Patrouillieren.
+    /// Ungefähr jeder fünfte zieht (siehe `MascotIncident`).
+    case sheriff
 }
 
 /// Haltung eines Läufers. Trennt sich bewusst von `MascotVariant`: Die Variante
@@ -105,8 +110,10 @@ struct MascotParadeCanvas: View {
     static let coralDark = Color(red: 0.753, green: 0.416, blue: 0.333) // #c06a55
     static let faceInk = Color(red: 0.227, green: 0.122, blue: 0.086)   // #3a1f16
     static let partyPink = Color(red: 0.855, green: 0.353, blue: 0.545) // Partyhut
-    static let partyTip = Color(red: 0.980, green: 0.800, blue: 0.235)  // Bommel
+    static let partyTip = Color(red: 0.980, green: 0.800, blue: 0.235)  // Bommel & Sheriffstern
     static let hatBlack = Color(red: 0.16, green: 0.16, blue: 0.19)     // Zylinder
+    static let sheriffHat = Color(red: 0.478, green: 0.322, blue: 0.184)     // Cowboyhut, Leder
+    static let sheriffHatDark = Color(red: 0.361, green: 0.235, blue: 0.129) // Krempe
     static let smoke = Color.secondary
 
     // Taktung der Parade
@@ -139,14 +146,21 @@ struct MascotParadeCanvas: View {
         return Double(index) * avgInterval + roll(index, 1) * jitterMax
     }
 
-    /// Je 10 % pro Sonderform, die Hälfte läuft ganz normal.
+    /// Je 10 % pro Sonderform, die Hälfte läuft ganz normal — und der Sheriff
+    /// kommt obendrauf (siehe `MascotIncident.sheriffChance`).
     static func variant(_ index: Int) -> MascotVariant {
-        // Opfer und Schütze eines Zwischenfalls laufen unauffällig: Ein
-        // Sprinter als Opfer wäre vor dem Schuss längst über alle Berge, ein
-        // Rückwärtsläufer als Schütze zielte in die falsche Richtung. Die Regel
-        // hängt nur an der Nummer — die beiden laufen also von Anfang an so, und
-        // beim Beginn des Vorfalls springt nichts um.
-        if MascotIncident.role(of: index) != nil { return .normal }
+        // Der Schütze ist immer der Sheriff, das Opfer läuft unauffällig: Ein
+        // Sprinter als Opfer wäre vor dem Schuss längst über alle Berge. Die
+        // Regel hängt nur an der Nummer — beide laufen also von Anfang an so,
+        // und beim Beginn des Vorfalls springt nichts um.
+        if let role = MascotIncident.role(of: index) {
+            return role == .shooter ? .sheriff : .normal
+        }
+
+        // Sheriffs, die nur nach dem Rechten schauen. Vor den übrigen
+        // Sonderformen, damit ein Sheriff nie zugleich Sprinter oder
+        // Rückwärtsläufer ist — er muss im Takt der Normalen patrouillieren.
+        if MascotIncident.isSheriff(index) { return .sheriff }
 
         let r = roll(index, 7)
         if r < 0.10 { return .partyHat }
@@ -265,11 +279,24 @@ struct MascotParadeCanvas: View {
         // Leichtes Hüpfen im Schritt-Takt; Grundlinie so, dass die Beinchen
         // am unteren Rand des 24-pt-Streifens aufsetzen. Wer steht, hüpft nicht —
         // außer beim Schluchzen, das ist ein halber Punkt Bewegung.
-        let baseline: CGFloat
+        var baseline: CGFloat
         switch pose {
         case .walking:  baseline = step ? 12.0 : 13.0
         case .mourning: baseline = step ? 12.5 : 13.0
         default:        baseline = 13.0
+        }
+
+        // Der Sheriff hüpft beim Patrouillieren: alle gut zwei Sekunden ein
+        // kleiner Bogen. Reine Funktion der Uhrzeit, Phase je Nummer versetzt —
+        // zwei Sheriffs im Bild hüpfen also nie synchron. Nur die Höhe ändert
+        // sich, nie die x-Position, deshalb bleiben die Abstände stabil.
+        if variant == .sheriff, pose == .walking, collapse == 0 {
+            let period = 2.3
+            let phase = (time + roll(seed, 37) * period).truncatingRemainder(dividingBy: period)
+            let airtime = 0.55
+            if phase < airtime {
+                baseline -= CGFloat(sin(phase / airtime * .pi)) * 5
+            }
         }
         walker.translateBy(x: x, y: baseline)
 
@@ -394,6 +421,19 @@ struct MascotParadeCanvas: View {
                 px(-1.6, 1, coralDark.opacity(0.35), 1.2, 0.5)
                 px(-2.6, 2.2, coralDark.opacity(0.25), 1.4, 0.5)
             }
+
+        case .sheriff:
+            // Cowboyhut: breite Krempe, flache Krone — bewusst flach, damit
+            // er beim Hüpfen nicht aus dem Streifen ragt. Bleibt beim Zielen
+            // auf, wie alle Hüte.
+            px(1.2, -1.5, sheriffHatDark, 5.6, 0.6)   // Krempe
+            px(2.4, -2.7, sheriffHat, 3.2, 1.2)       // Krone
+            px(2.4, -1.9, sheriffHatDark, 3.2, 0.4)   // Hutband
+            // Goldener Stern auf der Brust — bei vier Punkt Zellgröße ist ein
+            // kleines Plus das, was von einem Stern übrig bleibt.
+            px(1.35, 2.0, partyTip, 0.7, 0.7)
+            px(1.5, 1.75, partyTip, 0.4, 0.25)
+            px(1.5, 2.7, partyTip, 0.4, 0.25)
         }
     }
 

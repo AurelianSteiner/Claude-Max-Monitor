@@ -2,27 +2,31 @@
 //  MascotIncident.swift
 //  Usage4Claude
 //
-//  Der seltene Zwischenfall auf dem Laufsteg.
+//  Der Zwischenfall auf dem Laufsteg — jetzt mit Sheriff.
 //
-//  Sehr selten (im Schnitt alle gut dreizehn Minuten) bleibt ein Claudie mitten im
-//  Streifen stehen. Der Vordermann hält an, dreht sich zu ihm um und schießt ihn
-//  ab. Er kippt um, zerplatzt zu orangem Matsch, und ein paar Sekunden später
-//  wächst an der Stelle ein kleiner Grabstein aus dem Boden. Der steht gut drei
-//  Minuten. Alle, die danach vorbeikommen, bleiben kurz davor stehen und weinen,
-//  bevor sie weitergehen.
+//  Regelmäßig (im Schnitt alle anderthalb Minuten) patrouilliert ein Sheriff
+//  durch die Parade: Cowboyhut, goldener Stern, und er hüpft beim Gehen. Die
+//  meisten Sheriffs schauen nur nach dem Rechten. Aber ungefähr jeder fünfte
+//  zieht: Der Claudie hinter ihm bleibt mitten im Streifen stehen, der Sheriff
+//  hält an, dreht sich um und schießt ihn ab. Er kippt um, zerplatzt zu orangem
+//  Matsch, und ein paar Sekunden später wächst an der Stelle ein kleiner
+//  Grabstein aus dem Boden. Der steht nur eine knappe Minute — eine kleine
+//  Erinnerung, kein Denkmal. Alle, die in der Zeit vorbeikommen, bleiben kurz
+//  davor stehen und weinen, bevor sie weitergehen.
 //
-//  Es schießt genau einer. Der Hintermann bekommt deshalb gar keine Rolle: Er
-//  ist ein gewöhnlicher Vorbeikommender, hält am frisch Gefallenen und weint wie
-//  alle nach ihm. Das ist nebenbei auch die ruhigere Variante — ein Schütze
-//  hinter dem Opfer stünde länger als ein Trauernder und nähme dem Nächsten in
-//  der Reihe den Abstand weg.
+//  Es schießt genau einer: der Sheriff, der als Vordermann des Opfers läuft.
+//  Der Hintermann bekommt deshalb gar keine Rolle: Er ist ein gewöhnlicher
+//  Vorbeikommender, hält am frisch Gefallenen und weint wie alle nach ihm.
+//  Das ist nebenbei auch die ruhigere Variante — ein Schütze hinter dem Opfer
+//  stünde länger als ein Trauernder und nähme dem Nächsten in der Reihe den
+//  Abstand weg.
 //
 //  Warum das ohne gespeicherten Zustand geht: Die Parade ist eine reine Funktion
-//  der Uhrzeit, und dieser Zwischenfall auch. Ob eine Läufer-Nummer das Opfer
-//  ist, entscheidet allein ihr Hash (`rawVictim`) — nicht der Zufall des
-//  Augenblicks. Daraus folgt alles Weitere: Wer die Schützen sind (die Nummern
-//  davor und danach), wann der Vorfall beginnt (wenn das Opfer die Mitte
-//  erreicht) und wie lange er dauert. Das Fenster kann zwischendurch zu sein,
+//  der Uhrzeit, und dieser Zwischenfall auch. Ob eine Läufer-Nummer ein Sheriff
+//  ist und ob er zieht, entscheidet allein ihr Hash — nicht der Zufall des
+//  Augenblicks. Das Opfer ist immer der Läufer direkt hinter einem ziehenden
+//  Sheriff (`rawVictim`). Daraus folgt alles Weitere: wann der Vorfall beginnt
+//  (wenn das Opfer die Mitte erreicht) und wie lange er dauert. Das Fenster kann zwischendurch zu sein,
 //  der Rechner schlafen, die Ansicht neu gebaut werden — beim nächsten Blick
 //  steht der Grabstein trotzdem an der richtigen Stelle und ist genau so alt,
 //  wie er sein müsste.
@@ -48,8 +52,8 @@ import SwiftUI
 enum MascotIncidentRole: Equatable {
     /// Bleibt in der Mitte stehen und wird abgeschossen
     case victim
-    /// Der Vordermann: früher gestartet, steht deshalb rechts vom Opfer und
-    /// dreht sich zum Zielen um. Der Einzige, der schießt.
+    /// Der Sheriff davor: früher gestartet, steht deshalb rechts vom Opfer
+    /// und dreht sich zum Zielen um. Der Einzige, der schießt.
     case shooter
 }
 
@@ -71,19 +75,23 @@ enum MascotIncident {
 
     // MARK: Wie oft
 
-    /// Wahrscheinlichkeit je Läufer, das Opfer zu sein — zusammen mit der
-    /// Sperrfrist unten kommt im Schnitt alle gut dreizehn Minuten einer heraus:
-    /// selten genug, dass es eine Überraschung bleibt, häufig genug, dass man
-    /// es überhaupt einmal zu sehen bekommt.
-    static let chance: Double = 1.0 / 90.0
+    /// Wahrscheinlichkeit je Läufer, ein Sheriff zu sein — im Schnitt
+    /// patrouilliert so alle anderthalb Minuten einer durchs Bild. Oft genug,
+    /// dass man ihn kennt; selten genug, dass er etwas Besonderes bleibt.
+    static let sheriffChance: Double = 1.0 / 25.0
+
+    /// Nur ungefähr jeder fünfte Sheriff zieht wirklich — die anderen schauen
+    /// nur nach dem Rechten. Zusammen mit `sheriffChance` und der Sperrfrist
+    /// unten fällt so im Schnitt alle acht bis neun Minuten ein Schuss.
+    static let killChance: Double = 0.2
 
     /// So viele Nummern zurück darf kein zweites Opfer liegen. Muss über der
     /// Lebensdauer eines Vorfalls in Startabständen liegen
-    /// (`lifetime / minInterval` ≈ 78), sonst stünden zwei Gräber gleichzeitig
+    /// (`lifetime / minInterval` ≈ 33), sonst stünden zwei Gräber gleichzeitig
     /// auf demselben Fleck. Reine Funktion der Nummer — bewusst ohne die
     /// Streifenbreite, denn `MascotParadeCanvas.variant` fragt sie mit ab und
     /// kennt keine Breite.
-    static let cooldown = 82
+    static let cooldown = 40
 
     /// Unter dieser Streifenbreite fällt der Zwischenfall aus: Die Schützen
     /// stehen gut 80 pt neben dem Opfer und wären sonst außerhalb des Bildes.
@@ -102,10 +110,11 @@ enum MascotIncident {
     /// Ab hier wächst der Grabstein aus dem Boden, der Matsch verblasst
     static let stoneRiseAt: TimeInterval = 5.0
     static let stoneRiseEnd: TimeInterval = 6.0
-    /// Ab hier verblasst der Grabstein
-    static let stoneFadeAt: TimeInterval = 186
+    /// Ab hier verblasst der Grabstein — er steht bewusst nur eine knappe
+    /// Minute: eine kleine Erinnerung, kein Denkmal.
+    static let stoneFadeAt: TimeInterval = 50
     /// Gesamtdauer des *sichtbaren* Teils — danach ist die Stelle wieder leer
-    static let total: TimeInterval = 189
+    static let total: TimeInterval = 55
 
     /// Nachlauf: So lange bleibt der Vorfall über sein Ende hinaus bekannt,
     /// obwohl längst nichts mehr zu sehen ist.
@@ -148,18 +157,31 @@ enum MascotIncident {
 
     // MARK: - Wer ist wer
 
+    /// Ist diese Nummer ein Sheriff? Reine Funktion der Nummer — der Sheriff
+    /// läuft von Anfang an mit Hut und Stern ein, nichts springt um.
+    static func isSheriff(_ index: Int) -> Bool {
+        MascotParadeCanvas.roll(index, 29) < sheriffChance
+    }
+
+    /// Zieht dieser Sheriff wirklich? Nur sinnvoll, wenn `isSheriff` wahr ist.
+    private static func sheriffDraws(_ index: Int) -> Bool {
+        MascotParadeCanvas.roll(index, 31) < killChance
+    }
+
     /// Roher Würfelwurf: Wäre diese Nummer ein Opfer, wenn nichts dagegenspräche?
+    /// Das Opfer ist immer der Läufer direkt *hinter* einem ziehenden Sheriff —
+    /// der Sheriff startete früher, läuft vorneweg und dreht sich um.
     /// Getrennt von `isVictim`, damit die Sperrfrist unten nicht in eine
     /// Endlosschleife läuft (sie fragt ausschließlich den rohen Wurf ab).
     private static func rawVictim(_ index: Int) -> Bool {
-        MascotParadeCanvas.roll(index, 101) < chance
+        isSheriff(index - 1) && sheriffDraws(index - 1)
     }
 
     /// Ist diese Nummer das Opfer eines Zwischenfalls?
     static func isVictim(_ index: Int) -> Bool {
         guard rawVictim(index) else { return false }
         // Sperrfrist: Solange der letzte Grabstein noch stehen könnte, gibt es
-        // kein zweites Opfer. Die Schleife läuft nur im Trefferfall (1 von 90),
+        // kein zweites Opfer. Die Schleife läuft nur im Trefferfall (1 von 125),
         // kostet also praktisch nichts.
         for back in 1...cooldown where rawVictim(index - back) { return false }
         return true
@@ -169,8 +191,8 @@ enum MascotIncident {
     /// Wegen der Sperrfrist kann neben einem Opfer kein zweites liegen.
     static func role(of index: Int) -> MascotIncidentRole? {
         if isVictim(index) { return .victim }
-        // Nummer + 1 ist das Opfer → dieser hier startete früher, läuft also
-        // vorneweg und steht rechts vom Opfer.
+        // Nummer + 1 ist das Opfer → dieser hier ist der ziehende Sheriff:
+        // früher gestartet, läuft vorneweg und steht rechts vom Opfer.
         if isVictim(index + 1) { return .shooter }
         return nil
     }
