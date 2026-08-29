@@ -420,5 +420,9 @@
 /* Team-Übersicht — Verbindungszeile und Server-Zustände */
 "team.view.connected_as" = "Verbunden als %@";
 "team.view.members_own_only" = "Mitglieder sehen nur die eigene Meldung.";
+"team.view.members_reported" = "%1$d von %2$d gemeldet";
+"team.row.no_report" = "Noch keine Meldung";
+"team.detail.models" = "Modelle";
+"team.detail.accounts" = "Weitere Konten";
 "team.empty.server_no_reports_step" = "Die App meldet von selbst, sobald sie verbunden ist. Kollegen brauchen nur Team-ID und Token.";
 "team.empty.server_unreachable_step" = "Netzwerk prüfen und erneut versuchen.";

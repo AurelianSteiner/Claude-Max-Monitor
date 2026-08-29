@@ -297,6 +297,18 @@ class MenuBarUI {
             dashboardItem.target = target
             setMenuItemIcon(dashboardItem, systemName: "square.grid.2x2")
             menu.addItem(dashboardItem)
+
+            // Team-Ansicht: derselbe Container, nur im Team-Modus — der
+            // einzige Direktweg dorthin, ohne erst die Übersicht zu öffnen.
+            let teamItem = NSMenuItem(
+                title: L.Dashboard.openTeamWindow,
+                action: #selector(MenuBarManager.openTeamOverview),
+                keyEquivalent: "t"
+            )
+            teamItem.target = target
+            setMenuItemIcon(teamItem, systemName: "person.3")
+            menu.addItem(teamItem)
+
             menu.addItem(NSMenuItem.separator())
         }
 

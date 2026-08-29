@@ -51,7 +51,26 @@ enum TeamReportError: Error, Equatable {
 
 // MARK: - Ein einzelnes Limit
 
-/// Eine Zeile einer Meldung: Beschriftung, Prozentwert, optional der Reset.
+/// Maschinenlesbare Art einer Limit-Zeile. Optional und additiv: Alte
+/// Meldungen ohne `kind` bleiben gültig, die Auswertung fällt dann auf die
+/// Beschriftungs-Erkennung zurück (siehe `TeamSummary`). Der Server speichert
+/// unbekannte Schlüssel unverändert, deshalb braucht das keine neue
+/// Schema-Version.
+enum TeamLimitKind: String, Codable {
+    /// Das schnelle Sitzungsfenster (5 Stunden bzw. Codex primary)
+    case session
+    /// Das Wochenfenster des Kontos
+    case weekly
+    /// Wochenlimit eines einzelnen Modells („Opus 7 Tage", …)
+    case modelWeekly = "model_weekly"
+    /// Wochenlage eines weiteren Kontos („<Kontoname> 7 Tage")
+    case accountWeekly = "account_weekly"
+
+    /// Zählt diese Zeile zur Wochenlage? (Alles außer dem Sitzungsfenster.)
+    var isWeekly: Bool { self != .session }
+}
+
+/// Eine Zeile einer Meldung: Beschriftung, Prozentwert, optional Reset und Art.
 struct TeamLimit: Codable, Identifiable, Equatable {
 
     /// Position innerhalb der Meldung — steckt nicht im JSON, sondern wird
@@ -65,21 +84,25 @@ struct TeamLimit: Codable, Identifiable, Equatable {
     let percent: Int
     /// Wann das Limit wieder frei ist — darf fehlen
     let resetsAt: Date?
+    /// Maschinenlesbare Art der Zeile — darf fehlen (alte Meldungen)
+    let kind: TeamLimitKind?
 
     var id: String { "\(index)-\(label)" }
 
     /// Maximale Länge einer Beschriftung (defensiv, gegen aufgeblähte Dateien)
     static let maxLabelLength = 40
 
-    init(index: Int = 0, label: String, percent: Int, resetsAt: Date? = nil) {
+    init(index: Int = 0, label: String, percent: Int, resetsAt: Date? = nil,
+         kind: TeamLimitKind? = nil) {
         self.index = index
         self.label = String(label.prefix(TeamLimit.maxLabelLength))
         self.percent = min(100, max(0, percent))
         self.resetsAt = resetsAt
+        self.kind = kind
     }
 
     private enum CodingKeys: String, CodingKey {
-        case label, percent, resetsAt
+        case label, percent, resetsAt, kind
     }
 
     init(from decoder: Decoder) throws {
@@ -115,6 +138,11 @@ struct TeamLimit: Codable, Identifiable, Equatable {
             resetsAt = nil
         }
 
+        // Unbekannte kind-Werte werden wie fehlende behandelt — ein neuerer
+        // Client darf Arten erfinden, ohne ältere Leser zu stören.
+        kind = (try? container.decodeIfPresent(String.self, forKey: .kind))
+            .flatMap { TeamLimitKind(rawValue: $0) }
+
         index = 0
     }
 
@@ -124,6 +152,9 @@ struct TeamLimit: Codable, Identifiable, Equatable {
         try container.encode(percent, forKey: .percent)
         if let resetsAt {
             try container.encode(TeamDateFormat.string(from: resetsAt), forKey: .resetsAt)
+        }
+        if let kind {
+            try container.encode(kind.rawValue, forKey: .kind)
         }
     }
 }

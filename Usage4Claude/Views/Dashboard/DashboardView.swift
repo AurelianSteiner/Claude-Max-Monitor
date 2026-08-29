@@ -147,6 +147,8 @@ struct DashboardView: View {
 
     @ObservedObject private var settings = UserSettings.shared
     @StateObject private var localization = LocalizationManager.shared
+    /// Konten-Gitter oder Team-Ansicht — geteilt zwischen Popover und Fenster
+    @ObservedObject private var mode = DashboardMode.shared
     /// „Bleib wach" im Kopf — beobachtet, damit Schalter und Maskottchen
     /// sofort mitziehen, egal wo umgeschaltet wurde.
     @ObservedObject private var sleepGuard = SleepGuard.shared
@@ -246,7 +248,11 @@ struct DashboardView: View {
             header
             mascotRow
             Divider()
-            grid
+            if mode.showsTeam {
+                teamContent
+            } else {
+                grid
+            }
             Divider()
             footer
         }
@@ -366,7 +372,11 @@ struct DashboardView: View {
             HStack(spacing: 6) {
                 stayAwakeToggle(showsLabel: density.showsSleepLabel)
                 stayAwakeInfoButton
-                sortMenu
+                teamToggle
+                if !mode.showsTeam {
+                    // Sortierung und Spalten betreffen nur das Konten-Gitter
+                    sortMenu
+                }
                 actionMenu
             }
             .fixedSize()
@@ -631,6 +641,25 @@ struct DashboardView: View {
         }
     }
 
+    /// Der Umschalter zwischen Konten-Gitter und Team-Ansicht. Aktiv =
+    /// gefüllte Figuren in Akzentfarbe, dieselbe Formensprache wie der
+    /// Wach-Schalter daneben. Die Team-Ansicht ist damit einen Klick entfernt
+    /// statt in einem dritten Fenster versteckt.
+    private var teamToggle: some View {
+        Button(action: {
+            withAnimation(.easeInOut(duration: 0.18)) { mode.showsTeam.toggle() }
+        }) {
+            Image(systemName: mode.showsTeam ? "person.3.fill" : "person.3")
+                .font(.system(size: 12))
+                .foregroundColor(mode.showsTeam ? .accentColor : .secondary)
+                .frame(width: 22, height: 20)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .focusable(false)
+        .help(L.Dashboard.openTeamWindow)
+    }
+
     private var actionMenu: some View {
         Menu {
             // „Aktualisieren" saß bis 2.5 als eigener Knopf im Kopf. Dort war er
@@ -649,10 +678,11 @@ struct DashboardView: View {
                     Label(L.Dashboard.openWindow, systemImage: "macwindow")
                 }
             }
-            // Die Team-Übersicht ist ein eigenes Fenster und deshalb auch aus
-            // dem eigenen Übersichtsfenster heraus erreichbar — anders als der
-            // Eintrag darüber, der dort auf sich selbst zeigen würde.
-            Button(action: { onMenuAction?(.openTeamWindow) }) {
+            // Die Team-Ansicht ist ein Modus der Übersicht (Kopfzeilen-Knopf);
+            // der Menüeintrag spiegelt ihn nur, für alle, die hier suchen.
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.18)) { mode.showsTeam.toggle() }
+            }) {
                 Label(L.Dashboard.openTeamWindow, systemImage: "person.3")
             }
             Divider()
@@ -688,6 +718,21 @@ struct DashboardView: View {
     }
 
     // MARK: - Grid
+
+    /// Die Team-Ansicht im selben Rahmen wie das Gitter: gleiche Höhenregeln,
+    /// damit das Popover beim Umschalten nicht springt und das Fenster
+    /// weiter frei skaliert. Mindestens 320 pt hoch — eine Team-Liste unter
+    /// einer einzelnen Kartenzeile wäre sonst ein Sehschlitz.
+    @ViewBuilder
+    private var teamContent: some View {
+        let boxHeight = max(gridHeight + DashboardMetrics.outerPadding * 2, 320)
+        TeamView(onMenuAction: onMenuAction)
+            .frame(
+                minHeight: isStandaloneWindow ? min(boxHeight, 200) : boxHeight,
+                idealHeight: boxHeight,
+                maxHeight: isStandaloneWindow ? .infinity : boxHeight
+            )
+    }
 
     @ViewBuilder
     private var grid: some View {

@@ -33,6 +33,10 @@ final class TeamReportStore: ObservableObject {
 
     /// Alle Meldungen des Teams, neueste zuerst
     @Published private(set) var reports: [TeamReport] = []
+    /// Die Mitgliederliste des Teams — nur für Super/Admin gefüllt (der Server
+    /// gibt sie Mitgliedern nicht heraus). Damit zeigt die Übersicht auch, wer
+    /// noch **nie** gemeldet hat, statt so zu tun, als gäbe es ihn nicht.
+    @Published private(set) var members: [TeamServerMember] = []
     /// Wann zuletzt beim Server nachgefragt wurde
     @Published private(set) var lastRefreshAt: Date?
     /// Läuft gerade ein Abruf?
@@ -90,11 +94,6 @@ final class TeamReportStore: ObservableObject {
         TeamServerConnection.shared.isConnected
     }
 
-    /// Meldungen, die älter als 24 Stunden sind
-    var staleReports: [TeamReport] {
-        reports.filter(\.isStale)
-    }
-
     // MARK: - Aktualisieren
 
     /// Für `onAppear`: sofort nachsehen und den Zeitgeber laufen lassen.
@@ -130,14 +129,25 @@ final class TeamReportStore: ObservableObject {
 
         isRefreshing = true
         let generation = configurationGeneration
+        let mayListMembers = TeamServerConnection.shared.role.map { $0 != .member } ?? false
         Task { [weak self] in
             do {
                 let fetched = try await client.reports()
+                // Mitgliederliste nur für Rollen, die sie bekommen — und ihr
+                // Scheitern ist kein Verbindungsfehler: Die Meldungen sind da,
+                // dann fehlen eben nur die „noch keine Meldung"-Zeilen.
+                let fetchedMembers: [TeamServerMember]
+                if mayListMembers {
+                    fetchedMembers = (try? await client.members()) ?? []
+                } else {
+                    fetchedMembers = []
+                }
                 await MainActor.run {
                     guard let self, generation == self.configurationGeneration else { return }
                     self.isRefreshing = false
                     self.lastRefreshAt = Date()
                     self.serverUnavailable = false
+                    if self.members != fetchedMembers { self.members = fetchedMembers }
                     // Pro Person nur die jüngste Meldung.
                     let cleaned = TeamReport.deduplicatedByPerson(fetched)
                     guard self.reports != cleaned else { return }
@@ -171,6 +181,7 @@ final class TeamReportStore: ObservableObject {
             refresh(force: true)
         } else {
             reports = []
+            members = []
             serverUnavailable = false
             lastRefreshAt = nil
         }

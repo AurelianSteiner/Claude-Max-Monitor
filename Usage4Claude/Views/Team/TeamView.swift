@@ -2,12 +2,16 @@
 //  TeamView.swift
 //  Usage4Claude
 //
-//  Die Team-Übersicht: eine Karte je gemeldeter Person, am stärksten
-//  Ausgelastete oben. Sie beantwortet genau eine Frage — wer im Team ist
-//  gerade am Ende und wer hat noch Luft.
+//  Die Team-Übersicht: eine kompakte Zeile je Person, am stärksten
+//  Ausgelastete oben, veraltete Meldungen unten. Ein Klick auf eine Zeile
+//  öffnet die Detailansicht der Person (`TeamMemberDetailView`) — im selben
+//  Container, kein eigenes Fenster. Die Übersicht beantwortet „wer ist am
+//  Ende, wer hat noch Luft", das Detail „welche Limits genau, und ab wann
+//  wieder frei".
 //
-//  Alles hier ist Anzeige. Die Meldungen kommen vom Team-Server
-//  (`TeamReportStore`), es gibt keinen anderen Weg mehr.
+//  Seit 2.7 lebt die Ansicht als zweiter Modus in der Übersicht
+//  (`DashboardView`), nicht mehr im eigenen Fenster. Die Meldungen kommen vom
+//  Team-Server (`TeamReportStore`), es gibt keinen anderen Weg.
 //
 //  Die leeren Zustände (nicht verbunden / Server nicht erreichbar / noch
 //  keine Meldungen) sind absichtlich unterschieden: Jeder braucht einen
@@ -26,9 +30,35 @@ struct TeamView: View {
     @ObservedObject private var server = TeamServerConnection.shared
     @StateObject private var localization = LocalizationManager.shared
 
-    /// Am stärksten Ausgelastete zuerst
+    /// Aufgeklappte Person (Meldungs-ID) — `nil` = Liste. Verschwindet die
+    /// Meldung bei einer Aktualisierung, fällt die Ansicht von selbst auf die
+    /// Liste zurück (siehe `selectedReport`).
+    @State private var selectedReportID: String?
+
+    /// Am stärksten Ausgelastete zuerst, Veraltete unten
     private var reports: [TeamReport] {
         TeamSummary.sortedByLoad(reportStore.reports)
+    }
+
+    private var selectedReport: TeamReport? {
+        guard let id = selectedReportID else { return nil }
+        return reports.first { $0.id == id }
+    }
+
+    /// Mitglieder, von denen noch keine Meldung vorliegt — nur Super/Admin
+    /// bekommen die Mitgliederliste, für alle anderen bleibt das leer.
+    /// Ohne diese Zeilen sähe ein Team von zehn, in dem drei melden, wie ein
+    /// Team von drei aus.
+    private var silentMembers: [TeamServerMember] {
+        guard !reportStore.members.isEmpty else { return [] }
+        let reportedIDs = Set(reportStore.reports.map(\.id))
+        let reportedNames = Set(reportStore.reports.map { $0.person.lowercased() })
+        return reportStore.members
+            .filter { member in
+                !reportedIDs.contains("server-\(member.id)")
+                    && !reportedNames.contains(member.name.lowercased())
+            }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
     var body: some View {
@@ -37,10 +67,6 @@ struct TeamView: View {
             Divider()
             content
         }
-        .frame(
-            minWidth: 320, idealWidth: 380, maxWidth: .infinity,
-            minHeight: 240, idealHeight: 460, maxHeight: .infinity
-        )
         .onAppear { reportStore.activate() }
         .onDisappear { reportStore.deactivate() }
     }
@@ -64,10 +90,28 @@ struct TeamView: View {
                 }
             }
 
+            // Ein Wasserstand je Person, dieselbe Miniatur wie die Konten in
+            // der Kopfzeile der Übersicht: Pegel = Woche, roter Ring =
+            // Sitzung voll. Veraltete Meldungen erscheinen gedämpft.
+            if !reports.isEmpty {
+                HStack(spacing: MiniGaugeMetrics.spacing) {
+                    ForEach(reports) { report in
+                        MiniWaterGauge(
+                            weeklyUtilization: TeamSummary.weeklyPercent(of: report).map(Double.init),
+                            sessionExhausted: (TeamSummary.sessionPercent(of: report) ?? 0) >= 100,
+                            diameter: 13
+                        )
+                        .opacity(report.isStale ? 0.45 : 1)
+                        .help(gaugeHelp(for: report))
+                    }
+                }
+                .fixedSize()
+            }
+
             Spacer(minLength: 8)
 
             if !reports.isEmpty {
-                countPill(L.Team.peopleCount(reports.count), help: nil)
+                countPill(peopleText, help: nil)
 
                 let atLimit = TeamSummary.atLimitCount(reports)
                 if atLimit > 0 {
@@ -86,11 +130,33 @@ struct TeamView: View {
         .frame(minHeight: 36)
     }
 
+    /// „3 von 8 gemeldet", sobald die Mitgliederliste bekannt ist —
+    /// sonst schlicht „Personen: 3".
+    private var peopleText: String {
+        let fresh = TeamSummary.freshCount(reports)
+        let total = max(reportStore.members.count, reports.count)
+        if !reportStore.members.isEmpty, total > reports.count || fresh < total {
+            return L.Team.membersReported(fresh, total)
+        }
+        return L.Team.peopleCount(reports.count)
+    }
+
     /// Zeile unter dem Titel: verbunden als wer. `nil`, solange keine
     /// Verbindung besteht oder die Rolle (Token abgelehnt) fehlt.
     private var connectionLine: String? {
         guard server.isConnected, let role = server.role else { return nil }
         return L.Team.connectedAs(role.displayName)
+    }
+
+    private func gaugeHelp(for report: TeamReport) -> String {
+        var parts: [String] = [report.person]
+        if let weekly = TeamSummary.weeklyPercent(of: report) {
+            parts.append("\(L.Dashboard.weeklyLimit) \(weekly)%")
+        }
+        if let session = TeamSummary.sessionPercent(of: report) {
+            parts.append("\(L.Dashboard.sessionLimit) \(session)%")
+        }
+        return parts.joined(separator: " · ")
     }
 
     private func countPill(_ text: String, help: String?, tint: Color = .secondary) -> some View {
@@ -118,11 +184,15 @@ struct TeamView: View {
 
     // MARK: - Inhalt
 
-    /// Drei leere Zustände plus die Kartenliste: nicht verbunden, Server
-    /// gerade nicht erreichbar, noch keine Meldungen.
+    /// Drei leere Zustände, die Liste — oder das Detail einer Person.
     @ViewBuilder
     private var content: some View {
-        if !server.isConnected {
+        if let report = selectedReport {
+            TeamMemberDetailView(report: report) {
+                withAnimation(.easeInOut(duration: 0.18)) { selectedReportID = nil }
+            }
+            .transition(.move(edge: .trailing).combined(with: .opacity))
+        } else if !server.isConnected {
             emptyState(
                 symbol: "person.2",
                 title: L.Team.emptyNoTeam,
@@ -140,7 +210,7 @@ struct TeamView: View {
             ) {
                 reportStore.refresh(force: true)
             }
-        } else if reports.isEmpty {
+        } else if reports.isEmpty && silentMembers.isEmpty {
             emptyState(
                 symbol: "tray",
                 title: L.Team.emptyNoReports,
@@ -150,18 +220,30 @@ struct TeamView: View {
                 reportStore.refresh(force: true)
             }
         } else {
-            cardList
+            memberList
         }
     }
 
-    private var cardList: some View {
+    private var memberList: some View {
         ScrollView {
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 ForEach(reports) { report in
-                    TeamReportCard(report: report)
+                    TeamMemberRow(report: report) {
+                        withAnimation(.easeInOut(duration: 0.18)) {
+                            selectedReportID = report.id
+                        }
+                    }
                 }
 
-                // Ein Mitglied sieht nur die eigene Karte — das ist Absicht
+                // Wer noch nie gemeldet hat, steht trotzdem da — gedämpft,
+                // mit dem grauen „keine Daten"-Wasserstand. So sieht der
+                // Inhaber auf einen Blick, wer die App noch nicht
+                // eingerichtet hat.
+                ForEach(silentMembers) { member in
+                    TeamSilentMemberRow(member: member)
+                }
+
+                // Ein Mitglied sieht nur die eigene Zeile — das ist Absicht
                 // des Servers, kein Fehler. Eine leise Zeile erklärt es,
                 // bevor jemand nach den Kollegen sucht.
                 if server.role == .member {
@@ -210,5 +292,113 @@ struct TeamView: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: - Eine Person als Zeile
+
+/// Kompakte Zeile der Team-Liste: Wasserstand, Name, Meldealter, Wochenwert,
+/// Pfeil. Die Details (alle Limits, Reset-Zeiten) stehen bewusst nicht hier —
+/// dafür ist die Detailansicht da, sonst wird die Liste ab fünf Personen zur
+/// Scrollstrecke.
+private struct TeamMemberRow: View {
+    let report: TeamReport
+    let action: () -> Void
+
+    private var weekly: Int? { TeamSummary.weeklyPercent(of: report) }
+    private var session: Int? { TeamSummary.sessionPercent(of: report) }
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                MiniWaterGauge(
+                    weeklyUtilization: weekly.map(Double.init),
+                    sessionExhausted: (session ?? 0) >= 100,
+                    diameter: 16
+                )
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(report.person)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Text(L.Team.reportedAgo(report.reportedAgoText))
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 8)
+
+                if let stale = report.staleLabel {
+                    Text(stale)
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundColor(DashboardPalette.ink(80))
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(Capsule().fill(DashboardPalette.fill(80).opacity(0.15)))
+                }
+
+                if let weekly {
+                    Text("\(weekly)%")
+                        .font(.system(size: 13, weight: .semibold).monospacedDigit())
+                        .foregroundColor(DashboardPalette.ink(Double(weekly)))
+                }
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(NSColor.controlBackgroundColor).opacity(0.7))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+            )
+            .opacity(report.isStale ? 0.55 : 1)
+            .contentShape(RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
+        .focusable(false)
+    }
+}
+
+/// Zeile für ein Mitglied, das noch nie gemeldet hat: grauer Wasserstand,
+/// Name, „Noch keine Meldung". Nicht klickbar — es gibt nichts zu zeigen.
+private struct TeamSilentMemberRow: View {
+    let member: TeamServerMember
+
+    var body: some View {
+        HStack(spacing: 10) {
+            MiniWaterGauge(weeklyUtilization: nil, sessionExhausted: false, diameter: 16)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(member.name)
+                    .font(.system(size: 12, weight: .semibold))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Text(L.Team.rowNoReport)
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary)
+            }
+
+            Spacer(minLength: 8)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(NSColor.controlBackgroundColor).opacity(0.4))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        )
+        .opacity(0.7)
     }
 }

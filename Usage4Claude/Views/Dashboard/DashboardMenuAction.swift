@@ -19,6 +19,4 @@ enum MenuAction {
     case quit
     /// Übersicht in einem eigenständigen Fenster öffnen
     case openDashboardWindow
-    /// Team-Übersicht in einem eigenständigen Fenster öffnen
-    case openTeamWindow
 }

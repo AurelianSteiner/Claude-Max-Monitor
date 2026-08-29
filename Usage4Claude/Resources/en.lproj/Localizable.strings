@@ -421,5 +421,9 @@
 /* Team overview — connection line and server states */
 "team.view.connected_as" = "Connected as %@";
 "team.view.members_own_only" = "Members only see their own report.";
+"team.view.members_reported" = "%1$d of %2$d reported";
+"team.row.no_report" = "No report yet";
+"team.detail.models" = "Models";
+"team.detail.accounts" = "Other accounts";
 "team.empty.server_no_reports_step" = "The app reports on its own once connected. Colleagues only need the team ID and a token.";
 "team.empty.server_unreachable_step" = "Check the network and try again.";

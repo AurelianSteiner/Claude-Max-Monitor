@@ -575,6 +575,16 @@ enum L {
             String(format: localized("team.view.connected_as"), role)
         }
         static var membersOwnOnly: String { localized("team.view.members_own_only") }
+
+        /// „3 von 8 gemeldet" — frische Meldungen gegen die Mitgliederliste
+        static func membersReported(_ fresh: Int, _ total: Int) -> String {
+            String(format: localized("team.view.members_reported"), fresh, total)
+        }
+        /// Zeile eines Mitglieds ohne Meldung
+        static var rowNoReport: String { localized("team.row.no_report") }
+        /// Gruppenüberschriften der Detailansicht
+        static var detailModels: String { localized("team.detail.models") }
+        static var detailAccounts: String { localized("team.detail.accounts") }
         static var emptyServerNoReportsStep: String { localized("team.empty.server_no_reports_step") }
         static var emptyServerUnreachableStep: String { localized("team.empty.server_unreachable_step") }
     }

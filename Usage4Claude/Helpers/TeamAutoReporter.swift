@@ -222,22 +222,28 @@ final class TeamAutoReporter {
         var limits: [TeamLimit] = []
 
         // Hauptzeilen: das beste Konto, beschriftet wie Karten und Skript.
+        // Jede Zeile trägt zusätzlich ihre maschinenlesbare Art (`kind`),
+        // damit Auswertung und Detailansicht nicht mehr an der Beschriftung
+        // schnüffeln müssen. Alte Leser ignorieren das Feld einfach.
         if let data = best.usageData {
             if let fiveHour = data.fiveHour {
                 limits.append(TeamLimit(label: "5 Stunden",
                                         percent: percent(fiveHour.percentage),
-                                        resetsAt: fiveHour.resetsAt))
+                                        resetsAt: fiveHour.resetsAt,
+                                        kind: .session))
             }
             if let sevenDay = data.sevenDay {
                 limits.append(TeamLimit(label: "7 Tage",
                                         percent: percent(sevenDay.percentage),
-                                        resetsAt: sevenDay.resetsAt))
+                                        resetsAt: sevenDay.resetsAt,
+                                        kind: .weekly))
             }
             for model in data.weeklyModels {
                 let name = model.modelName ?? "Modell"
                 limits.append(TeamLimit(label: weeklyLabel(prefixedWith: name),
                                         percent: percent(model.limit.percentage),
-                                        resetsAt: model.limit.resetsAt))
+                                        resetsAt: model.limit.resetsAt,
+                                        kind: .modelWeekly))
             }
         }
 
@@ -248,7 +254,8 @@ final class TeamAutoReporter {
                 guard let weekly = snapshot.weeklyPeakUtilization else { continue }
                 limits.append(TeamLimit(label: weeklyLabel(prefixedWith: snapshot.account.displayName),
                                         percent: percent(weekly),
-                                        resetsAt: snapshot.usageData?.sevenDay?.resetsAt))
+                                        resetsAt: snapshot.usageData?.sevenDay?.resetsAt,
+                                        kind: .accountWeekly))
             }
         }
 
