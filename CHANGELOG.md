@@ -29,6 +29,14 @@ Großer Aufräum- und Ausbau-Durchgang.
 - **Der Team-Server führt Verlauf**: Jede Meldung wird zusätzlich als kompakte
   Zeile je Mitglied angehängt (30 Tage), abrufbar über einen neuen, nach Rollen
   gesicherten History-Endpunkt — die Grundlage für Auslastungs-Verläufe.
+- **Verläufe in der App.** Die Detailansicht einer Person zeichnet unter jeder
+  Wochen-Zeile eine kleine 7-Tage-Verlaufslinie (schlichter `Path`, keine
+  Chart-Abhängigkeit), und die Team-Liste trägt einen Trend-Pfeil, sobald sich
+  die Woche gegenüber ~24 Stunden zuvor spürbar bewegt hat. Geladen wird träge
+  über den neuen History-Endpunkt (`TeamHistoryStore`, einmal je Person und
+  Sitzung); die Verlaufs-ID kommt aus der Mitglieds-ID der Meldung,
+  Super-/Admin-Meldungen liegen unter dem Namens-Slug des Servers. Läuft
+  draußen noch ein Relay ohne den Endpunkt, fehlen schlicht Linie und Pfeil.
 - **Sheriff auf dem Laufsteg.** Alle anderthalb Minuten patrouilliert ein
   Sheriff-Claudie (Cowboyhut, goldener Stern) hüpfend durch die Parade.
   Ungefähr jeder fünfte zieht — der Zwischenfall ist damit häufiger als

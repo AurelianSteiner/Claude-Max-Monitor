@@ -567,6 +567,13 @@ enum L {
         /// Gruppenüberschriften der Detailansicht
         static var detailModels: String { localized("team.detail.models") }
         static var detailAccounts: String { localized("team.detail.accounts") }
+        /// Fußnote und Tooltip der Verlaufslinien in der Detailansicht
+        static var detailHistory: String { localized("team.detail.history") }
+
+        /// „Wochenlimit: 62 % → 78 % in 24 h" — Tooltip des Trend-Pfeils
+        static func trendHelp(_ previous: Int, _ current: Int) -> String {
+            String(format: localized("team.view.trend"), previous, current)
+        }
         static var emptyServerNoReportsStep: String { localized("team.empty.server_no_reports_step") }
         static var emptyServerUnreachableStep: String { localized("team.empty.server_unreachable_step") }
     }

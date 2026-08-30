@@ -405,5 +405,7 @@
 "team.row.no_report" = "Noch keine Meldung";
 "team.detail.models" = "Modelle";
 "team.detail.accounts" = "Weitere Konten";
+"team.detail.history" = "Verlauf: letzte 7 Tage";
+"team.view.trend" = "Wochenlimit: %1$d %% → %2$d %% in 24 h";
 "team.empty.server_no_reports_step" = "Die App meldet von selbst, sobald sie verbunden ist. Kollegen brauchen nur Team-ID und Token.";
 "team.empty.server_unreachable_step" = "Netzwerk prüfen und erneut versuchen.";

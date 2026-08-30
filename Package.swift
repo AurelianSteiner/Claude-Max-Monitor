@@ -36,6 +36,7 @@ let package = Package(
                 "Models/CodexUsageData.swift",
                 "Helpers/NotificationNames.swift",
                 "Models/TeamReport.swift",
+                "Models/TeamHistorySample.swift",
                 "Helpers/PrivilegedPower.swift"
             ]
         ),

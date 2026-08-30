@@ -10,6 +10,10 @@
 //  Die Zeilen sind nach ihrer Art gruppiert (Sitzung/Woche, Modelle, weitere
 //  Konten), sofern die Meldung das maschinenlesbare `kind`-Feld trägt. Alte
 //  Meldungen ohne `kind` zeigen schlicht alle Zeilen in Meldereihenfolge.
+//
+//  Unter jeder Wochen-Zeile liegt eine kleine 7-Tage-Verlaufslinie
+//  (`TeamSparkline`), sobald der Verlauf der Person geladen ist — geholt
+//  wird er träge beim Öffnen des Details (`TeamHistoryStore`).
 //  Copyright © 2025 f-is-h. All rights reserved.
 //
 
@@ -19,6 +23,8 @@ struct TeamMemberDetailView: View {
     let report: TeamReport
     /// Zurück zur Liste — die Ansicht lebt im selben Container wie sie
     var onBack: () -> Void
+
+    @ObservedObject private var historyStore = TeamHistoryStore.shared
 
     private var sessionLimit: TeamLimit? {
         report.limits.first(where: TeamSummary.isSession)
@@ -48,6 +54,11 @@ struct TeamMemberDetailView: View {
         report.limits.filter { $0.kind == .session || $0.kind == .weekly || $0.kind == nil }
     }
 
+    /// Der geladene Verlauf dieser Person — `nil`, solange er noch fehlt
+    private var samples: [TeamHistorySample]? {
+        historyStore.samples(for: report.historyMemberId)
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
@@ -58,6 +69,7 @@ struct TeamMemberDetailView: View {
             }
             .padding(12)
         }
+        .onAppear { historyStore.load(memberId: report.historyMemberId) }
     }
 
     // MARK: - Kopf
@@ -179,6 +191,15 @@ struct TeamMemberDetailView: View {
             if !accountLimits.isEmpty {
                 section(title: L.Team.detailAccounts, limits: accountLimits)
             }
+
+            // Eine Fußnote für alle Linien, statt einer Beschriftung an
+            // jeder — die Linien selbst bleiben unbeschriftet und ruhig.
+            if showsAnySparkline {
+                Text(L.Team.detailHistory)
+                    .font(.system(size: 9))
+                    .foregroundColor(.secondary)
+                    .padding(.top, 4)
+            }
         }
     }
 
@@ -196,7 +217,9 @@ struct TeamMemberDetailView: View {
 
     /// Eine Limit-Zeile mit **sichtbarer** Reset-Zeit: Die Übersicht ist zum
     /// Planen da, und „ab wann wieder frei" ist die halbe Antwort — im
-    /// Tooltip war sie versteckt.
+    /// Tooltip war sie versteckt. Wochen-Zeilen tragen darunter ihre
+    /// 7-Tage-Verlaufslinie, sobald der Verlauf geladen ist.
+    @ViewBuilder
     private func limitRow(_ limit: TeamLimit) -> some View {
         HStack(spacing: 8) {
             TeamLimitBar(
@@ -209,7 +232,45 @@ struct TeamMemberDetailView: View {
                 .font(.system(size: 10).monospacedDigit())
                 .foregroundColor(.secondary)
                 .lineLimit(1)
-                .frame(width: 68, alignment: .trailing)
+                .frame(width: Self.resetWidth, alignment: .trailing)
         }
+
+        if let points = sparklinePoints(for: limit) {
+            sparklineRow(points, percent: limit.percent)
+        }
+    }
+
+    // MARK: - Verlaufslinien
+
+    /// Breite der Reset-Spalte rechts neben dem Balken
+    private static let resetWidth: CGFloat = 68
+
+    /// Die Verlaufspunkte einer Zeile — nur für Wochen-Zeilen, und nur wenn
+    /// mindestens zwei Punkte da sind (ein einzelner ergäbe keine Linie).
+    /// Das Sitzungsfenster bekommt bewusst keine Linie: Es springt alle fünf
+    /// Stunden auf null, sein „Verlauf" wäre ein Sägezahn ohne Aussage.
+    private func sparklinePoints(for limit: TeamLimit) -> [TeamHistoryPoint]? {
+        guard TeamSummary.isWeekly(limit), let samples else { return nil }
+        let points = samples.points(label: limit.label)
+        return points.count >= 2 ? points : nil
+    }
+
+    /// Die Linie unter einer Zeile, exakt unter deren Balken ausgerichtet:
+    /// links die Beschriftungs-, rechts die Wert- und Reset-Spalte freigehalten.
+    private func sparklineRow(_ points: [TeamHistoryPoint], percent: Int) -> some View {
+        HStack(spacing: 8) {
+            Color.clear.frame(width: TeamLimitBar.labelWidth, height: 1)
+            TeamSparkline(points: points, percent: percent)
+                .frame(height: 18)
+                .help(L.Team.detailHistory)
+            Color.clear.frame(width: TeamLimitBar.valueWidth, height: 1)
+            Color.clear.frame(width: Self.resetWidth, height: 1)
+        }
+        .padding(.bottom, 2)
+    }
+
+    /// Zeigt mindestens eine Zeile eine Verlaufslinie? (Für die Fußnote.)
+    private var showsAnySparkline: Bool {
+        report.limits.contains { sparklinePoints(for: $0) != nil }
     }
 }

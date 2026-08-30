@@ -23,8 +23,10 @@ struct TeamLimitBar: View {
     /// Wann das Limit wieder frei ist — nur als Tooltip, die Zeile bleibt schmal
     var resetsAtText: String?
 
-    private static let labelWidth: CGFloat = 96
-    private static let valueWidth: CGFloat = 40
+    /// Spaltenbreiten — nicht privat, damit die Detailansicht ihre
+    /// Verlaufslinien exakt unter dem Balken ausrichten kann.
+    static let labelWidth: CGFloat = 96
+    static let valueWidth: CGFloat = 40
 
     private var clamped: Double { Double(min(100, max(0, percent))) }
 
