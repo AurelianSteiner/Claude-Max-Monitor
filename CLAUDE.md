@@ -25,9 +25,10 @@ A macOS menu bar app that monitors Claude / Codex subscription usage. Swift + Sw
 ## Key Conventions
 
 - Commits: English, no emoji, no Co-Authored-By — see `docs/COMMIT_MESSAGE_GUIDELINES.md` (release commits are hand-written by the owner)
-- Releases: `CHANGELOG.md` is the authoritative version source and technical record; `docs/RELEASE_NOTES.md` is the
-  user-facing text for the Sparkle popup/Release body. A commit message with a `[release]` prefix pushed to main
-  triggers a fully automated CI release — see `docs/DAILY_RELEASE_WORKFLOW.md`
+- Releases: `CHANGELOG.md` is the authoritative version source and technical record. Cut a release with
+  `./scripts/release.sh <version> "<user-facing notes>"` on `main` — it builds (swiftc, no Xcode needed),
+  packs and Sparkle-signs the DMG, extends `appcast.xml`, pushes main, and creates the GitHub release.
+  The notes argument is the user-facing text for the Sparkle popup and the release body.
 - Service-layer public completions must always be called back on the main thread
 - `Config/Info.plist` is a static file (Xcode's auto-generation mode drops Sparkle keys) — edit it directly to change keys
 - Outdated docs go into `docs/archive/`, not left in the `docs/` root
