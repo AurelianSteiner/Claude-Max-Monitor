@@ -32,7 +32,7 @@ enum TeamServerRole: String, Codable, Equatable {
     case superAdmin = "super"
     /// Sieht alle Meldungen, verwaltet aber nichts
     case admin
-    /// Meldet die eigene Auslastung, sieht nur die eigene Meldung
+    /// Meldet die eigene Auslastung; sehen dürfen alle Rollen alles
     case member
 
     /// Unbekannte Rollen aus der Antwort fallen auf die kleinste Rechte-

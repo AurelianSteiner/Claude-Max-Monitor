@@ -543,7 +543,6 @@ enum L {
         static func connectedAs(_ role: String) -> String {
             String(format: localized("team.view.connected_as"), role)
         }
-        static var membersOwnOnly: String { localized("team.view.members_own_only") }
 
         /// „3 von 8 gemeldet" — frische Meldungen gegen die Mitgliederliste
         static func membersReported(_ fresh: Int, _ total: Int) -> String {

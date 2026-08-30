@@ -391,7 +391,6 @@
 
 /* Team overview — connection line and server states */
 "team.view.connected_as" = "Connected as %@";
-"team.view.members_own_only" = "Members only see their own report.";
 "team.view.members_reported" = "%1$d of %2$d reported";
 "team.row.no_report" = "No report yet";
 "team.detail.models" = "Models";

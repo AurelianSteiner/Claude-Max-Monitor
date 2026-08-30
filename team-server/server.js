@@ -5,7 +5,8 @@
 //   super   Team-Inhaber (Token aus TEAM_TOKENS): verwaltet Mitglieder,
 //           sieht alles inklusive der Mitglieds-Tokens.
 //   admin   sieht alle Meldungen des Teams, verwaltet aber nichts.
-//   member  meldet die eigene Auslastung und sieht nur die eigene Meldung.
+//   member  meldet die eigene Auslastung; sehen dürfen alle alles —
+//           geteilt werden ohnehin nur freiwillige Prozentwerte.
 //
 // Es werden ausschließlich Prozentwerte, Labels und Reset-Zeitpunkte
 // gespeichert — niemals Session Keys, Chats oder andere Inhalte.
@@ -24,8 +25,8 @@
 //   GET    /v1/teams/:id/members                Mitglieder auflisten              super (mit Token), admin (ohne)
 //   DELETE /v1/teams/:id/members/:memberId      Mitglied entfernen                super
 //   POST   /v1/reports                          Meldung speichern                 jede Rolle (member: nur als sich selbst)
-//   GET    /v1/teams/:id/reports                Meldungen lesen                   super/admin: alle, member: nur die eigene
-//   GET    /v1/teams/:id/members/:mid/history   Verlauf (?days=7, max 30)         super/admin: jeder, member: nur eigener
+//   GET    /v1/teams/:id/reports                Meldungen lesen                   jede Rolle: alle
+//   GET    /v1/teams/:id/members/:mid/history   Verlauf (?days=7, max 30)         jede Rolle: jeder
 //
 // Verlauf: Jede angenommene Meldung wird zusätzlich als eine Zeile
 // {t, limits:[{label, kind?, percent}]} an history/<memberId>.ndjson
@@ -318,13 +319,11 @@ const server = http.createServer((req, res) => {
     });
   }
 
-  // GET /v1/teams/:id/reports
+  // GET /v1/teams/:id/reports — jede Rolle sieht alle Meldungen. Wer seine
+  // Auslastung teilt, bekommt die Übersicht auch zurück; der frühere Filter
+  // auf die eigene Meldung nahm Mitgliedern genau den Anreiz dafür.
   if (req.method === "GET" && rest === "/reports") {
-    let reports = readReports(teamId);
-    if (who.role === "member") {
-      reports = reports.filter((r) => r.memberId === who.member.id);
-    }
-    return send(res, 200, { reports });
+    return send(res, 200, { reports: readReports(teamId) });
   }
 
   // POST /v1/teams/:id/members — Mitglied anlegen (nur Super-Admin)
@@ -377,13 +376,11 @@ const server = http.createServer((req, res) => {
   }
 
   // GET /v1/teams/:id/members/:memberId/history?days=7 — Verlauf eines
-  // Mitglieds. Mitglieder sehen nur den eigenen, wie bei den Meldungen.
+  // Mitglieds. Wie die Meldungen für jede Rolle offen, sonst gäbe es in der
+  // Detailansicht der Kollegen zwar Balken, aber keine Kurven.
   const historyMatch = rest.match(/^\/members\/([a-z0-9-]{1,64})\/history$/);
   if (req.method === "GET" && historyMatch) {
     const memberId = historyMatch[1];
-    if (who.role === "member" && (!who.member || who.member.id !== memberId)) {
-      return send(res, 403, { error: "nur der eigene Verlauf" });
-    }
     const days = Math.min(30, Math.max(1, Number(url.searchParams.get("days")) || 7));
     return send(res, 200, { memberId, days, samples: readHistory(teamId, memberId, days) });
   }

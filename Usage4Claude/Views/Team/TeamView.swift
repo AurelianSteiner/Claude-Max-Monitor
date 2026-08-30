@@ -248,17 +248,6 @@ struct TeamView: View {
                 ForEach(silentMembers) { member in
                     TeamSilentMemberRow(member: member)
                 }
-
-                // Ein Mitglied sieht nur die eigene Zeile — das ist Absicht
-                // des Servers, kein Fehler. Eine leise Zeile erklärt es,
-                // bevor jemand nach den Kollegen sucht.
-                if server.role == .member {
-                    Text(L.Team.membersOwnOnly)
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 2)
-                }
             }
             .padding(12)
         }

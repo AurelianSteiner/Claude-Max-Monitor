@@ -5,7 +5,7 @@
 //  Team-Übersicht — die Meldungen. EINE Quelle der Wahrheit für alle
 //  Ansichten, und dahinter genau EIN Weg: der Team-Server. Besteht eine
 //  Verbindung (`TeamServerConnection`), holt `refresh()` GET /reports —
-//  Super und Admin bekommen alle Meldungen, Mitglieder nur die eigene.
+//  jede Rolle bekommt alle Meldungen des Teams.
 //
 //  Veröffentlicht wird `[TeamReport]`, eine Meldung pro Person.
 //

@@ -9,7 +9,7 @@
 //  und Reset-Zeitpunkte. Endpunkte:
 //
 //      GET    /v1/teams/<ID>/me                  Rolle + Name des Tokens
-//      GET    /v1/teams/<ID>/reports             Meldungen (member: nur die eigene)
+//      GET    /v1/teams/<ID>/reports             Meldungen (jede Rolle: alle)
 //      POST   /v1/reports                        eigene Meldung speichern
 //      GET    /v1/teams/<ID>/members             Mitglieder (super: mit Tokens)
 //      POST   /v1/teams/<ID>/members             Mitglied anlegen (nur super)
@@ -148,7 +148,7 @@ final class TeamServerClient {
         return try Self.decode(TeamServerIdentity.self, from: data)
     }
 
-    /// GET /v1/teams/<ID>/reports — alle Meldungen (member: nur die eigene).
+    /// GET /v1/teams/<ID>/reports — alle Meldungen des Teams (jede Rolle).
     ///
     /// Jeder Eintrag läuft einzeln durch den toleranten `TeamReport.parse`:
     /// Ein kaputter Eintrag fliegt still raus, die anderen bleiben. Einträge
