@@ -257,20 +257,9 @@ enum L {
         }
     }
     
-    // MARK: - Icon Display Mode
-    enum Display {
-        static var percentageOnly: String { localized("display.percentage_only") }
-        static var iconOnly: String { localized("display.icon_only") }
-        static var both: String { localized("display.both") }
-        static var none: String { localized("display.none") }
-        /// Name des Menüleisten-Modus „ein Punkt je Konto"
-        static var accountDots: String { localized("display.account_dots") }
-    }
-    
     // MARK: - Icon Style Mode
     enum IconStyle {
         static var colorTranslucent: String { localized("icon_style.color_translucent") }
-        static var colorWithBackground: String { localized("icon_style.color_with_background") }
         static var monochrome: String { localized("icon_style.monochrome") }
     }
     
@@ -370,9 +359,7 @@ enum L {
 
     // MARK: - Display Options (v2.0.0)
     enum DisplayOptions {
-        static var smartDisplay: String { localized("smart_display") }
-        static var customDisplay: String { localized("custom_display") }
-        /// Überschrift der Auswahl „Ringe oder Punktreihe in der Menüleiste"
+        /// Überschrift der Auswahl „farbig oder einfarbig in der Menüleiste"
         static var menuBarLayout: String { localized("display_options.menu_bar_layout") }
         /// Erklärung zur Punktreihe unter der Auswahl
         static var accountDotsDescription: String { localized("display_options.account_dots_description") }

@@ -51,7 +51,6 @@
 "settings.general.interface_language" = "Interface Language";
 "settings.general.reset_button" = "Reset to Defaults";
 "icon_style.color_translucent" = "Color Translucent";
-"icon_style.color_with_background" = "Color with Background";
 "icon_style.monochrome" = "Monochrome";
 
 // MARK: - Settings - Authentication
@@ -85,13 +84,6 @@
 "update.notification.available" = "New Version Available!";
 "update.notification.badge_menu" = "🎉 New Version Available!";
 "update.notification.badge_short" = "🎉 New!";
-
-// MARK: - Icon Display Mode
-"display.percentage_only" = "Percentage Only";
-"display.icon_only" = "Icon Only";
-"display.both" = "Icon and Percentage";
-"display.none" = "No Display";
-"display.account_dots" = "Dots (all accounts)";
 
 // MARK: - Refresh Interval
 "refresh.smart_mode" = "Smart Frequency";
@@ -157,8 +149,6 @@
 "detail_row.extra_usage" = "Extra Usage";
 
 // MARK: - Display Options (v2.0.0)
-"smart_display" = "Smart Display";
-"custom_display" = "Custom Display";
 "display_options.menu_bar_layout" = "Menu bar";
 "display_options.account_dots_description" = "The menu bar shows one dot per account: gray without data, green fresh, blue in use, red used up. A red ring marks a full 5-hour window.";
 

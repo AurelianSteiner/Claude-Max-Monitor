@@ -75,16 +75,14 @@ path.addArc(center: center, radius: radius,
 
 ## NSBezierPath vs SwiftUI Path: Side-by-Side
 
-This project uses both. `IconShapePaths.swift` contains SwiftUI Path methods
-(used in Canvas views) and NSBezierPath methods (used by `MenuBarIconRenderer`
-for rendering into `NSImage`).
+This project uses both. `IconShapePaths.swift` contains the SwiftUI Path
+methods (used in Canvas views); NSBezierPath drawing lives in
+`MenuBarIconRenderer` (menu bar water-gauge dots, rendered into `NSImage`).
 
-**NSBezierPath (AppKit, y-UP) — `MenuBarIconRenderer` / `ShapeIconRenderer`:**
+**NSBezierPath (AppKit, y-UP) — `MenuBarIconRenderer`:**
 - 0° = right, 90° = **up**, 180° = left, 270° = **down**
 - `clockwise: false` = visually counter-clockwise (angles increase)
 - `clockwise: true` = visually clockwise (angles decrease)
-- The background shape paths in `ShapeIconRenderer` use `clockwise: false`
-  which traces the shape counter-clockwise (correct for fill/even-odd rules)
 
 **SwiftUI Path (Canvas, y-DOWN) — `IconShapePaths` SwiftUI methods:**
 - 0° = right, 90° = **down**, 180° = left, 270° = **up**
@@ -131,7 +129,6 @@ NSBezierPath version). The current `hexagonPath` correctly starts at `-60°`.
 
 | File | Role |
 |---|---|
-| `Helpers/IconShapePaths.swift` | All shape paths — SwiftUI Path (for Canvas) and NSBezierPath (for AppKit) |
+| `Helpers/IconShapePaths.swift` | Shape paths as SwiftUI Path (for Canvas) |
 | `Views/Components/UsageRowComponents.swift` | `MiniProgressIcon` — SwiftUI Canvas, draws shape + percentage text |
-| `Helpers/MenuBarIconRenderer.swift` | NSImage rendering for menu bar icon |
-| `Helpers/ShapeIconRenderer.swift` | NSImage rendering with percentage and progress arc |
+| `App/MenuBarIconRenderer.swift` | NSImage rendering for the menu bar icon (NSBezierPath, y-UP) |

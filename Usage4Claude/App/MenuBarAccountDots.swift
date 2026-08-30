@@ -2,11 +2,11 @@
 //  MenuBarAccountDots.swift
 //  Usage4Claude
 //
-//  Datenquelle der Menüleisten-Punktreihe (`IconDisplayMode.accountDots`).
+//  Datenquelle der Menüleisten-Punktreihe (ein Wasserstand je Konto).
 //
-//  Der klassische Menüleisten-Pfad (`DataRefreshManager`) kennt nur das *aktuelle*
-//  Konto. Für „ein Wasserstand je Konto" braucht es alle Konten — die liegen bereits
-//  in `DashboardRefreshManager.shared.snapshots`. Diese Klasse abonniert sie einmalig,
+//  `DataRefreshManager` kennt nur das *aktuelle* Konto. Für „ein Wasserstand je
+//  Konto" braucht es alle Konten — die liegen bereits in
+//  `DashboardRefreshManager.shared.snapshots`. Diese Klasse abonniert sie einmalig,
 //  bringt sie über `AccountUsageSnapshot.ordered(_:mode:)` in *dieselbe* Reihenfolge
 //  wie die Übersicht, destilliert jeden Snapshot auf das, was ein Punkt tatsächlich
 //  zeigt (gerasterter Wochenpegel + Sitzung aufgebraucht), und legt das Ergebnis
@@ -69,10 +69,6 @@ final class MenuBarAccountDots {
     private var states: [MenuBarDotState] = []
     private var cancellables = Set<AnyCancellable>()
     private var isStarted = false
-    /// Hält die Dashboard-Datenquelle am Leben, solange der Punktmodus aktiv ist.
-    /// Das Flag garantiert, dass `activate()`/`deactivate()` paarweise laufen —
-    /// der Referenzzähler dort wird auch vom Übersichtsfenster benutzt.
-    private var isDrivingDashboardRefresh = false
 
     private init() {}
 
@@ -104,26 +100,20 @@ final class MenuBarAccountDots {
             }
             .store(in: &cancellables)
 
-        // Der Punktmodus braucht Daten *aller* Konten. Ohne geöffnete Übersicht
-        // holt sie sonst niemand — deshalb hängt sich die Menüleiste als
-        // zusätzlicher „Zuschauer" an den DashboardRefreshManager.
-        UserSettings.shared.$iconDisplayMode
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] mode in
-                self?.syncDashboardRefresh(for: mode)
-            }
-            .store(in: &cancellables)
-
         apply(DashboardRefreshManager.shared.snapshots, mode: UserSettings.shared.dashboardSortMode)
-        syncDashboardRefresh(for: UserSettings.shared.iconDisplayMode)
+
+        // Die Punktreihe braucht Daten *aller* Konten. Ohne geöffnete Übersicht
+        // holt sie sonst niemand — deshalb hängt sich die Menüleiste dauerhaft
+        // als zusätzlicher „Zuschauer" an den DashboardRefreshManager (der
+        // Referenzzähler dort wird auch vom Übersichtsfenster benutzt).
+        DashboardRefreshManager.shared.activate()
     }
 
     // MARK: - Lesen
 
     /// Aktueller Stand der Punktreihe.
-    /// Leeres Ergebnis heißt „noch nichts zu zeigen" — die Aufrufer fallen dann
-    /// bewusst auf die bisherige Ring-Darstellung zurück, statt eine Reihe
-    /// nichtssagender grauer Punkte in die Menüleiste zu hängen.
+    /// Leeres Ergebnis heißt „noch kein Konto hat Daten gemeldet" — `MenuBarUI`
+    /// zeigt dann graue Platzhalter-Gefäße (eins je konfiguriertem Konto).
     func currentStates() -> [MenuBarDotState] {
         lock.lock()
         defer { lock.unlock() }
@@ -154,17 +144,5 @@ final class MenuBarAccountDots {
         lock.unlock()
 
         if changed { changeSubject.send() }
-    }
-
-    private func syncDashboardRefresh(for mode: IconDisplayMode) {
-        let needsData = (mode == .accountDots)
-        guard needsData != isDrivingDashboardRefresh else { return }
-        isDrivingDashboardRefresh = needsData
-
-        if needsData {
-            DashboardRefreshManager.shared.activate()
-        } else {
-            DashboardRefreshManager.shared.deactivate()
-        }
     }
 }

@@ -57,8 +57,6 @@ class MenuBarUI {
 
     /// Eingabe eines Icon-Aufbaus, gebündelt für den Neuaufbau nach Datenänderung
     private struct IconInput {
-        let usageData: UsageData?
-        let codexUsageData: CodexUsageData?
         let hasUpdate: Bool
         let shouldShowBadge: Bool
     }
@@ -80,15 +78,8 @@ class MenuBarUI {
 
         accountDotsCancellable = MenuBarAccountDots.shared.didChange
             .sink { [weak self] in
-                guard let self = self,
-                      self.settings.iconDisplayMode == .accountDots,
-                      let last = self.lastIconInput else { return }
-                self.updateMenuBarIcon(
-                    usageData: last.usageData,
-                    codexUsageData: last.codexUsageData,
-                    hasUpdate: last.hasUpdate,
-                    shouldShowBadge: last.shouldShowBadge
-                )
+                guard let self = self, let last = self.lastIconInput else { return }
+                self.updateMenuBarIcon(hasUpdate: last.hasUpdate, shouldShowBadge: last.shouldShowBadge)
             }
     }
 
@@ -555,26 +546,31 @@ class MenuBarUI {
 
     /// 更新菜单栏图标
     /// - Parameters:
-    ///   - usageData: Claude 用量数据
-    ///   - codexUsageData: Codex 用量数据
     ///   - hasUpdate: 是否有可用更新
     ///   - shouldShowBadge: 是否显示更新徽章
-    func updateMenuBarIcon(usageData: UsageData?, codexUsageData: CodexUsageData? = nil, hasUpdate: Bool, shouldShowBadge: Bool) {
+    func updateMenuBarIcon(hasUpdate: Bool, shouldShowBadge: Bool) {
         guard let button = statusItem.button else { return }
 
         // Für den Neuaufbau nach einem Dashboard-Refresh merken
-        lastIconInput = IconInput(
-            usageData: usageData,
-            codexUsageData: codexUsageData,
-            hasUpdate: hasUpdate,
-            shouldShowBadge: shouldShowBadge
-        )
+        lastIconInput = IconInput(hasUpdate: hasUpdate, shouldShowBadge: shouldShowBadge)
 
         // 确定是否实际显示徽章
         let showBadge = hasUpdate && shouldShowBadge
 
+        // Punktreihe aller Konten. Solange noch kein Konto Daten geliefert hat,
+        // stehen graue Platzhalter-Gefäße da — eins je konfiguriertem Konto,
+        // mindestens eins als Klick-Anker —, damit die Menüleiste beim Start
+        // nie leer aussieht.
+        let dots = MenuBarAccountDots.shared.currentStates()
+        let states = dots.isEmpty
+            ? Array(
+                repeating: MenuBarDotState(weeklyUtilization: nil, sessionExhausted: false),
+                count: max(1, settings.dashboardAccounts.count)
+            )
+            : dots
+
         // 生成缓存键
-        let cacheKey = generateCacheKey(usageData: usageData, codexUsageData: codexUsageData, hasUpdate: showBadge)
+        let cacheKey = generateCacheKey(states: states, hasUpdate: showBadge)
 
         // 尝试从缓存获取
         if let cachedImage = iconCache[cacheKey] {
@@ -583,12 +579,7 @@ class MenuBarUI {
         }
 
         // 缓存未命中，使用 IconRenderer 创建新图标
-        let icon = iconRenderer.createIcon(
-            usageData: usageData,
-            codexUsageData: codexUsageData,
-            hasUpdate: showBadge,
-            button: button
-        )
+        let icon = iconRenderer.createIcon(states: states, hasUpdate: showBadge, button: button)
 
         // 存入缓存（FIFO 驱逐：先进先出，而非 Dictionary 无序遍历的随机驱逐）
         if iconCache.count >= maxCacheSize, !iconCacheOrder.isEmpty {
@@ -608,109 +599,24 @@ class MenuBarUI {
     }
 
     /// 生成图标缓存键
+    ///
+    /// Der Schlüssel muss Anzahl *und* Zustand jedes Punkts enthalten, sonst
+    /// serviert der Cache nach einem Refresh das alte Bild. Die Tokens werden in
+    /// Zeichenreihenfolge aneinandergehängt, der Schlüssel ist also
+    /// *reihenfolgeabhängig*: Sortiert die Übersicht um, ändert sich der
+    /// Schlüssel mit („g-r" ≠ „r-g") und der Cache liefert kein veraltetes Bild.
     /// - Parameters:
-    ///   - usageData: Claude 用量数据
-    ///   - codexUsageData: Codex 用量数据
+    ///   - states: die Punktzustände, die der Renderer gleich zeichnet
     ///   - hasUpdate: 是否有更新徽章
     /// - Returns: 缓存键字符串
-    private func generateCacheKey(usageData: UsageData?, codexUsageData: CodexUsageData? = nil, hasUpdate: Bool) -> String {
-        let isMulti = settings.isMultiProviderActive
-
-        // Punktreihe: Der Schlüssel muss Anzahl *und* Zustand jedes Punkts enthalten,
-        // sonst serviert der Cache nach einem Refresh das alte Bild. Die Kontodaten
-        // selbst stecken nicht in `usageData` (das ist nur das aktuelle Konto),
-        // deshalb wird hier derselbe Stand gelesen, den der Renderer gleich zeichnet
-        // — beide Aufrufe laufen synchron im selben Durchlauf auf dem Main-Thread.
-        // Die Tokens werden in Zeichenreihenfolge aneinandergehängt, der Schlüssel ist
-        // also *reihenfolgeabhängig*: Sortiert die Übersicht um, ändert sich der
-        // Schlüssel mit („g-r" ≠ „r-g") und der Cache liefert kein veraltetes Bild.
-        if settings.iconDisplayMode == .accountDots {
-            let dots = MenuBarAccountDots.shared.currentStates()
-            if !dots.isEmpty {
-                var key = "dots_\(settings.iconStyleMode.rawValue)_n\(dots.count)_"
-                    + dots.map(\.cacheToken).joined(separator: "-")
-                // „Bleib wach" zeichnet eine Kapsel um die Reihe — ohne das
-                // Flag im Schlüssel bliebe nach dem Umschalten das alte Bild
-                // hängen (bzw. die Kapsel erschiene nie).
-                if SleepGuard.shared.isAwake { key += "_awake" }
-                if hasUpdate { key += "_badge" }
-                return key
-            }
-            // Leer = Rückfall auf die Ring-Darstellung; der Modus steckt unten
-            // ohnehin im Schlüssel, damit sich beide Bilder nicht überschreiben.
-        }
-
-        guard let data = usageData else {
-            var key = "no_data_\(settings.iconDisplayMode.rawValue)_\(settings.iconStyleMode.rawValue)_\(settings.displayMode.rawValue)_mp\(isMulti)"
-            if let codex = codexUsageData {
-                let activeTypes = settings.getActiveDisplayTypes(usageData: nil, codexUsageData: codex, forMenuBar: true)
-                    .map(\.rawValue)
-                    .sorted()
-                    .joined(separator: ",")
-                key += "_types\(activeTypes)"
-
-                if let primary = codex.primary {
-                    key += "_cxp\(Int(primary.percentage))"
-                } else {
-                    key += "_cxpnil"
-                }
-
-                if let secondary = codex.secondary {
-                    key += "_cxs\(Int(secondary.percentage))"
-                } else {
-                    key += "_cxsnil"
-                }
-
-                if let extraUsage = codex.extraUsage {
-                    key += "_cxe\(extraUsage.enabled ? 1 : 0)"
-                    if let percentage = extraUsage.percentage {
-                        key += "_\(Int(percentage))"
-                    }
-                } else {
-                    key += "_cxenil"
-                }
-            }
-
-            if hasUpdate {
-                key += "_badge"
-            }
-
-            return key
-        }
-
-        var key = "\(settings.iconDisplayMode.rawValue)_\(settings.iconStyleMode.rawValue)_mp\(isMulti)"
-
-        if let fiveHour = data.fiveHour {
-            key += "_5h\(Int(fiveHour.percentage))"
-        }
-        if let sevenDay = data.sevenDay {
-            key += "_7d\(Int(sevenDay.percentage))"
-        }
-        // 每周模型限制的前两个槽位：把解析出的类型也编进 key，避免不同模型构成
-        // （如 [Fable, Opus] 与 [Opus, Sonnet]）在百分比相同时命中同一缓存、画错图标
-        if let first = data.weeklyModels.first {
-            let type = LimitType.weeklyType(forModelName: first.modelName, slot: 0)
-            key += "_w0\(type.rawValue)\(Int(first.limit.percentage))"
-        }
-        if data.weeklyModels.count > 1 {
-            let model = data.weeklyModels[1]
-            let type = LimitType.weeklyType(forModelName: model.modelName, slot: 1)
-            key += "_w1\(type.rawValue)\(Int(model.limit.percentage))"
-        }
-        if let extraUsage = data.extraUsage, extraUsage.enabled, let percentage = extraUsage.percentage {
-            key += "_extra\(Int(percentage))"
-        }
-
-        if let codex = codexUsageData {
-            if let p = codex.primary { key += "_cxp\(Int(p.percentage))" }
-            if let s = codex.secondary { key += "_cxs\(Int(s.percentage))" }
-            if let e = codex.extraUsage?.percentage { key += "_cxe\(Int(e))" }
-        }
-
-        if hasUpdate {
-            key += "_badge"
-        }
-
+    private func generateCacheKey(states: [MenuBarDotState], hasUpdate: Bool) -> String {
+        var key = "dots_\(settings.iconStyleMode.rawValue)_n\(states.count)_"
+            + states.map(\.cacheToken).joined(separator: "-")
+        // „Bleib wach" zeichnet eine Kapsel um die Reihe — ohne das
+        // Flag im Schlüssel bliebe nach dem Umschalten das alte Bild
+        // hängen (bzw. die Kapsel erschiene nie).
+        if SleepGuard.shared.isAwake { key += "_awake" }
+        if hasUpdate { key += "_badge" }
         return key
     }
 
