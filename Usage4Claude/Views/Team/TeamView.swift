@@ -28,6 +28,7 @@ struct TeamView: View {
 
     @ObservedObject private var reportStore = TeamReportStore.shared
     @ObservedObject private var server = TeamServerConnection.shared
+    @ObservedObject private var historyStore = TeamHistoryStore.shared
     @StateObject private var localization = LocalizationManager.shared
 
     /// Aufgeklappte Person (Meldungs-ID) — `nil` = Liste. Verschwindet die
@@ -228,11 +229,16 @@ struct TeamView: View {
         ScrollView {
             VStack(spacing: 6) {
                 ForEach(reports) { report in
-                    TeamMemberRow(report: report) {
+                    TeamMemberRow(report: report,
+                                  trend: historyStore.weeklyTrend(for: report)) {
                         withAnimation(.easeInOut(duration: 0.18)) {
                             selectedReportID = report.id
                         }
                     }
+                    // Verlauf träge nachladen — einmal je Person und Sitzung.
+                    // Jede sichtbare Zeile ist eine, deren Verlauf diese Rolle
+                    // auch abrufen darf (Mitglieder sehen nur sich selbst).
+                    .onAppear { historyStore.load(memberId: report.historyMemberId) }
                 }
 
                 // Wer noch nie gemeldet hat, steht trotzdem da — gedämpft,
@@ -303,6 +309,8 @@ struct TeamView: View {
 /// Scrollstrecke.
 private struct TeamMemberRow: View {
     let report: TeamReport
+    /// Wochenlage gegen ~gestern — `nil`, solange kein Verlauf geladen ist
+    let trend: TeamWeeklyTrend?
     let action: () -> Void
 
     private var weekly: Int? { TeamSummary.weeklyPercent(of: report) }
@@ -338,6 +346,17 @@ private struct TeamMemberRow: View {
                         .padding(.horizontal, 5)
                         .padding(.vertical, 1)
                         .background(Capsule().fill(DashboardPalette.fill(80).opacity(0.15)))
+                }
+
+                // Der Trend-Pfeil: Woche deutlich höher oder niedriger als
+                // ~gestern. Kleine Bewegungen zeigen keinen Pfeil — sonst
+                // trüge jede Zeile immer einen.
+                if let trend, trend.isSignificant {
+                    Image(systemName: trend.delta > 0 ? "arrow.up.right" : "arrow.down.right")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(trend.delta > 0 ? DashboardPalette.ink(80)
+                                                         : DashboardPalette.ink(0))
+                        .help(L.Team.trendHelp(trend.previous, trend.current))
                 }
 
                 if let weekly {

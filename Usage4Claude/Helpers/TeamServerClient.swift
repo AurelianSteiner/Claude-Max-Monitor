@@ -14,6 +14,8 @@
 //      GET    /v1/teams/<ID>/members             Mitglieder (super: mit Tokens)
 //      POST   /v1/teams/<ID>/members             Mitglied anlegen (nur super)
 //      DELETE /v1/teams/<ID>/members/<memberId>  Mitglied entfernen (nur super)
+//      GET    /v1/teams/<ID>/members/<memberId>/history?days=7
+//                                                Verlauf (member: nur der eigene)
 //
 //  Alles außer /health trägt "Authorization: Bearer <token>". Fehler kommen
 //  als {"error":"…"} mit 4xx/5xx und werden hier in lesbare `TeamServerError`
@@ -170,6 +172,9 @@ final class TeamServerClient {
                 // ersatzweise der Namens-Slug (Super/Admin melden ohne ID).
                 let memberId = dictionary["memberId"] as? String
                 report.fileName = "server-" + (memberId ?? TeamReport.slug(report.person))
+                // Für den Verlaufs-Endpunkt: die echte ID getrennt merken —
+                // der Rückfall dort ist der Slug des *Servers*, nicht unserer.
+                report.serverMemberId = memberId
                 reports.append(report)
             } catch {
                 Logger.team.debug("Server-Meldung übersprungen (nicht lesbar)")
@@ -208,6 +213,20 @@ final class TeamServerClient {
         }
         let data = try await request("POST", "/v1/teams/\(teamId)/members", body: body)
         return try Self.decode(Envelope.self, from: data).member
+    }
+
+    /// GET /v1/teams/<ID>/members/<memberId>/history?days=7 — der
+    /// Auslastungs-Verlauf einer Person (super/admin: jede, member: nur die
+    /// eigene). Kaputte Zeilen fliegen einzeln raus, wie bei `reports()`;
+    /// eine Person ohne Verlauf liefert schlicht ein leeres Array.
+    func history(memberId: String, days: Int = 7) async throws -> [TeamHistorySample] {
+        let escaped = memberId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? memberId
+        let data = try await request("GET", "/v1/teams/\(teamId)/members/\(escaped)/history?days=\(days)")
+        do {
+            return try TeamHistorySample.parseList(data)
+        } catch {
+            throw TeamServerError.invalidResponse
+        }
     }
 
     /// DELETE /v1/teams/<ID>/members/<memberId> — Mitglied entfernen (nur super).

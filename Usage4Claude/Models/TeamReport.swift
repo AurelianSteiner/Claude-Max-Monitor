@@ -190,6 +190,11 @@ struct TeamReport: Codable, Identifiable, Equatable {
     /// Dient als stabile Identität: pro Person genau eine Datei.
     var fileName: String = ""
 
+    /// Server-interne Mitglieds-ID — nicht Teil des JSON, setzt der Client
+    /// aus der Server-Antwort. Nur Mitglieds-Tokens haben eine; Super/Admin
+    /// melden ohne ID und werden serverseitig unter dem Namens-Slug geführt.
+    var serverMemberId: String?
+
     var id: String {
         fileName.isEmpty ? TeamReport.fileName(teamId: teamId, person: person) : fileName
     }
@@ -335,6 +340,37 @@ struct TeamReport: Codable, Identifiable, Equatable {
         return slug.isEmpty ? "person" : slug
     }
 
+    /// Unter welcher ID der Server den Verlauf dieser Person führt
+    /// (GET /members/<id>/history): die Mitglieds-ID, ersatzweise der
+    /// Namens-Slug **des Servers** — Super/Admin melden ohne ID, und ihr
+    /// Verlauf liegt unter dem Slug, den server.js aus dem Namen macht.
+    var historyMemberId: String {
+        serverMemberId ?? TeamReport.serverSlug(person)
+    }
+
+    /// Spiegelt `slug()` des Team-Relays (team-server/server.js) — bei
+    /// Änderungen dort mitziehen. Anders als `slug(_:)` oben werden Umlaute
+    /// nicht ausgeschrieben, sondern die Akzente abgestreift
+    /// („Jürgen" → „jurgen"), Obergrenze 40 statt 32, Rückfall „anonym".
+    static func serverSlug(_ value: String) -> String {
+        let folded = value.lowercased()
+            .folding(options: [.diacriticInsensitive],
+                     locale: Locale(identifier: "en_US_POSIX"))
+
+        // Läufe von allem außer a–z/0–9 werden zu genau einem Bindestrich.
+        var slug = ""
+        for character in folded {
+            if character.isASCII && (character.isLetter || character.isNumber) {
+                slug.append(character)
+            } else if !slug.isEmpty && !slug.hasSuffix("-") {
+                slug.append("-")
+            }
+        }
+        while slug.hasSuffix("-") { slug.removeLast() }
+        slug = String(slug.prefix(40))
+        return slug.isEmpty ? "anonym" : slug
+    }
+
     /// Sieht der Dateiname nach einer Meldung dieses Teams aus?
     /// Nur eine Vorsortierung — verlässlich ist allein die `teamId` im Inhalt.
     static func looksLikeReportFile(_ name: String, teamId: String) -> Bool {
@@ -398,7 +434,8 @@ struct TeamReport: Codable, Identifiable, Equatable {
 ///
 /// `[TeamLimit]` direkt zu dekodieren würde beim ersten kaputten Eintrag das
 /// ganze Array verwerfen; über diesen Umweg bleibt der Rest erhalten.
-private struct LenientDecodable<Wrapped: Decodable>: Decodable {
+/// Auch der Verlauf (`TeamHistorySample`) liest so.
+struct LenientDecodable<Wrapped: Decodable>: Decodable {
     let value: Wrapped?
 
     init(from decoder: Decoder) throws {
