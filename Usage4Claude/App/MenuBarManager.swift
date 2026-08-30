@@ -32,10 +32,6 @@ class MenuBarManager: ObservableObject {
     /// 语言变化观察者
     private var languageChangeObserver: NSObjectProtocol?
 
-    /// 当前用量数据（从 dataManager 同步）
-    @Published var usageData: UsageData?
-    /// Codex 用量数据（从 dataManager 同步）
-    @Published var codexUsageData: CodexUsageData?
     /// 是否有可用更新（由 Sparkle 的 SPUUpdaterDelegate 回调驱动）
     @Published var hasAvailableUpdate = false
     /// 最新版本号（来自 Sparkle 发现的 appcast 条目）
@@ -53,8 +49,12 @@ class MenuBarManager: ObservableObject {
 
     init() {
         ui.configureClickHandler(target: self, action: #selector(handleClick))
-        setupDataBindings()
         setupSettingsObservers()
+
+        // Erstes Bild sofort zeichnen (graue Platzhalter-Gefäße, bis die
+        // Kontodaten eintreffen) — danach hält das Punktreihen-Abo in
+        // `MenuBarUI` das Symbol von selbst aktuell.
+        updateMenuBarIcon()
 
         // Team-Server: gespeicherte Verbindung laden, Rolle prüfen und die
         // automatische Eigenmeldung starten — läuft auch ohne offenes
@@ -62,25 +62,7 @@ class MenuBarManager: ObservableObject {
         TeamServerConnection.bootstrap()
     }
 
-    /// 设置数据绑定
-    /// 将 dataManager 的状态同步到 MenuBarManager
-    private func setupDataBindings() {
-        dataManager.$usageData
-            .sink { [weak self] data in
-                self?.usageData = data
-                self?.updateMenuBarIcon()
-            }
-            .store(in: &cancellables)
 
-        dataManager.$codexUsageData
-            .sink { [weak self] data in
-                self?.codexUsageData = data
-                self?.updateMenuBarIcon()
-            }
-            .store(in: &cancellables)
-
-    }
-    
     /// 处理菜单栏图标点击事件
     /// 左键切换弹出窗口，右键显示菜单
     @objc private func handleClick(_ sender: NSStatusBarButton) {
@@ -181,12 +163,12 @@ class MenuBarManager: ObservableObject {
             .store(in: &cancellables)
 
         #if DEBUG
-        // customDisplayTypes/iconStyleMode 等几乎所有设置项改动都会 post settingsChanged，
+        // iconStyleMode 等几乎所有设置项改动都会 post settingsChanged，
         // 但只有"调试模拟模式"（debugModeEnabled）下改动才需要立即刷新——那条路径读的是本地
         // mock 数据（ClaudeAPIService.createMockData），不产生真实网络请求。
-        // 若开发者正用真实账号联调 UI（debugModeEnabled 为 false），customDisplayTypes 这类
-        // 与用量数据无关的设置不该触发真实 API 请求；此前无条件 fetchUsage() 会导致连续勾选/
-        // 取消指标时打出一串真实请求，被 API 判定请求过于频繁（429）。
+        // 若开发者正用真实账号联调 UI（debugModeEnabled 为 false），这类与用量数据
+        // 无关的设置不该触发真实 API 请求；此前无条件 fetchUsage() 会导致连续改动
+        // 设置时打出一串真实请求，被 API 判定请求过于频繁（429）。
         // 防抖仅作为同一批 mock 场景改动（如拖动滑块）的兜底合并，不是本次修复的关键。
         settingsChanged
             .debounce(for: .milliseconds(500), scheduler: DispatchQueue.main)
@@ -421,8 +403,8 @@ class MenuBarManager: ObservableObject {
 
                 self?.settingsWindow = nil
                 if self?.settings.hasAnyValidCredentials == true
-                    && self?.usageData == nil
-                    && self?.codexUsageData == nil {
+                    && self?.dataManager.usageData == nil
+                    && self?.dataManager.codexUsageData == nil {
                     self?.startRefreshing()
                 }
             }
@@ -464,7 +446,7 @@ class MenuBarManager: ObservableObject {
 
     /// 更新菜单栏图标
     private func updateMenuBarIcon() {
-        ui.updateMenuBarIcon(usageData: usageData, codexUsageData: codexUsageData, hasUpdate: hasAvailableUpdate, shouldShowBadge: shouldShowUpdateBadge)
+        ui.updateMenuBarIcon(hasUpdate: hasAvailableUpdate, shouldShowBadge: shouldShowUpdateBadge)
     }
     
     // MARK: - Cleanup

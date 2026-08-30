@@ -50,7 +50,6 @@
 "settings.general.interface_language" = "Oberflächensprache";
 "settings.general.reset_button" = "Auf Standard zurücksetzen";
 "icon_style.color_translucent" = "Farbig transparent";
-"icon_style.color_with_background" = "Farbig mit Hintergrund";
 "icon_style.monochrome" = "Einfarbig";
 
 // MARK: - Settings - Authentication
@@ -84,13 +83,6 @@
 "update.notification.available" = "Neue Version verfügbar!";
 "update.notification.badge_menu" = "🎉 Neue Version verfügbar!";
 "update.notification.badge_short" = "🎉 Neu!";
-
-// MARK: - Icon Display Mode
-"display.percentage_only" = "Nur Prozent";
-"display.icon_only" = "Nur Symbol";
-"display.both" = "Symbol und Prozent";
-"display.none" = "Keine Anzeige";
-"display.account_dots" = "Punkte (alle Konten)";
 
 // MARK: - Refresh Interval
 "refresh.smart_mode" = "Intelligente Frequenz";
@@ -156,8 +148,6 @@
 "detail_row.extra_usage" = "Zusätzliche Nutzung";
 
 // MARK: - Display Options (v2.0.0)
-"smart_display" = "Intelligente Anzeige";
-"custom_display" = "Benutzerdefinierte Anzeige";
 "display_options.menu_bar_layout" = "Menüleiste";
 "display_options.account_dots_description" = "Die Menüleiste zeigt einen Punkt je Account: grau ohne Daten, grün frisch, blau in Benutzung, rot aufgebraucht. Ein roter Ring markiert ein volles 5-Stunden-Fenster.";
 

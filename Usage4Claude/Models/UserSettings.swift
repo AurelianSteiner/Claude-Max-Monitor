@@ -14,59 +14,16 @@ import OSLog
 
 // MARK: - Display Modes
 
-/// 菜单栏图标显示模式
-enum IconDisplayMode: String, CaseIterable, Codable {
-    /// 仅显示百分比圆环
-    case percentageOnly = "percentage_only"
-    /// 仅显示应用图标
-    case iconOnly = "icon_only"
-    /// 同时显示图标和百分比
-    case both = "both"
-    /// 不显示图标（双 Provider 时显示尖头分隔线）
-    case none = "no_display"
-    /// Ein kleiner Ampelpunkt je Konto statt der Ringe des aktuellen Kontos —
-    /// dieselbe Aussage wie die Punktreihe der Übersicht, aber schmal genug,
-    /// dass macOS die Menüleiste neben der Notch nicht abschneidet.
-    case accountDots = "account_dots"
-
-    var localizedName: String {
-        switch self {
-        case .percentageOnly:
-            return L.Display.percentageOnly
-        case .iconOnly:
-            return L.Display.iconOnly
-        case .both:
-            return L.Display.both
-        case .none:
-            return L.Display.none
-        case .accountDots:
-            return L.Display.accountDots
-        }
-    }
-}
-
 /// 菜单栏图标样式模式
-/// In den Einstellungen stehen nur noch `colorTranslucent` und `monochrome` zur
-/// Wahl; `colorWithBackground` gehörte zur alten Ring-Darstellung und wird beim
-/// Laden auf `colorTranslucent` abgebildet (siehe UserSettings.init()).
+/// Die Menüleiste zeigt immer die Punktreihe (ein Wasserstand je Konto);
+/// wählbar ist nur noch farbig vs. einfarbig. Der frühere Wert
+/// `color_with_background` gehörte zur alten Ring-Darstellung — gespeicherte
+/// Reste davon fallen beim Laden auf den Standard zurück (siehe init()).
 enum IconStyleMode: String, CaseIterable, Codable {
     /// 彩色通透（默认，彩色无背景）
     case colorTranslucent = "color_translucent"
-    /// 彩色带背景
-    case colorWithBackground = "color_with_background"
     /// 单色（Template模式，跟随系统主题）
     case monochrome = "monochrome"
-
-    var localizedName: String {
-        switch self {
-        case .colorTranslucent:
-            return L.IconStyle.colorTranslucent
-        case .colorWithBackground:
-            return L.IconStyle.colorWithBackground
-        case .monochrome:
-            return L.IconStyle.monochrome
-        }
-    }
 }
 
 // MARK: - Refresh Modes
@@ -146,26 +103,6 @@ enum LimitType: String, CaseIterable, Codable {
         }
     }
 
-    /// 是否为圆形图标（5小时、7天和 Codex 两项）
-    var isCircular: Bool {
-        return self == .fiveHour || self == .sevenDay || self == .codexPrimary || self == .codexSecondary
-    }
-
-    /// 是否为矩形/带角图标（Opus、Sonnet 和 Fable 这几个每周模型限制）
-    var isRectangular: Bool {
-        return self == .opusWeekly || self == .sonnetWeekly || self == .fableWeekly
-    }
-
-    /// 是否为六边形图标（Extra Usage）
-    var isHexagonal: Bool {
-        return self == .extraUsage || self == .codexExtraUsage
-    }
-
-    /// 是否使用虚线样式（7天类型）
-    var usesDashedStyle: Bool {
-        return self == .sevenDay || self == .codexSecondary
-    }
-
     /// 把一个每周模型限制（来自 `UsageData.weeklyModels`）解析为对应的限制类型。
     /// 优先按 API 返回的模型显示名（大小写不敏感）匹配 Fable / Opus / Sonnet；
     /// 名称缺失或无法识别时，退回旧的按槽位奇偶判定（slot % 2 == 0 → Opus，否则 Sonnet），
@@ -195,25 +132,6 @@ extension UsageData {
             }
         }
         return nil
-    }
-}
-
-// MARK: - Display Mode
-
-/// 显示模式（智能显示 vs 自定义显示）
-enum DisplayMode: String, CaseIterable, Codable {
-    /// 智能显示 - 自动显示有数据的限制类型
-    case smart = "smart"
-    /// 自定义显示 - 用户手动选择要显示的限制类型
-    case custom = "custom"
-
-    var localizedName: String {
-        switch self {
-        case .smart:
-            return L.DisplayOptions.smartDisplay
-        case .custom:
-            return L.DisplayOptions.customDisplay
-        }
     }
 }
 
@@ -310,14 +228,6 @@ class UserSettings: ObservableObject {
     /// 单例实例
     static let shared = UserSettings()
 
-    /// customDisplayTypes 的默认值，init() 与 resetToDefaults() 共用，避免两处定义漂移不一致
-    static let defaultCustomDisplayTypes: Set<LimitType> = [.fiveHour, .sevenDay]
-
-    /// Merker der einmaligen Umstellung auf die Menüleisten-Punktreihe (siehe init()).
-    /// Die zugehörigen Bedienelemente sind entfallen, deshalb wird der gespeicherte
-    /// Zustand genau einmal geradegezogen statt bei jedem Start überschrieben.
-    private static let menuBarModeMigrationKey = "didMigrateToAccountDotsMenuBar"
-
     // MARK: - Properties
 
     private let defaults = UserDefaults.standard
@@ -358,31 +268,8 @@ class UserSettings: ObservableObject {
     var codexSessionToken: String { accountStore.codexSessionToken }
     var hasValidCodexCredentials: Bool { accountStore.hasValidCodexCredentials }
 
-    /// 是否同时存在 Claude 和 Codex 账户（决定 UI 进入 multi-provider 形态）
-    var isMultiProviderActive: Bool {
-        #if DEBUG
-        if debugModeEnabled {
-            if displayMode == .custom {
-                let hasClaudeDisplayTypes = customDisplayTypes.contains { $0.provider == .claude }
-                let hasCodexDisplayTypes = customDisplayTypes.contains { $0.provider == .codex }
-                return hasClaudeDisplayTypes && hasCodexDisplayTypes
-            }
-            return true
-        }
-        #endif
-        return !accounts.isEmpty && !codexAccounts.isEmpty
-    }
-
     // MARK: - 非敏感设置（存储在UserDefaults中）
 
-    /// 菜单栏图标显示模式
-    @Published var iconDisplayMode: IconDisplayMode {
-        didSet {
-            defaults.set(iconDisplayMode.rawValue, forKey: "iconDisplayMode")
-            NotificationCenter.default.post(name: .settingsChanged, object: nil)
-        }
-    }
-    
     /// 菜单栏图标样式模式
     @Published var iconStyleMode: IconStyleMode {
         didSet {
@@ -422,37 +309,6 @@ class UserSettings: ObservableObject {
     var appearance: AppAppearance {
         get { appearanceManager.appearance }
         set { appearanceManager.appearance = newValue }
-    }
-
-    /// 显示模式（智能显示/自定义显示）
-    @Published var displayMode: DisplayMode {
-        didSet {
-            defaults.set(displayMode.rawValue, forKey: "displayMode")
-            NotificationCenter.default.post(name: .settingsChanged, object: nil)
-        }
-    }
-
-    /// 自定义显示的限制类型集合（仅在自定义模式下使用）
-    @Published var customDisplayTypes: Set<LimitType> {
-        didSet {
-            let rawValues = customDisplayTypes.map { $0.rawValue }
-            defaults.set(rawValues, forKey: "customDisplayTypes")
-            NotificationCenter.default.post(name: .settingsChanged, object: nil)
-        }
-    }
-
-    /// 自定义显示是否仅应用于菜单栏（开启时 Popover 走智能显示）
-    @Published var customDisplayMenuBarOnly: Bool {
-        didSet {
-            defaults.set(customDisplayMenuBarOnly, forKey: "customDisplayMenuBarOnly")
-            NotificationCenter.default.post(name: .settingsChanged, object: nil)
-        }
-    }
-
-    /// Popover 端是否应该显示自定义模式的占位符（0% 空壳）
-    /// 仅当显示模式为 custom 且未开启"仅应用于菜单栏"时为 true
-    var shouldShowCustomPlaceholderInPopover: Bool {
-        displayMode == .custom && !customDisplayMenuBarOnly
     }
 
     // MARK: - Dashboard（多账户总览）
@@ -698,30 +554,16 @@ class UserSettings: ObservableObject {
     private init() {
         // MARK: - 从UserDefaults加载非敏感设置
 
-        // Die Menüleiste zeigt immer die Punktreihe (ein Punkt je Konto); dafür gibt
-        // es kein Bedienelement mehr. Bestandsinstallationen werden einmalig
-        // umgestellt, damit niemand auf der alten Ring-Darstellung hängen bleibt.
-        // Danach zählt wieder der gespeicherte Wert (Debug-Builds dürfen ihn setzen).
-        let needsMenuBarMigration = !defaults.bool(forKey: Self.menuBarModeMigrationKey)
-
-        if !needsMenuBarMigration,
-           let modeString = defaults.string(forKey: "iconDisplayMode"),
-           let mode = IconDisplayMode(rawValue: modeString) {
-            self.iconDisplayMode = mode
-        } else {
-            self.iconDisplayMode = .accountDots
-            defaults.set(IconDisplayMode.accountDots.rawValue, forKey: "iconDisplayMode")
-        }
-
-        // Für die Punktreihe zählt nur noch farbig vs. einfarbig; „farbig mit
-        // Hintergrund" war eine Variante der Ringe und fällt auf farbig zurück.
+        // Für die Punktreihe zählt nur noch farbig vs. einfarbig; das frühere
+        // „farbig mit Hintergrund" der Ring-Darstellung parst nicht mehr und
+        // fällt damit automatisch auf den Standard (farbig) zurück.
         if let styleString = defaults.string(forKey: "iconStyleMode"),
            let style = IconStyleMode(rawValue: styleString) {
-            self.iconStyleMode = style == .colorWithBackground ? .colorTranslucent : style
+            self.iconStyleMode = style
         } else {
             self.iconStyleMode = .colorTranslucent  // 默认彩色通透
         }
-        
+
         // 加载刷新模式，默认为智能模式
         if let modeString = defaults.string(forKey: "refreshMode"),
            let mode = RefreshMode(rawValue: modeString) {
@@ -742,35 +584,6 @@ class UserSettings: ObservableObject {
         }
 
         // 外观模式的加载已搬进 AppearanceManager.init()
-
-        // 加载显示模式，默认为智能模式。Die Auswahl „welche Limits zeige ich" ist
-        // aus den Einstellungen verschwunden; wer noch auf „benutzerdefiniert"
-        // stand, wird mit derselben einmaligen Migration auf „intelligent"
-        // zurückgeholt, sonst bliebe eine Teilauswahl ohne Bedienelement stehen.
-        if !needsMenuBarMigration,
-           let modeString = defaults.string(forKey: "displayMode"),
-           let mode = DisplayMode(rawValue: modeString) {
-            self.displayMode = mode
-        } else {
-            self.displayMode = .smart
-            defaults.set(DisplayMode.smart.rawValue, forKey: "displayMode")
-        }
-
-        // 加载自定义显示类型，默认为 5 小时和 7 天限制
-        if let rawValues = defaults.array(forKey: "customDisplayTypes") as? [String] {
-            self.customDisplayTypes = Set(rawValues.compactMap { LimitType(rawValue: $0) })
-        } else {
-            self.customDisplayTypes = Self.defaultCustomDisplayTypes
-        }
-
-        // 加载"自定义显示仅应用于菜单栏"开关，默认关闭（保持向后兼容）
-        self.customDisplayMenuBarOnly = needsMenuBarMigration ? false : defaults.bool(forKey: "customDisplayMenuBarOnly")
-
-        // Migration abschließen: ab jetzt gilt wieder der gespeicherte Zustand.
-        if needsMenuBarMigration {
-            defaults.set(false, forKey: "customDisplayMenuBarOnly")
-            defaults.set(true, forKey: Self.menuBarModeMigrationKey)
-        }
 
         // Dashboard 设置：默认开启（多账户时直接看总览，单账户时本设置不生效）
         if let sortRaw = defaults.string(forKey: "dashboardSortMode"),
@@ -889,14 +702,10 @@ class UserSettings: ObservableObject {
     /// 只重置非敏感设置，不影响认证信息
     func resetToDefaults() {
         appearance = .system
-        iconDisplayMode = .accountDots
         iconStyleMode = .colorTranslucent
         refreshMode = .smart
         refreshInterval = 180  // 固定模式默认3分钟
         language = Self.detectSystemLanguage()
-        displayMode = .smart
-        customDisplayTypes = Self.defaultCustomDisplayTypes
-        customDisplayMenuBarOnly = false
         dashboardSortMode = .availability
         dashboardColumns = 2
 
@@ -961,8 +770,7 @@ class UserSettings: ObservableObject {
 
     // MARK: - Account Management (v2.1.0)
     // 实际存取/持久化都在 AccountStore（Models/AccountStore.swift），这里只是门面转发，
-    // 保持外部调用点不变。addCodexAccount 额外处理"首次接入 Codex"的展示类型初始化，
-    // 因为那部分要读 displayMode/customDisplayTypes，属于 UserSettings 自己的地盘。
+    // 保持外部调用点不变。
 
     /// 添加新账户
     /// - Parameter account: 要添加的账户
@@ -1008,11 +816,7 @@ class UserSettings: ObservableObject {
 
     @discardableResult
     func addCodexAccount(_ account: Account) -> Account {
-        let (stored, wasFirstCodexAccount) = accountStore.addCodexAccount(account)
-        if wasFirstCodexAccount {
-            ensureDefaultCodexDisplayTypesForCustomMode()
-        }
-        return stored
+        accountStore.addCodexAccount(account).account
     }
 
     func removeCodexAccount(_ account: Account) {
@@ -1049,13 +853,6 @@ class UserSettings: ObservableObject {
         accountStore.silentlyUpdateCodexSessionToken(accountId: accountId, token: token)
     }
 
-    private func ensureDefaultCodexDisplayTypesForCustomMode() {
-        guard displayMode == .custom else { return }
-        let codexTypes: Set<LimitType> = [.codexPrimary, .codexSecondary, .codexExtraUsage]
-        guard customDisplayTypes.isDisjoint(with: codexTypes) else { return }
-        customDisplayTypes.formUnion([.codexPrimary, .codexSecondary])
-    }
-
     // MARK: - Launch at Login Management
     // 注册/注销/状态同步都在 LaunchAtLoginManager 里，这里只保留一个转发方法，
     // 供 ClaudeUsageMonitorApp（didBecomeActive）和设置页（onAppear）调用。
@@ -1067,87 +864,51 @@ class UserSettings: ObservableObject {
 
     // MARK: - Display Logic Helper Methods (v2.0)
 
-    /// 获取当前应该显示的限制类型列表
+    /// 获取当前应该显示的限制类型列表（显示所有有数据的类型）。
+    /// Die frühere „benutzerdefinierte" Auswahl ist entfallen — es gilt immer
+    /// die intelligente Regel: zeigen, was Daten hat.
     /// - Parameters:
     ///   - usageData: Claude 用量数据
     ///   - codexUsageData: Codex 用量数据（可选，有 Codex 账号时传入）
-    ///   - forMenuBar: 是否用于菜单栏渲染。当 customDisplayMenuBarOnly 开启时，
-    ///                 仅菜单栏走 custom 分支，Popover 自动 fallback 到 smart 分支
     /// - Returns: 要显示的限制类型数组，按显示顺序排列
-    func getActiveDisplayTypes(usageData: UsageData?, codexUsageData: CodexUsageData? = nil, forMenuBar: Bool = false) -> [LimitType] {
-        // 当"仅应用于菜单栏"开启且当前是为 Popover 渲染时，强制走智能分支
-        let effectiveMode: DisplayMode = {
-            if displayMode == .custom && customDisplayMenuBarOnly && !forMenuBar {
-                return .smart
-            }
-            return displayMode
-        }()
-        switch effectiveMode {
-        case .smart:
-            // 智能模式：显示所有有数据的类型
-            var types: [LimitType] = []
+    func getActiveDisplayTypes(usageData: UsageData?, codexUsageData: CodexUsageData? = nil) -> [LimitType] {
+        var types: [LimitType] = []
 
-            // Claude 类型：按规范顺序 fiveHour → sevenDay → extraUsage → opus → sonnet
-            if let data = usageData {
-                // 5小时和7天限制始终显示，因为所有账号均受这两项限制约束
-                types.append(.fiveHour)
-                types.append(.sevenDay)
-                if data.extraUsage?.enabled == true {
-                    types.append(.extraUsage)
-                }
-                // 每周模型限制（菜单栏受空间所限只呈现前两个槽位）：按模型名解析类型
-                // （Fable/Opus/Sonnet），让 Fable 作为一等类型独立出现，而不再被槽位奇偶
-                // 强行归为 Opus/Sonnet。名称缺失时 weeklyType 会退回旧的按槽位奇偶判定。
-                if let first = data.weeklyModels.first {
-                    types.append(LimitType.weeklyType(forModelName: first.modelName, slot: 0))
-                }
-                if data.weeklyModels.count > 1 {
-                    types.append(LimitType.weeklyType(forModelName: data.weeklyModels[1].modelName, slot: 1))
-                }
+        // Claude 类型：按规范顺序 fiveHour → sevenDay → extraUsage → opus → sonnet
+        if let data = usageData {
+            // 5小时和7天限制始终显示，因为所有账号均受这两项限制约束
+            types.append(.fiveHour)
+            types.append(.sevenDay)
+            if data.extraUsage?.enabled == true {
+                types.append(.extraUsage)
             }
-
-            // Codex 类型：仅在对应窗口确有数据时追加
-            // （Codex 曾临时取消5小时窗口，此时 API 只返回7天窗口，
-            //  不能像 Claude 的 fiveHour/sevenDay 那样假定 primary 必然存在）
-            if let codex = codexUsageData {
-                if codex.primary != nil {
-                    types.append(.codexPrimary)
-                }
-                if codex.secondary != nil {
-                    types.append(.codexSecondary)
-                }
-                if codex.extraUsage?.enabled == true {
-                    types.append(.codexExtraUsage)
-                }
+            // 每周模型限制的前两个槽位：按模型名解析类型（Fable/Opus/Sonnet），
+            // 让 Fable 作为一等类型独立出现，而不再被槽位奇偶强行归为 Opus/Sonnet。
+            // 名称缺失时 weeklyType 会退回旧的按槽位奇偶判定。
+            if let first = data.weeklyModels.first {
+                types.append(LimitType.weeklyType(forModelName: first.modelName, slot: 0))
             }
-
-            return types
-
-        case .custom:
-            // 自定义模式：按用户选择排序，无论数据是否存在都显示
-            // Codex 类型仅在有 Codex 账号时纳入候选；Debug mock 模式例外
-            var orderedTypes: [LimitType] = [.fiveHour, .sevenDay, .extraUsage, .opusWeekly, .sonnetWeekly, .fableWeekly]
-            var shouldIncludeCodexTypes = !codexAccounts.isEmpty
-            #if DEBUG
-            if debugModeEnabled {
-                shouldIncludeCodexTypes = true
+            if data.weeklyModels.count > 1 {
+                types.append(LimitType.weeklyType(forModelName: data.weeklyModels[1].modelName, slot: 1))
             }
-            #endif
-            if shouldIncludeCodexTypes {
-                orderedTypes.append(contentsOf: [.codexPrimary, .codexSecondary, .codexExtraUsage])
-            }
-            return orderedTypes.filter { customDisplayTypes.contains($0) }
         }
-    }
 
-    /// 判断当前配置是否可以使用彩色主题
-    /// - Returns: true 表示可以使用彩色主题
-    func canUseColoredTheme(usageData: UsageData?) -> Bool {
-        let activeTypes = getActiveDisplayTypes(usageData: usageData)
+        // Codex 类型：仅在对应窗口确有数据时追加
+        // （Codex 曾临时取消5小时窗口，此时 API 只返回7天窗口，
+        //  不能像 Claude 的 fiveHour/sevenDay 那样假定 primary 必然存在）
+        if let codex = codexUsageData {
+            if codex.primary != nil {
+                types.append(.codexPrimary)
+            }
+            if codex.secondary != nil {
+                types.append(.codexSecondary)
+            }
+            if codex.extraUsage?.enabled == true {
+                types.append(.codexExtraUsage)
+            }
+        }
 
-        // 现在所有限制类型都支持彩色显示
-        // 只要有图标就可以使用彩色主题
-        return !activeTypes.isEmpty
+        return types
     }
 }
 

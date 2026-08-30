@@ -9,8 +9,7 @@
 import SwiftUI
 
 /// 图标形状路径工具类
-/// 提供所有限制类型图标的形状路径生成方法
-/// 支持 SwiftUI Path 和 NSBezierPath 两种格式
+/// 提供所有限制类型图标的 SwiftUI 形状路径生成方法（`MiniProgressIcon` 等视图使用）
 struct IconShapePaths {
 
     // MARK: - SwiftUI Path Methods
@@ -149,122 +148,5 @@ struct IconShapePaths {
         case .extraUsage, .codexExtraUsage:
             return hexagonPath(center: center, radius: hexRadius)
         }
-    }
-
-    // MARK: - NSBezierPath Methods (for MenuBarIconRenderer)
-
-    /// 创建圆角正方形 NSBezierPath（Opus）
-    /// - Parameters:
-    ///   - center: 中心点
-    ///   - size: 正方形边长
-    /// - Returns: NSBezierPath
-    static func roundedSquareNSPath(center: CGPoint, size: CGFloat) -> NSBezierPath {
-        let path = NSBezierPath()
-        let rect = CGRect(
-            x: center.x - size / 2,
-            y: center.y - size / 2,
-            width: size,
-            height: size
-        )
-        path.appendRoundedRect(rect, xRadius: 2, yRadius: 2)
-        return path
-    }
-
-    /// 创建右上角斜切的圆角正方形 NSBezierPath（Sonnet）
-    /// - Parameters:
-    ///   - center: 中心点
-    ///   - size: 正方形边长
-    /// - Returns: NSBezierPath
-    static func chamferedSquareNSPath(center: CGPoint, size: CGFloat) -> NSBezierPath {
-        let path = NSBezierPath()
-        let rect = CGRect(
-            x: center.x - size / 2,
-            y: center.y - size / 2,
-            width: size,
-            height: size
-        )
-        let cornerRadius: CGFloat = 2.0
-        let cutSize: CGFloat = 2.5
-
-        // 从左下角开始
-        path.move(to: CGPoint(x: rect.minX, y: rect.minY + cornerRadius))
-
-        // 左边到左下圆角
-        path.appendArc(
-            withCenter: CGPoint(x: rect.minX + cornerRadius, y: rect.minY + cornerRadius),
-            radius: cornerRadius,
-            startAngle: 180,
-            endAngle: 270,
-            clockwise: false
-        )
-
-        // 底边到右下圆角
-        path.line(to: CGPoint(x: rect.maxX - cornerRadius, y: rect.minY))
-        path.appendArc(
-            withCenter: CGPoint(x: rect.maxX - cornerRadius, y: rect.minY + cornerRadius),
-            radius: cornerRadius,
-            startAngle: 270,
-            endAngle: 0,
-            clockwise: false
-        )
-
-        // 右边到斜切位置
-        path.line(to: CGPoint(x: rect.maxX, y: rect.maxY - cutSize))
-
-        // 斜切线
-        path.line(to: CGPoint(x: rect.maxX - cutSize, y: rect.maxY))
-
-        // 顶边到左上圆角
-        path.line(to: CGPoint(x: rect.minX + cornerRadius, y: rect.maxY))
-        path.appendArc(
-            withCenter: CGPoint(x: rect.minX + cornerRadius, y: rect.maxY - cornerRadius),
-            radius: cornerRadius,
-            startAngle: 90,
-            endAngle: 180,
-            clockwise: false
-        )
-
-        path.close()
-        return path
-    }
-
-    /// 创建菱形 NSBezierPath（Fable，四个顶点：上/右/下/左）
-    /// - Parameters:
-    ///   - center: 中心点
-    ///   - size: 顶点到顶点的对角线长度
-    /// - Returns: NSBezierPath
-    static func diamondNSPath(center: CGPoint, size: CGFloat) -> NSBezierPath {
-        let path = NSBezierPath()
-        let r = size / 2
-        path.move(to: CGPoint(x: center.x, y: center.y + r))    // 上
-        path.line(to: CGPoint(x: center.x + r, y: center.y))    // 右
-        path.line(to: CGPoint(x: center.x, y: center.y - r))    // 下
-        path.line(to: CGPoint(x: center.x - r, y: center.y))    // 左
-        path.close()
-        return path
-    }
-
-    /// 创建平顶六边形 NSBezierPath（Extra Usage）
-    /// - Parameters:
-    ///   - center: 中心点
-    ///   - radius: 半径
-    /// - Returns: NSBezierPath
-    static func hexagonNSPath(center: CGPoint, radius: CGFloat) -> NSBezierPath {
-        let path = NSBezierPath()
-
-        for i in 0..<6 {
-            let angle = CGFloat(i) * .pi / 3.0
-            let x = center.x + radius * cos(angle)
-            let y = center.y + radius * sin(angle)
-
-            if i == 0 {
-                path.move(to: CGPoint(x: x, y: y))
-            } else {
-                path.line(to: CGPoint(x: x, y: y))
-            }
-        }
-
-        path.close()
-        return path
     }
 }

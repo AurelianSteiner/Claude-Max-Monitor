@@ -45,6 +45,12 @@ Großer Aufräum- und Ausbau-Durchgang.
   Codex-Cookie-Login, ungenutzte Refresh-Verwaltung und über 100 verwaiste
   Übersetzungs-Schlüssel. Das Schließen der Einstellungen wirft dem noch
   offenen Übersichtsfenster nicht mehr das Dock-Symbol weg.
+- **Alte Menüleisten-Malerei entfernt.** Die Ring-/Prozent-Darstellung des
+  aktuellen Kontos (Kreise, Quadrate, Rauten, Sechsecke samt eigenem
+  Farbschema, den Anzeigemodi und der „intelligent/benutzerdefiniert"-Auswahl —
+  über 2.300 Zeilen) war seit der Punktreihe unerreichbar und ist raus. Bevor
+  das erste Konto Daten meldet, zeigt die Menüleiste jetzt graue
+  Platzhalter-Gefäße (eins je Konto) statt des alten 0-%-Rings.
 
 ## 2.6
 

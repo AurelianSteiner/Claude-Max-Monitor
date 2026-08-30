@@ -41,8 +41,7 @@ enum DashboardMetrics {
     // Innenabstand oben/unten + Kopfzeile (Name + Email) + Abstände + Headline-Block
     private static let cardChromeHeight: CGFloat = 12 * 2 + 30 + 10 + 10
 
-    /// 卡片里要展示的限制行。沿用设置里的"智能 / 自定义显示"规则，
-    /// 因此 Dashboard 与详情窗口显示的指标始终一致。
+    /// 卡片里要展示的限制行：显示所有有数据的类型（智能规则）。
     static func activeTypes(for snapshot: AccountUsageSnapshot) -> [LimitType] {
         switch snapshot.provider {
         case .claude:
@@ -56,11 +55,10 @@ enum DashboardMetrics {
         }
     }
 
-    /// 智能模式下第三个及以后的每周模型限制（如同时出现 Fable + Opus + Sonnet），
-    /// 与详情窗口一致，避免 Dashboard 少显示指标。
+    /// 第三个及以后的每周模型限制（如同时出现 Fable + Opus + Sonnet），
+    /// 避免 Dashboard 少显示指标。
     static func overflowWeeklyModels(for snapshot: AccountUsageSnapshot) -> [(offset: Int, element: UsageData.WeeklyModelLimit)] {
         guard snapshot.provider == .claude,
-              UserSettings.shared.displayMode == .smart,
               let data = snapshot.usageData else { return [] }
         return Array(Array(data.weeklyModels.enumerated()).dropFirst(2))
     }
