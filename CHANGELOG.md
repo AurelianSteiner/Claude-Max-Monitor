@@ -1,6 +1,6 @@
 # Änderungen
 
-## 2.7.1 (in Arbeit)
+## 2.7.1
 
 - Alle sehen alle: Der Team-Server liefert Meldungen und Verläufe jetzt an
   jede Rolle — wer seine Auslastung teilt, bekommt die Übersicht auch zurück.
