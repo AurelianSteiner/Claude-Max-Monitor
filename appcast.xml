@@ -3,6 +3,23 @@
     <channel>
         <title>Claude Max Monitor</title>
         <item>
+            <title>2.7.1</title>
+            <pubDate>Mon, 31 Aug 2026 02:31:10 +0000</pubDate>
+            <sparkle:version>2.7.1</sparkle:version>
+            <sparkle:shortVersionString>2.7.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[Alle sehen alle.
+
+Der Team-Server liefert Meldungen und Verläufe jetzt an jede Rolle — wer seine Auslastung teilt, bekommt die Team-Übersicht auch zurück. Vorher sahen Mitglieder nur die eigene Meldung; der erklärende Hinweis dazu ist aus der App entfernt. Die Mitgliederverwaltung bleibt Inhabern und Admins vorbehalten.
+
+Vor dem Release lief ein Security-Review über alle Änderungen seit 2.6 (Server-Endpunkte, Verlaufs-Speicher, Team-Ansichten) — ohne Befund.]]></description>
+            <enclosure
+                url="https://github.com/AurelianSteiner/Claude-Max-Monitor/releases/download/v2.7.1/Claude-Max-Monitor-2.7.1.dmg"
+                sparkle:edSignature="ZNYIHTw+mzKsvDpJV7IMso7m4C8yNDGKvAze28CVaawQvMJHTTBzZcY/CbLaEvYKbcZcgIjMlHTLOtg3cRb5Dw=="
+                length="5246596"
+                type="application/octet-stream"/>
+        </item>
+        <item>
             <title>2.7</title>
             <pubDate>Sun, 30 Aug 2026 20:35:25 +0000</pubDate>
             <sparkle:version>2.7</sparkle:version>
