@@ -7,8 +7,22 @@
 //   admin   sieht alle Meldungen des Teams, verwaltet aber nichts.
 //   member  meldet die eigene Auslastung und sieht nur die eigene Meldung.
 //
-// Es werden ausschließlich Prozentwerte, Labels und Reset-Zeitpunkte
-// gespeichert — niemals Session Keys, Chats oder andere Inhalte.
+// Gespeichert werden ausschließlich Prozentwerte, Labels und Reset-
+// Zeitpunkte — niemals Session Keys, OAuth-Tokens, Chats oder andere
+// Inhalte. Personenbezogen ist darin trotzdem etwas, und das sollte
+// wissen, wer selbst hostet oder einem Team beitritt:
+//   report.person  Anzeigename der Meldung. Gehört das Token zu einem
+//                  Eintrag in members.json (member wie admin), setzt der
+//                  Server unten den vom Inhaber vergebenen Namen ein. Zum
+//                  Super-Token gibt es keinen solchen Eintrag — dann bleibt
+//                  stehen, was die App schickt: der volle Mac-Benutzername
+//                  aus NSFullUserName().
+//   limit.label    Beschriftung einer Zeile („7 Tage"). Meldet jemand
+//                  mehrere Konten, steht der Kontoname davor — und der ist
+//                  bei OAuth-Konten ohne selbst vergebenen Alias die
+//                  E-Mail-Adresse des Logins.
+// Wer das nicht auf dem Server haben will, vergibt in der App je Konto
+// einen Alias; der steht dann anstelle der E-Mail im Label.
 //
 // Umgebungsvariablen:
 //   TEAM_TOKENS "TEAMID1:supertoken1,TEAMID2:supertoken2" — je Team genau
