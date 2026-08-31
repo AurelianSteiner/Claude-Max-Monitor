@@ -17,7 +17,8 @@
 #
 # Voraussetzungen:
 #   - Command Line Tools (xcode-select --install)
-#   - Sparkle.framework 2.9.x — wird bei Bedarf automatisch heruntergeladen
+#   - Sparkle.framework 2.9.x — wird bei Bedarf automatisch heruntergeladen und
+#     vor dem Entpacken gegen SPARKLE_SHA256 geprüft
 #
 # Verwendung:
 #   ./scripts/build_without_xcode.sh [--open]
@@ -43,6 +44,15 @@ BASE_VERSION="$(grep -m1 -oE 'MARKETING_VERSION = [0-9][^;]*' "$PROJECT_ROOT/$AP
 VERSION="${U4C_VERSION:-${BASE_VERSION}+dashboard}"
 DEPLOYMENT_TARGET="13.0"
 SPARKLE_VERSION="2.9.2"
+# SHA-256 von Sparkle-2.9.2.tar.xz, dem Release-Asset unter
+# github.com/sparkle-project/Sparkle/releases/download/2.9.2/. Das Archiv wandert
+# entpackt ins signierte Bundle und damit in jedes ausgelieferte DMG — ohne
+# Prüfsumme würde ein untergeschobenes Archiv unbesehen mitgehen.
+# Beim Versionswechsel neu bestimmen:
+#   curl -fL -o /tmp/Sparkle.tar.xz \
+#     "https://github.com/sparkle-project/Sparkle/releases/download/<version>/Sparkle-<version>.tar.xz"
+#   shasum -a 256 /tmp/Sparkle.tar.xz
+SPARKLE_SHA256="1cb340cbbef04c6c0d162078610c25e2221031d794a3449d89f2f56f4df77c95"
 # Eigener Appcast (z. B. aus dem eigenen GitHub-Fork). Gesetzt = automatische
 # Update-Prüfung an; leer = aus, damit kein fremdes Release diesen Build ersetzt.
 APPCAST_URL="${U4C_APPCAST_URL:-}"
@@ -68,13 +78,32 @@ info "SDK: $SDK_PATH"
 info "Produkt: $PRODUCT_NAME  ($BUNDLE_ID)"
 info "Version: $VERSION"
 
-if [[ ! -d "$SPARKLE_DIR/Sparkle.framework" ]]; then
+[[ -n "$SPARKLE_SHA256" ]] || fail "SPARKLE_SHA256 ist leer — Prüfsumme für Sparkle $SPARKLE_VERSION eintragen (siehe Kommentar oben)"
+
+# Ein bereits entpacktes Verzeichnis allein sagt nichts darüber aus, woher es
+# stammt. Der Stempel hält fest, gegen welche Prüfsumme der Inhalt tatsächlich
+# geprüft wurde; fehlt er oder passt er nicht, wird verworfen und neu geladen.
+SPARKLE_STAMP="$SPARKLE_DIR/.verified-sha256"
+CACHED_SHA256=""
+if [[ -f "$SPARKLE_STAMP" ]]; then
+    CACHED_SHA256="$(cat "$SPARKLE_STAMP")"
+fi
+
+if [[ ! -d "$SPARKLE_DIR/Sparkle.framework" || "$CACHED_SHA256" != "$SPARKLE_SHA256" ]]; then
     info "Sparkle $SPARKLE_VERSION wird heruntergeladen…"
+    rm -rf "$SPARKLE_DIR"
     mkdir -p "$SPARKLE_DIR"
     curl -fsSL -o "$SPARKLE_DIR/Sparkle.tar.xz" \
         "https://github.com/sparkle-project/Sparkle/releases/download/$SPARKLE_VERSION/Sparkle-$SPARKLE_VERSION.tar.xz"
+    ACTUAL_SHA256="$(shasum -a 256 "$SPARKLE_DIR/Sparkle.tar.xz" | awk '{print $1}')"
+    if [[ "$ACTUAL_SHA256" != "$SPARKLE_SHA256" ]]; then
+        rm -rf "$SPARKLE_DIR"
+        fail "Sparkle-Prüfsumme stimmt nicht — erwartet $SPARKLE_SHA256, erhalten $ACTUAL_SHA256"
+    fi
+    info "Prüfsumme bestätigt"
     tar -xf "$SPARKLE_DIR/Sparkle.tar.xz" -C "$SPARKLE_DIR"
     rm -f "$SPARKLE_DIR/Sparkle.tar.xz"
+    printf '%s\n' "$SPARKLE_SHA256" > "$SPARKLE_STAMP"
 fi
 [[ -d "$SPARKLE_DIR/Sparkle.framework" ]] || fail "Sparkle.framework nicht gefunden"
 

@@ -3,6 +3,11 @@
 *.cer
 *.certSigningRequest
 
+# Local environment files (team-server reads TEAM_TOKEN/TEAM_TOKENS from here)
+.env
+.env.*
+!.env.example
+
 # md file upload rules
 /*.md
 !/README.md

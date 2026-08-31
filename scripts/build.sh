@@ -387,10 +387,13 @@ print_success "DMG 创建完成: $DMG_PATH"
 # appcast.xml。私钥在 generate_keys 时创建并保存到登录 Keychain；详见
 # docs/SPARKLE_SETUP.md。
 #
-# 默认在 /tmp/sparkle-tools/bin 寻找 sign_update；用 $SIGN_UPDATE 环境变量
-# 覆盖（例如已通过 brew/homebrew tap 安装）。找不到时打印警告并跳过 —— 这样
-# Debug 构建在没有 Sparkle 工具的开发者机器上也能继续。
-SIGN_UPDATE="${SIGN_UPDATE:-/tmp/sparkle-tools/bin/sign_update}"
+# 默认在仓库内的 build/vendor/sparkle-tools/ 寻找 sign_update —— 与 release.sh
+# 用的路径一致。此前的默认值指向 /tmp：那是全局可写目录，任何本地进程都能抢先
+# 放一个同名可执行文件进去，而这里恰好会在弹出 Sparkle 私钥钥匙串授权提示时
+# 执行它。用 $SIGN_UPDATE 环境变量覆盖（例如已通过 brew/homebrew tap 安装）。
+# 找不到时打印警告并跳过 —— 这样 Debug 构建在没有 Sparkle 工具的开发者机器上
+# 也能继续。
+SIGN_UPDATE="${SIGN_UPDATE:-${PROJECT_ROOT}/build/vendor/sparkle-tools/sign_update}"
 
 print_header "Sparkle 签名"
 
@@ -398,7 +401,7 @@ if [[ "${CI:-}" == "true" ]]; then
     print_info "CI 环境：跳过 Sparkle 签名（由工作流的 Sign DMG 步骤处理）"
 elif [ ! -x "$SIGN_UPDATE" ]; then
     print_warning "sign_update 未找到 ($SIGN_UPDATE)，跳过 Sparkle 签名"
-    print_info "下载 Sparkle 工具：https://github.com/sparkle-project/Sparkle/releases"
+    print_info "把 Sparkle 发布包里的 bin/sign_update 放入 build/vendor/sparkle-tools/（build_without_xcode.sh 会带校验地下载该发布包）"
     print_info "或用 SIGN_UPDATE 环境变量指定已安装的 sign_update 路径"
 else
     SIGN_OUTPUT=$("$SIGN_UPDATE" "$DMG_PATH" 2>&1)

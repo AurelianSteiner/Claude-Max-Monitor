@@ -8,7 +8,12 @@
 #
 # Voraussetzungen:
 #   - gh (GitHub CLI), angemeldet
-#   - Sparkle-Werkzeuge unter build/vendor/sparkle-tools/ (legt build_without_xcode.sh an)
+#   - sign_update unter build/vendor/sparkle-tools/ — einmalig selbst dort ablegen.
+#     build_without_xcode.sh legt dieses Verzeichnis NICHT an; es lädt den
+#     Sparkle-Release-Tarball, prüft ihn gegen eine fest hinterlegte SHA-256 und
+#     entpackt ihn nach build/vendor/Sparkle-<version>/ — inklusive bin/sign_update.
+#     Von dort kopieren/verlinken. Niemals ein ungeprüftes Binary dort ablegen:
+#     es signiert die Updates aller installierten Kopien.
 #   - privater EdDSA-Schlüssel im Anmeldeschlüsselbund (einmalig via generate_keys)
 #
 # Nach dem Durchlauf melden sich installierte Kopien innerhalb einer Stunde
@@ -48,9 +53,17 @@ SIGN_UPDATE="$PROJECT_ROOT/build/vendor/sparkle-tools/sign_update"
 command -v gh >/dev/null || fail "gh nicht gefunden"
 [[ -x "$SIGN_UPDATE" ]] || fail "sign_update nicht gefunden unter $SIGN_UPDATE"
 
-# Ein sauberer Arbeitsbaum verhindert, dass ungetestete Änderungen mitgehen
+# Ein sauberer Arbeitsbaum verhindert, dass ungetestete Änderungen mitgehen —
+# und zwar hart: veröffentlicht wird der Stand des Arbeitsbaums, nicht der von
+# HEAD. Eine liegengebliebene Änderung fährt also ungeprüft in ein Release, das
+# alle installierten Kopien automatisch ziehen.
 if [[ -n "$(git status --porcelain)" ]]; then
-    warn "Arbeitsbaum ist nicht sauber — es wird der aktuelle Stand veröffentlicht"
+    if [[ "${ALLOW_DIRTY:-}" == "1" ]]; then
+        warn "Arbeitsbaum ist nicht sauber — ALLOW_DIRTY=1, es wird der aktuelle Stand veröffentlicht"
+    else
+        git status --short
+        fail "Arbeitsbaum ist nicht sauber. Änderungen committen oder verwerfen — oder bewusst mit ALLOW_DIRTY=1 ./scripts/release.sh $VERSION \"…\" erneut starten"
+    fi
 fi
 
 info "Repo:    $REPO"
@@ -109,6 +122,12 @@ from pathlib import Path
 version, url, signature, length, pub_date, description, product, appcast_url = sys.argv[1:9]
 path = Path("appcast.xml")
 
+# Ein wörtliches "]]>" in den Release-Notes würde den CDATA-Abschnitt unten
+# vorzeitig beenden und damit den Feed für alle installierten Kopien zerlegen.
+# Üblicher Kniff: die Sequenz auf zwei CDATA-Abschnitte aufteilen — der
+# angezeigte Text bleibt unverändert.
+description = description.replace("]]>", "]]]]><![CDATA[>")
+
 item = f"""        <item>
             <title>{esc.escape(version)}</title>
             <pubDate>{pub_date}</pubDate>
@@ -149,7 +168,11 @@ PYEOF
 
 # ------------------------------------------------------------------ veröffentlichen
 info "Committe appcast.xml…"
-git add appcast.xml Config/Info.plist
+# Nur die Datei, die dieses Skript tatsächlich schreibt. Config/Info.plist stand
+# hier früher mit drin, obwohl das Skript sie nie anfasst — ein versehentlich
+# geänderter SUPublicEDKey wäre so unbemerkt ins Release-Commit gerutscht und
+# hätte jedes künftige Update abgeschnitten.
+git add appcast.xml
 git commit -q -m "Release $VERSION" || warn "Nichts zu committen"
 git push -q origin main
 
