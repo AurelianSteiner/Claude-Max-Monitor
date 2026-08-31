@@ -207,6 +207,11 @@ final class AccountStore: ObservableObject {
             }
             defaults.set(true, forKey: "organizationIdMigrated")
         }
+
+        // 早期版本的 Cookie 登录会把 claude.ai 的 sessionKey 复制到 WebKit 的
+        // default store（该复制已删除）。老安装的磁盘上仍留着那份有效凭据，
+        // 一次性清掉——只有第一次真正碰 WebKit，之后靠 marker 直接返回。
+        WebsiteDataCleaner.purgeLegacyClaudeCookiesOnce()
     }
 
     // MARK: - Claude Account Management
@@ -258,6 +263,10 @@ final class AccountStore: ObservableObject {
             // 发送账户变更通知
             postAccountChanged(provider: .claude)
         }
+
+        // 只改写 Keychain 不够：磁盘上的 cookie 罐里可能还留着仍然有效的 sessionKey。
+        // 剩余的同 Provider 账号不会因此掉线，理由见 WebsiteDataCleaner 的文件头注释。
+        WebsiteDataCleaner.removeCredentialCookies(for: .claude)
 
         Logger.settings.notice("删除账户: \(account.displayName)")
     }
@@ -375,6 +384,11 @@ final class AccountStore: ObservableObject {
             currentCodexAccountId = codexAccounts.first?.id
             postAccountChanged(provider: .codex)
         }
+
+        // 同 Claude 侧：清掉磁盘上残留的 session-token cookie。静默续期会在每次
+        // 加载前重新注入当前账号的 token，剩余账号不受影响。
+        WebsiteDataCleaner.removeCredentialCookies(for: .codex)
+
         Logger.settings.notice("删除 Codex 账户: \(account.displayName)")
     }
 

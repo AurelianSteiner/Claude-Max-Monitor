@@ -111,18 +111,6 @@ final class WebLoginCoordinator: ObservableObject {
         progressObservation = nil
     }
 
-    /// 将登录 WebView（nonPersistent）中指定域的 cookie 复制到 default store
-    /// 用于在成功登录后同步 session，供 Level 2 静默刷新使用
-    private func transferCookiesToDefaultStore(domains: [String]) {
-        let sourceStore = webView.configuration.websiteDataStore.httpCookieStore
-        let destStore = WKWebsiteDataStore.default().httpCookieStore
-        sourceStore.getAllCookies { cookies in
-            let relevant = cookies.filter { c in domains.contains { c.domain.contains($0) } }
-            for cookie in relevant { destStore.setCookie(cookie) { } }
-            Logger.settings.info("WebLogin: 复制 \(relevant.count) 个 Claude cookie 到 default store")
-        }
-    }
-
     // MARK: - Cookie Monitoring
 
     /// 启动 Cookie 轮询定时器
@@ -183,7 +171,11 @@ final class WebLoginCoordinator: ObservableObject {
 
                         self.loginState = .success(accountName: account.displayName)
                         self.onAccountCreated?(account)
-                        self.transferCookiesToDefaultStore(domains: ["claude.ai"])
+                        // sessionKey 只存在于本 WebView 的 nonPersistent store 和 Keychain 中。
+                        // 早期版本会把 claude.ai cookie 复制一份到 WKWebsiteDataStore.default()，
+                        // 名义上供"Level 2 静默刷新"使用——但静默刷新只针对 Codex
+                        // （CodexSilentRefreshCoordinator 加载 chatgpt.com），Claude 侧没有任何
+                        // 代码读取该 store。那份副本因此只是一份长期留在磁盘上的有效会话凭据。
 
                         Logger.settings.notice("WebLogin: 账户创建成功 - \(account.displayName)")
                     } else {
