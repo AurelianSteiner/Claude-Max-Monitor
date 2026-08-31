@@ -92,7 +92,10 @@ final class CodexTokenRefreshCoordinator: NSObject {
                 Logger.settings.debug("CodexTokenRefresh: Set-Cookie 响应头数量=\(setCookieHeaders.count)")
                 for cookieStr in setCookieHeaders {
                     let isSessionToken = cookieStr.contains("next-auth.session-token")
-                    Logger.settings.info("CodexTokenRefresh: Set-Cookie [\(isSessionToken ? "SESSION-TOKEN" : "other")] \(cookieStr.prefix(80))")
+                    // 只记录 cookie 名与值长度——值本身是可直接使用的凭据，片段同样不可入日志
+                    let name = String(cookieStr.prefix { $0 != "=" })
+                    let valueLength = cookieStr.drop { $0 != "=" }.dropFirst().prefix { $0 != ";" }.count
+                    Logger.settings.info("CodexTokenRefresh: Set-Cookie [\(isSessionToken ? "SESSION-TOKEN" : "other")] name=\(name) len=\(valueLength)")
                 }
 
                 guard (200...299).contains(http.statusCode) else {

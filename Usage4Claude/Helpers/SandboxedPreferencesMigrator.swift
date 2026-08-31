@@ -22,9 +22,14 @@
 //  Regeln:
 //    • Nur Schlüssel übernehmen, die im Standard-Bereich noch NICHT existieren —
 //      wer 2.0 schon benutzt hat, behält seine neuen Werte.
-//    • Schlüssel wortwörtlich kopieren, nichts umbenennen. Das gilt auch für die
-//      DEBUG_-Präfix-Konvention der Debug-Builds: präfixierte wie unpräfixierte
-//      Schlüssel wandern unverändert mit.
+//    • Schlüssel wortwörtlich kopieren, nichts umbenennen — mit EINER Ausnahme:
+//      Ein Release-Build überspringt die DEBUG_-präfixierten Schlüssel. Unter
+//      diesem Präfix legen Debug-Builds ihre Zugangsdaten im Klartext in den
+//      UserDefaults ab (siehe KeychainManager). Ein Release-Build liest sie
+//      ohnehin nie — er würde sie nur aus dem Container nach
+//      ~/Library/Preferences weiterreichen und dort dauerhaft behalten.
+//      Debug-Builds übernehmen sie weiterhin, sonst wäre der Umzug für die
+//      Entwicklung wertlos.
 //    • Der Container wird NICHT gelöscht — wer auf 1.x zurückgeht, findet alles
 //      unverändert vor.
 //    • Ein kaputtes Plist darf den Start nicht reißen: loggen, Marker setzen,
@@ -77,6 +82,7 @@ enum SandboxedPreferencesMigrator {
 
             var imported = 0
             for (key, value) in entries where defaults.object(forKey: key) == nil {
+                guard shouldImport(key) else { continue }
                 defaults.set(value, forKey: key)
                 imported += 1
             }
@@ -102,5 +108,15 @@ enum SandboxedPreferencesMigrator {
             defaults.set(true, forKey: markerKey)
             log.error("Sandbox-Einstellungen nicht lesbar, Import übersprungen: \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    /// Darf dieser Schlüssel in den Standard-Bereich? Nur die DEBUG_-Zugangsdaten
+    /// der Debug-Builds bleiben im Container zurück — Begründung siehe Kopf.
+    private static func shouldImport(_ key: String) -> Bool {
+        #if DEBUG
+        return true
+        #else
+        return !key.hasPrefix("DEBUG_")
+        #endif
     }
 }

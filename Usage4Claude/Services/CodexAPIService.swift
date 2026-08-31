@@ -253,7 +253,11 @@ class CodexAPIService {
                             .compactMap { $0.value as? String }
                         Logger.api.debug("Codex session Set-Cookie 数量=\(setCookieHeaders.count)")
                         for cookieStr in setCookieHeaders where cookieStr.contains("next-auth.session-token") {
-                            Logger.api.info("Codex session Set-Cookie [SESSION-TOKEN] \(cookieStr.prefix(80))")
+                            // 只记录 cookie 名与值长度：cookie 值本身就是可直接使用的会话凭据，
+                            // 截断也无济于事——日志里不该出现它的任何片段
+                            let name = String(cookieStr.prefix { $0 != "=" })
+                            let valueLength = cookieStr.drop { $0 != "=" }.dropFirst().prefix { $0 != ";" }.count
+                            Logger.api.info("Codex session Set-Cookie [SESSION-TOKEN] name=\(name) len=\(valueLength)")
                         }
 
                         switch httpResponse.statusCode {
