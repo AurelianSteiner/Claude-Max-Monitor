@@ -4,8 +4,9 @@ import XCTest
 /// Abgedecktes Risiko: `PrivilegedPower` schreibt eine sudoers-Regel und baut
 /// ein Shell-Kommando, das als root läuft. Lässt die Namensprüfung auch nur
 /// EIN Sonderzeichen durch oder escapt das AppleScript-Literal falsch, wird
-/// aus einem Benutzernamen eine root-Shell-Injektion. Diese Tests nageln
-/// beides fest.
+/// aus einem Benutzernamen eine root-Shell-Injektion. Dazu kommt der Zuschnitt
+/// der Regel selbst: ohne Argumentliste verschenkt sie root für jeden
+/// pmset-Aufruf. Diese Tests nageln alles drei fest.
 final class PrivilegedPowerTests: XCTestCase {
 
     // MARK: - isValidShortUserName: gültige Kurznamen
@@ -59,6 +60,72 @@ final class PrivilegedPowerTests: XCTestCase {
         // Kyrillisches „а“ statt lateinischem „a“
         XCTAssertFalse(PrivilegedPower.isValidShortUserName("a\u{0430}bc"))
         XCTAssertFalse(PrivilegedPower.isValidShortUserName("äbc"))
+    }
+
+    // MARK: - sudoersRule: exakt die zwei Aufrufe, die die App absetzt
+
+    func testRuleGrantsExactlyTheTwoSwitchCommands() {
+        XCTAssertEqual(
+            PrivilegedPower.sudoersRule(for: "aurelian"),
+            "aurelian ALL=(root) NOPASSWD: /usr/bin/pmset -a disablesleep 1, /usr/bin/pmset -a disablesleep 0"
+        )
+    }
+
+    func testRuleNeverGrantsFreePmset() {
+        // Der Kern des Zuschnitts: `/usr/bin/pmset` ohne Argumentliste wäre
+        // root für JEDEN pmset-Aufruf — Zeitpläne stellen, den Mac aufwecken,
+        // Batterie-Schwellen verstellen. sudoers matcht die Argumente exakt,
+        // also muss jeder Eintrag die vollständige Liste tragen.
+        let rule = PrivilegedPower.sudoersRule(for: "aurelian")
+        let parts = rule.components(separatedBy: "NOPASSWD: ")
+        guard parts.count == 2 else { return XCTFail("Regel ohne NOPASSWD-Teil: \(rule)") }
+
+        let commands = parts[1]
+            .components(separatedBy: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+        XCTAssertFalse(commands.contains("/usr/bin/pmset"))
+        XCTAssertTrue(commands.allSatisfy { $0.hasPrefix("/usr/bin/pmset -a disablesleep ") })
+    }
+
+    func testRuleStaysOnASingleLine() {
+        // Eine zweite Zeile in /etc/sudoers.d wäre eine zweite Berechtigung.
+        let rule = PrivilegedPower.sudoersRule(for: "_svc-user")
+        XCTAssertFalse(rule.contains("\n"))
+        XCTAssertFalse(rule.contains("\r"))
+    }
+
+    // MARK: - needsRuleUpgrade: die alte, weite Regel ablösen
+
+    func testUpgradesWhenOnlyPmsetIsPasswordless() {
+        // `sudo -n pmset -g` läuft durch, `sudo -n true` nicht: das kann nur
+        // die alte Regel ohne Argumentliste sein — sie muss ersetzt werden,
+        // sonst bleibt sie liegen (der stille Weg gelingt mit ihr ja weiter).
+        XCTAssertTrue(PrivilegedPower.needsRuleUpgrade(
+            pmsetAllowedWithoutRuleArguments: true,
+            anyCommandAllowedWithoutPassword: false
+        ))
+    }
+
+    func testNoUpgradeWithNarrowRuleOrNoRule() {
+        // Die enge Regel deckt `pmset -g` nicht ab — genau wie gar keine Regel.
+        XCTAssertFalse(PrivilegedPower.needsRuleUpgrade(
+            pmsetAllowedWithoutRuleArguments: false,
+            anyCommandAllowedWithoutPassword: false
+        ))
+    }
+
+    func testNoUpgradeWhenEverythingIsPasswordlessAnyway() {
+        // Pauschales `NOPASSWD: ALL` des Benutzers: dann sagt die pmset-Probe
+        // nichts über UNSERE Regel aus. Ein „Upgrade“ brächte hier nur einen
+        // Passwortdialog pro Schaltvorgang und keinen Sicherheitsgewinn.
+        XCTAssertFalse(PrivilegedPower.needsRuleUpgrade(
+            pmsetAllowedWithoutRuleArguments: true,
+            anyCommandAllowedWithoutPassword: true
+        ))
+        XCTAssertFalse(PrivilegedPower.needsRuleUpgrade(
+            pmsetAllowedWithoutRuleArguments: false,
+            anyCommandAllowedWithoutPassword: true
+        ))
     }
 
     // MARK: - appleScriptStringLiteral
