@@ -499,6 +499,12 @@ enum L {
         static var serverUnreachable: String { localized("team.server.unreachable") }
         static var serverBadResponse: String { localized("team.server.bad_response") }
 
+        /// Eingetippte Adresse abgelehnt: https nötig (http nur lokal)
+        static var serverInsecureURL: String { localized("team.server.insecure_url") }
+        /// Gespeicherte http-Adresse aus einer älteren Version: bleibt stehen,
+        /// wird aber nicht mehr benutzt
+        static var serverInsecureSavedURL: String { localized("team.server.insecure_saved_url") }
+
         // MARK: Server-Verbindung — Karte in den Einstellungen
 
         static var serverSection: String { localized("team.server.section") }

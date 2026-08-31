@@ -14,6 +14,11 @@
 //  Schlüsselbund über den bestehenden `KeychainManager` (der in DEBUG
 //  seinerseits bewusst UserDefaults nutzt — die Konvention steckt dort).
 //
+//  Transport: Die Server-URL muss `https` sein — `http` nur zum eigenen
+//  Rechner (localhost/127.0.0.1/::1), damit ein selbst gehostetes Relay
+//  lokal ausprobiert werden kann. Sonst ginge das Bearer-Token im Klartext
+//  durchs Netz. `isSecureServerURL` ist die eine Stelle, die das entscheidet.
+//
 //  Thread-Regel wie im Projekt: Öffentliche Methoden vom Main-Thread,
 //  Completions kommen auf dem Main-Thread zurück, `@Published` wird nur
 //  auf dem Main-Thread geschrieben.
@@ -113,9 +118,20 @@ final class TeamServerConnection: ObservableObject {
     /// abgelehnt und `lastError` sagt warum.
     var isConnected: Bool { teamId != nil && token != nil }
 
+    /// Die gespeicherte Adresse trägt das Token unverschlüsselt (http auf
+    /// einen fremden Rechner) — aus einer älteren Version übrig geblieben.
+    /// Die Verbindung bleibt gespeichert, wird aber nicht benutzt; die
+    /// Oberfläche zeigt deshalb wieder das Verbinden-Formular.
+    var isServerURLInsecure: Bool { !Self.isSecureServerURL(serverURL) }
+
     /// Fertig konfigurierter Client für die aktuelle Verbindung, `nil` ohne.
+    ///
+    /// Hier hängt alles dran, was mit dem Server spricht (Meldeschleife,
+    /// Übersicht, Verlauf, Mitgliederverwaltung) — deshalb ist das die eine
+    /// Stelle, an der eine unsichere URL alles anhält: kein Client, keine
+    /// Anfrage, das Token verlässt den Rechner nicht.
     var client: TeamServerClient? {
-        guard let teamId, let token else { return nil }
+        guard let teamId, let token, Self.isSecureServerURL(serverURL) else { return nil }
         return TeamServerClient(baseURL: serverURL, teamId: teamId, token: token)
     }
 
@@ -149,8 +165,44 @@ final class TeamServerConnection: ObservableObject {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             _ = TeamAutoReporter.shared
-            if self.isConnected { self.verifyIdentity() }
+            guard self.isConnected else { return }
+            guard !self.isServerURLInsecure else {
+                // Eine http-Adresse aus einer älteren Version: Die
+                // Einstellung bleibt stehen, wie sie ist — still auf https
+                // umzuschreiben hieße, jemandem eine andere Verbindung
+                // unterzuschieben. Stattdessen bleibt sie ungenutzt (`client`
+                // gibt nichts heraus) und der Grund steht in `lastError`,
+                // direkt unter dem Server-Abschnitt der Einstellungen.
+                self.lastError = L.Team.serverInsecureSavedURL
+                Logger.team.notice("Gespeicherte Team-Server-URL ist unverschlüsselt — Verbindung wird nicht benutzt")
+                return
+            }
+            self.verifyIdentity()
         }
+    }
+
+    // MARK: - Server-URL
+
+    /// Darf über diese Adresse ein Token gehen? `https` immer — `http` nur
+    /// zum eigenen Rechner, damit sich ein selbst gehostetes Relay lokal
+    /// ausprobieren lässt. Alles andere trüge das Bearer-Token im Klartext
+    /// durchs Netz. (ATS unterbindet Klartext-http heute ohnehin; die Zusage
+    /// gehört trotzdem in den Code und nicht in die Plattform.)
+    static func isSecureServerURL(_ url: URL) -> Bool {
+        guard let scheme = url.scheme?.lowercased(),
+              let host = url.host, !host.isEmpty else { return false }
+        switch scheme {
+        case "https": return true
+        case "http":  return isLoopbackHost(host)
+        default:      return false
+        }
+    }
+
+    /// Der eigene Rechner. IPv6-Literale kommen je nach Eingabe mit oder ohne
+    /// eckige Klammern an — beides abfangen.
+    private static func isLoopbackHost(_ host: String) -> Bool {
+        let cleaned = host.trimmingCharacters(in: CharacterSet(charactersIn: "[]")).lowercased()
+        return cleaned == "localhost" || cleaned == "127.0.0.1" || cleaned == "::1"
     }
 
     // MARK: - Team-ID
@@ -174,6 +226,14 @@ final class TeamServerConnection: ObservableObject {
                  token rawToken: String,
                  completion: @escaping (Result<TeamServerIdentity, TeamServerError>) -> Void) {
         dispatchPrecondition(condition: .onQueue(.main))
+
+        // Zuerst das Ziel: Wohin das Token ginge, entscheidet sich hier —
+        // die Oberfläche prüft dasselbe, ist aber nicht die einzige Aufruferin.
+        guard Self.isSecureServerURL(serverURL) else {
+            lastError = TeamServerError.insecureURL.errorDescription
+            completion(.failure(.insecureURL))
+            return
+        }
 
         guard let teamId = Self.normalizeTeamId(rawTeamId) else {
             lastError = TeamServerError.invalidTeamId.errorDescription

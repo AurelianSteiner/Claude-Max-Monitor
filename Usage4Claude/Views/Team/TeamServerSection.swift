@@ -67,6 +67,9 @@ struct TeamServerSection: View {
     @State private var tokenInput = ""
     @State private var serverURLInput = TeamServerConnection.defaultServerURL.absoluteString
     @State private var isServerFieldExpanded = false
+    /// Die beanstandete Adresse wird genau einmal ins Feld gelegt — sonst
+    /// überschriebe ein zweites `onAppear` die halb fertige Korrektur.
+    @State private var didPrefillRejectedURL = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -75,7 +78,11 @@ struct TeamServerSection: View {
                 .fontWeight(.semibold)
                 .foregroundColor(.secondary)
 
-            if connection.isConnected {
+            // Eine gespeicherte http-Adresse wird nicht benutzt (siehe
+            // `TeamServerConnection.isServerURLInsecure`). Dann zählt die
+            // Verbindung hier als nicht hergestellt: Das Formular ist der Ort,
+            // an dem die Adresse zu reparieren ist.
+            if connection.isConnected && !connection.isServerURLInsecure {
                 connectedRow
 
                 if connection.role?.canManageMembers == true {
@@ -92,6 +99,20 @@ struct TeamServerSection: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+        .onAppear(perform: prefillRejectedURL)
+    }
+
+    /// Reparaturzustand: Die gespeicherte Adresse liegt aufgeklappt im Feld,
+    /// die Team-ID daneben — zu korrigieren ist meist nur das „http". Das
+    /// Token wird bewusst nicht mitgefüllt: Es aus dem Schlüsselbund ins Feld
+    /// zu holen, hieße ein Geheimnis ohne Not auf den Bildschirm zu legen.
+    private func prefillRejectedURL() {
+        guard connection.isServerURLInsecure, connection.isConnected,
+              !didPrefillRejectedURL else { return }
+        didPrefillRejectedURL = true
+        serverURLInput = connection.serverURL.absoluteString
+        teamIdInput = connection.teamId ?? ""
+        isServerFieldExpanded = true
     }
 
     // MARK: - Nicht verbunden
@@ -130,17 +151,30 @@ struct TeamServerSection: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
+
+            // Nur im Reparaturzustand: Die gespeicherte Verbindung besteht
+            // noch, wird aber nicht benutzt. Wer sie gar nicht mehr will,
+            // kommt hier heraus, statt eine Adresse eintippen zu müssen.
+            if connection.isConnected {
+                Button(L.Team.serverDisconnect) {
+                    connection.disconnect()
+                    serverURLInput = TeamServerConnection.defaultServerURL.absoluteString
+                    teamIdInput = ""
+                    isServerFieldExpanded = false
+                }
+                .controlSize(.small)
+            }
         }
     }
 
-    /// Eine wohlgeformte URL mit http(s) — sonst bleibt „Verbinden" aus,
-    /// statt hinterher einen Netzfehler zu melden.
+    /// Eine wohlgeformte https-URL — sonst bleibt „Verbinden" aus, statt
+    /// hinterher einen Netzfehler zu melden. Klartext-http lässt
+    /// `isSecureServerURL` nur zum eigenen Rechner durch; die Verbindung
+    /// prüft dasselbe noch einmal selbst.
     private var normalizedURL: URL? {
         let trimmed = serverURLInput.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let url = URL(string: trimmed),
-              let scheme = url.scheme?.lowercased(),
-              scheme == "http" || scheme == "https",
-              url.host != nil else { return nil }
+              TeamServerConnection.isSecureServerURL(url) else { return nil }
         return url
     }
 
@@ -335,7 +369,7 @@ struct TeamMemberManagement: View {
                     .background(Capsule().fill(Color.secondary.opacity(0.15)))
 
                 Button(action: {
-                    TeamClipboard.copy(token)
+                    TeamClipboard.copyConcealed(token)
                     flashCopied()
                 }) {
                     Image(systemName: "doc.on.doc")
@@ -440,9 +474,11 @@ struct TeamMemberManagement: View {
         }
     }
 
+    /// Die Einladung trägt das Token mitten im Text — sie ist genauso geheim
+    /// wie das Token allein und geht deshalb denselben Weg.
     private func copyInvitation(token: String?) {
         guard let token, let teamId = connection.teamId else { return }
-        TeamClipboard.copy(L.Team.invitation(teamId: teamId, token: token))
+        TeamClipboard.copyConcealed(L.Team.invitation(teamId: teamId, token: token))
         flashCopied()
     }
 

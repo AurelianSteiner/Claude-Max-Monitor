@@ -363,6 +363,8 @@
 "team.server.invalid_token" = "Invalid token.";
 "team.server.unreachable" = "Server not reachable.";
 "team.server.bad_response" = "Unexpected server response.";
+"team.server.insecure_url" = "The server URL has to use https. Plain http is only allowed for a relay on this Mac (localhost).";
+"team.server.insecure_saved_url" = "The saved server URL uses unencrypted http and is therefore not being used. Enter an https address and connect again.";
 
 /* Team — server connection (card in Settings) */
 "team.server.section" = "Connect to server";
