@@ -76,13 +76,15 @@ enum MascotIncident {
     // MARK: Wie oft
 
     /// Wahrscheinlichkeit je Läufer, ein Sheriff zu sein — im Schnitt
-    /// patrouilliert so alle anderthalb Minuten einer durchs Bild. Oft genug,
-    /// dass man ihn kennt; selten genug, dass er etwas Besonderes bleibt.
-    static let sheriffChance: Double = 1.0 / 25.0
+    /// patrouilliert so etwa jede Minute einer durchs Bild. Der Sheriff ist
+    /// Stammgast auf dem Laufsteg, kein seltenes Ereignis.
+    static let sheriffChance: Double = 1.0 / 16.0
 
-    /// Nur ungefähr jeder fünfte Sheriff zieht wirklich — die anderen schauen
-    /// nur nach dem Rechten. Zusammen mit `sheriffChance` und der Sperrfrist
-    /// unten fällt so im Schnitt alle acht bis neun Minuten ein Schuss.
+    /// Nur ungefähr jeder fünfte Sheriff schießt wirklich — die anderen
+    /// schauen nach dem Rechten (und ziehen höchstens mal zum Angeben den
+    /// Colt, siehe AwakeMascotView). Zusammen mit `sheriffChance` und der
+    /// Sperrfrist unten fällt so im Schnitt alle sechs bis sieben Minuten
+    /// ein Schuss.
     static let killChance: Double = 0.2
 
     /// So viele Nummern zurück darf kein zweites Opfer liegen. Muss über der
@@ -423,7 +425,9 @@ enum MascotIncident {
         let chestY: CGFloat = 13 + 2.2 * cell
         // Brusthöhe des Opfers, die dem Schützen zugewandte Kante
         let target = incident.x + 6.5 * cell
-        let muzzle = frozenX(of: incident.victimIndex - 1, incident: incident) - 1.3 * cell
+        // Der Colt des Sheriffs ragt einen guten Zentimeter über den alten
+        // bloßen Arm hinaus — das Mündungsfeuer sitzt an der Laufspitze.
+        let muzzle = frozenX(of: incident.victimIndex - 1, incident: incident) - 2.3 * cell
 
         func dot(_ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat, _ color: Color) {
             shots.fill(Path(CGRect(x: x, y: y, width: w, height: h)), with: .color(color))

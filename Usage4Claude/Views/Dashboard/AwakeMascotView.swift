@@ -16,10 +16,11 @@
 //  Startzeitpunkt (Abstände zufällig zwischen ~3,0 s und ~4,2 s — nie so
 //  knapp, dass zwei aufeinandersitzen) und seine Art abgeleitet: Die Hälfte
 //  läuft normal, die andere Hälfte fällt auf — Partyhut, Zylinder, ein
-//  Raucher mit Rauchfahne, ein Sprinter, der alle überholt, und einer, der
-//  seelenruhig rückwärts stapft. Dazu patrouilliert alle anderthalb Minuten
-//  ein hüpfender Sheriff — und ungefähr jeder fünfte zieht
-//  (siehe `MascotIncident`).
+//  Raucher mit Rauchfahne, ein Sprinter, der alle überholt, einer, der
+//  seelenruhig rückwärts stapft, und einer, der im kleinen roten Auto an
+//  allen vorbeirollt. Dazu patrouilliert etwa jede Minute ein hüpfender
+//  Sheriff mit Colt im Halfter — gezogen wird öfter, geschossen nur
+//  manchmal (siehe `MascotIncident`).
 //  Alle Normalen laufen exakt gleich schnell, damit die Abstände stabil
 //  bleiben und niemand auf den Vordermann aufläuft.
 //
@@ -78,9 +79,13 @@ enum MascotVariant {
     case sprinter
     /// Läuft verkehrt herum — kommt von rechts und schaut nach links
     case backwards
-    /// Der Sheriff: Cowboyhut, goldener Stern, hüpft beim Patrouillieren.
-    /// Ungefähr jeder fünfte zieht (siehe `MascotIncident`).
+    /// Der Sheriff: Cowboyhut, goldener Stern, Colt im Halfter, hüpft beim
+    /// Patrouillieren. Zieht gelegentlich zum Angeben — und ungefähr jeder
+    /// fünfte schießt wirklich (siehe `MascotIncident`).
     case sheriff
+    /// Fährt im kleinen roten Auto durch die Parade — wem das Laufen zu
+    /// langsam ist, der überholt eben alle.
+    case driver
 }
 
 /// Haltung eines Läufers. Trennt sich bewusst von `MascotVariant`: Die Variante
@@ -113,12 +118,16 @@ struct MascotParadeCanvas: View {
     static let partyTip = Color(red: 0.980, green: 0.800, blue: 0.235)  // Bommel & Sheriffstern
     static let hatBlack = Color(red: 0.16, green: 0.16, blue: 0.19)     // Zylinder
     static let sheriffHat = Color(red: 0.478, green: 0.322, blue: 0.184)     // Cowboyhut, Leder
-    static let sheriffHatDark = Color(red: 0.361, green: 0.235, blue: 0.129) // Krempe
+    static let sheriffHatDark = Color(red: 0.361, green: 0.235, blue: 0.129) // Krempe & Halfter
+    static let carBody = Color(red: 0.769, green: 0.259, blue: 0.231)   // das kleine Auto
+    static let carDark = Color(red: 0.573, green: 0.161, blue: 0.145)
+    static let wheel = Color(red: 0.13, green: 0.13, blue: 0.15)
     static let smoke = Color.secondary
 
     // Taktung der Parade
     static let baseSpeed: Double = 26        // pt/s, alle Normalen exakt gleich
     static let sprintSpeed: Double = 74      // der Eilige
+    static let carSpeed: Double = 96         // das Auto überholt sogar den
     static let avgInterval: Double = 3.6     // mittlerer Start-Abstand (s)
     static let minInterval: Double = 3.0     // nie enger — verhindert Aufsitzen,
                                              // auch wenn jemand am Grab hält
@@ -146,8 +155,9 @@ struct MascotParadeCanvas: View {
         return Double(index) * avgInterval + roll(index, 1) * jitterMax
     }
 
-    /// Je 10 % pro Sonderform, die Hälfte läuft ganz normal — und der Sheriff
-    /// kommt obendrauf (siehe `MascotIncident.sheriffChance`).
+    /// Je 10 % für die klassischen Sonderformen, 8 % fürs Auto, gut 40 %
+    /// laufen ganz normal — und der Sheriff kommt obendrauf
+    /// (siehe `MascotIncident.sheriffChance`).
     static func variant(_ index: Int) -> MascotVariant {
         // Der Schütze ist immer der Sheriff, das Opfer läuft unauffällig: Ein
         // Sprinter als Opfer wäre vor dem Schuss längst über alle Berge. Die
@@ -168,6 +178,7 @@ struct MascotParadeCanvas: View {
         if r < 0.30 { return .smoker }
         if r < 0.40 { return .sprinter }
         if r < 0.50 { return .backwards }
+        if r < 0.58 { return .driver }
         return .normal
     }
 
@@ -209,7 +220,8 @@ struct MascotParadeCanvas: View {
                 }
 
                 let kind = Self.variant(index)
-                let speed = kind == .sprinter ? Self.sprintSpeed : Self.baseSpeed
+                let speed = kind == .sprinter ? Self.sprintSpeed
+                    : (kind == .driver ? Self.carSpeed : Self.baseSpeed)
 
                 // Pause am Grab bzw. beim Zielen. Sie zieht nur *vergangene*
                 // Standzeit ab, deshalb bleibt die Position stetig.
@@ -298,6 +310,11 @@ struct MascotParadeCanvas: View {
                 baseline -= CGFloat(sin(phase / airtime * .pi)) * 5
             }
         }
+
+        // Ein Auto wippt nicht im Schritt-Takt — es rollt.
+        if variant == .driver {
+            baseline = 13.0
+        }
         walker.translateBy(x: x, y: baseline)
 
         // Umkippen: bewusst kein starres Drehen um 90°. Das Sprite ist breiter
@@ -361,8 +378,11 @@ struct MascotParadeCanvas: View {
             px(6, 1, faceInk)
         }
 
-        // Beinchen: wechseln nur beim Gehen, sonst ruhiger Stand
-        if pose == .walking, fall == 0 {
+        // Beinchen: wechseln nur beim Gehen, sonst ruhiger Stand.
+        // Der Fahrer hat keine — seine stecken im Auto, unten rollen Räder.
+        if variant == .driver {
+            // keine Beinchen
+        } else if pose == .walking, fall == 0 {
             if step {
                 px(1, 4, coralDark)
                 px(4.5, 4, coralDark)
@@ -429,11 +449,56 @@ struct MascotParadeCanvas: View {
             px(1.2, -1.5, sheriffHatDark, 5.6, 0.6)   // Krempe
             px(2.4, -2.7, sheriffHat, 3.2, 1.2)       // Krone
             px(2.4, -1.9, sheriffHatDark, 3.2, 0.4)   // Hutband
-            // Goldener Stern auf der Brust — bei vier Punkt Zellgröße ist ein
-            // kleines Plus das, was von einem Stern übrig bleibt.
-            px(1.35, 2.0, partyTip, 0.7, 0.7)
-            px(1.5, 1.75, partyTip, 0.4, 0.25)
-            px(1.5, 2.7, partyTip, 0.4, 0.25)
+            // Der Sheriffstern — unübersehbar golden auf der Krone …
+            px(3.4, -2.55, partyTip, 1.2, 0.9)
+            px(3.7, -2.85, partyTip, 0.6, 0.35)
+            // … und als Marke auf der Brust (Plus-Form: mehr Stern geben
+            // vier Punkt Zellgröße nicht her).
+            px(1.15, 1.95, partyTip, 0.9, 0.9)
+            px(1.4, 1.65, partyTip, 0.4, 0.3)
+            px(1.4, 2.85, partyTip, 0.4, 0.3)
+
+            // Colt im Halfter an der Hüfte — und ab und zu zieht er ihn zum
+            // Angeben in die Luft. Ziehen heißt noch lange nicht schießen:
+            // Ob er wirklich abdrückt, entscheidet `MascotIncident.killChance`.
+            if pose == .walking {
+                px(6.6, 2.9, sheriffHatDark, 1.0, 1.3)              // Halfter
+                let drawPeriod = 8.5
+                let drawPhase = (time + roll(seed, 43) * drawPeriod)
+                    .truncatingRemainder(dividingBy: drawPeriod)
+                if drawPhase < 1.1 {
+                    // Gezogen: Arm hoch, Lauf in die Luft
+                    px(7.4, 0.9, faceInk, 0.5, 1.5)                 // Arm
+                    px(7.1, 0.35, faceInk, 1.1, 0.55)               // Colt quer
+                    px(7.35, -0.45, faceInk, 0.45, 0.8)             // Lauf nach oben
+                } else {
+                    px(6.8, 2.55, faceInk, 0.55, 0.6)               // Griff schaut raus
+                }
+            }
+
+        case .driver:
+            // Ein kleines rotes Blechauto ums Untergestell: Karosserie über
+            // den Beinen, Räder darunter, Auspuffwölkchen hinterher. Der
+            // Fahrer ist ein ganz normaler Claudie, dem das Laufen zu
+            // langsam wurde.
+            px(-1.2, 2.4, carDark, 1.2, 1.4)                        // Heck
+            px(-0.6, 2.7, carBody, 9.6, 1.7)                        // Karosserie
+            px(8.4, 2.2, carBody, 0.9, 0.7)                         // Haube vorn
+            px(8.15, 1.4, Color.white.opacity(0.4), 0.45, 1.0)      // Windschutzscheibe
+            px(0.4, 4.1, wheel, 1.4, 1.2)                           // Hinterrad
+            px(6.4, 4.1, wheel, 1.4, 1.2)                           // Vorderrad
+            px(0.8, 4.45, Color.white.opacity(0.85), 0.5, 0.5)      // Radkappen
+            px(6.8, 4.45, Color.white.opacity(0.85), 0.5, 0.5)
+            // Auspuff: kleine Wölkchen, die hinten abreißen und verwehen
+            for puff in 0..<3 {
+                let phase = (time * 0.9 + Double(puff) * 0.33 + roll(seed, 41))
+                    .truncatingRemainder(dividingBy: 1)
+                let puffAlpha = (1 - phase) * 0.55
+                guard puffAlpha > 0.04 else { continue }
+                let grow = 0.7 + phase * 0.8
+                px(-1.6 - phase * 2.4, 3.3 - phase * 1.1,
+                   smoke.opacity(puffAlpha), grow, grow)
+            }
         }
     }
 
@@ -448,9 +513,11 @@ struct MascotParadeCanvas: View {
             break
 
         case .aiming:
-            // Kurzer dunkler Arm nach vorn plus finstere Brauen. Die Spiegelung
-            // oben dreht beides mit, wenn er nach links zielt.
-            px(8, 2.1, faceInk, 1.4, 0.5)
+            // Ausgestreckter Arm mit gezogenem Colt plus finstere Brauen.
+            // Die Spiegelung oben dreht alles mit, wenn er nach links zielt.
+            px(8, 2.1, faceInk, 1.4, 0.5)                // Arm
+            px(9.35, 1.95, faceInk, 1.0, 0.5)            // Lauf
+            px(9.15, 2.45, faceInk, 0.45, 0.65)          // Griff
             px(2.7, 0.45, faceInk, 1.4, 0.3)
             px(5.7, 0.45, faceInk, 1.4, 0.3)
 
