@@ -371,10 +371,8 @@ struct DashboardView: View {
                 stayAwakeToggle(showsLabel: density.showsSleepLabel)
                 stayAwakeInfoButton
                 teamToggle
-                if !mode.showsTeam {
-                    // Sortierung und Spalten betreffen nur das Konten-Gitter
-                    sortMenu
-                }
+                // Der Reihenfolge-/Spalten-Regler wohnt bei den Karten, die er
+                // ordnet (siehe `grid`) — nicht mehr hier oben rechts.
                 actionMenu
             }
             .fixedSize()
@@ -743,27 +741,44 @@ struct DashboardView: View {
                     maxHeight: isStandaloneWindow ? .infinity : boxHeight
                 )
         } else {
-            ScrollView(.vertical, showsIndicators: true) {
-                // Im eigenen Fenster mittig, damit der Rest der Breite links und
-                // rechts gleichmäßig verteilt wird; im popover deckungsgleich.
-                LazyVGrid(columns: gridColumns, alignment: isStandaloneWindow ? .center : .leading, spacing: DashboardMetrics.cardSpacing) {
-                    ForEach(orderedSnapshots) { snapshot in
-                        AccountUsageCard(
-                            snapshot: snapshot,
-                            showRemainingMode: $showRemainingMode,
-                            onSelect: { select(snapshot) },
-                            onRefresh: { manager.refreshAccount(id: snapshot.id) },
-                            onOpenAuthSettings: { onMenuAction?(.authSettings) }
-                        )
-                    }
+            // Der Reihenfolge-/Spalten-Regler steht direkt über den Karten,
+            // die er ordnet — dort, wo seine Wirkung zu sehen ist, statt oben
+            // rechts in der Kopfzeile. Die schmale Zeile kommt auf die
+            // Wunschhöhe obendrauf, damit die Karten nicht gestaucht werden.
+            let sortRowHeight: CGFloat = 24
+            VStack(spacing: 0) {
+                HStack {
+                    Spacer()
+                    sortMenu
                 }
-                .padding(DashboardMetrics.outerPadding)
-                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.horizontal, DashboardMetrics.outerPadding)
+                .padding(.top, 4)
+                .frame(height: sortRowHeight)
+
+                ScrollView(.vertical, showsIndicators: true) {
+                    // Im eigenen Fenster mittig, damit der Rest der Breite links und
+                    // rechts gleichmäßig verteilt wird; im popover deckungsgleich.
+                    LazyVGrid(columns: gridColumns, alignment: isStandaloneWindow ? .center : .leading, spacing: DashboardMetrics.cardSpacing) {
+                        ForEach(orderedSnapshots) { snapshot in
+                            AccountUsageCard(
+                                snapshot: snapshot,
+                                showRemainingMode: $showRemainingMode,
+                                onSelect: { select(snapshot) },
+                                onRefresh: { manager.refreshAccount(id: snapshot.id) },
+                                onOpenAuthSettings: { onMenuAction?(.authSettings) }
+                            )
+                        }
+                    }
+                    .padding(.horizontal, DashboardMetrics.outerPadding)
+                    .padding(.bottom, DashboardMetrics.outerPadding)
+                    .padding(.top, 2)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                }
             }
             .frame(
-                minHeight: isStandaloneWindow ? min(boxHeight, 160) : boxHeight,
-                idealHeight: boxHeight,
-                maxHeight: isStandaloneWindow ? .infinity : boxHeight
+                minHeight: isStandaloneWindow ? min(boxHeight, 160) + sortRowHeight : boxHeight + sortRowHeight,
+                idealHeight: boxHeight + sortRowHeight,
+                maxHeight: isStandaloneWindow ? .infinity : boxHeight + sortRowHeight
             )
         }
     }
