@@ -1,5 +1,17 @@
 # Änderungen
 
+## 2.7.2 (in Arbeit)
+
+- Der Reihenfolge-/Spalten-Regler ist von oben rechts zu den Karten gezogen,
+  die er ordnet — eine schmale Zeile direkt über dem Kartenbereich.
+- Der Sheriff kommt jetzt etwa jede Minute, trägt einen unübersehbaren
+  goldenen Stern auf Hut und Brust und einen Colt im Halfter. Alle paar
+  Sekunden zieht er ihn zum Angeben in die Luft — gezogen wird oft,
+  geschossen weiterhin nur manchmal. Wenn er schießt, sitzt das
+  Mündungsfeuer jetzt an der Laufspitze des gezogenen Colts.
+- Neu in der Parade: ein Claudie im kleinen roten Auto — schneller als der
+  Sprinter, mit Rädern statt Beinchen, Windschutzscheibe und Auspuffwölkchen.
+
 ## 2.7.1
 
 - Alle sehen alle: Der Team-Server liefert Meldungen und Verläufe jetzt an
@@ -55,14 +67,6 @@ Großer Aufräum- und Ausbau-Durchgang.
   Handeingabe-Login stehen eingeklappt unter „Weitere Anmeldewege".
 - **Willkommensfenster entfernt.** Der Erststart öffnet die Übersicht mit ihrem
   Leerzustand — der Knopf dort führt direkt in die Konten-Einstellungen.
-- **Verläufe im Team-Detail.** Die Detailansicht einer Person zeigt je
-  Wochenlimit eine 7-Tage-Kurve aus dem Server-Verlauf, die Zeilen der
-  Übersicht einen Trendpfeil (heute gegen gestern). Die Daten sammeln sich,
-  sobald der Server sie führt — die ersten Kurven wachsen ab jetzt.
-- **Die alte Ring-Darstellung der Menüleiste ist vollständig ausgebaut**
-  (~2 400 Zeilen): Prozent-Ringe, Formen je Limit und die unsichtbar
-  gewordenen Anzeige-Modi. Bevor Daten geladen sind, zeigt die Leiste jetzt
-  graue Platzhalter-Gefäße statt der alten Ringe.
 - **Totes Gewicht raus**: das komplette, unerreichbare Diagnose-Subsystem
   (~1.900 Zeilen), die Überreste des alten Einzelkonto-Detailfensters, der tote
   Codex-Cookie-Login, ungenutzte Refresh-Verwaltung und über 100 verwaiste
