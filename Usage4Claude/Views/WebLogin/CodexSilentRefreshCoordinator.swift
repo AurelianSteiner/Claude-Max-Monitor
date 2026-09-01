@@ -16,7 +16,9 @@ import OSLog
 /// WKWebView，load chatgpt.com。WebKit 会自动携带当前进程中已有的所有 Cookie（含
 /// Cloudflare 的 cf_clearance/__cf_bm），服务端进行 NextAuth OAuth 刷新后通过
 /// Set-Cookie 下发续期后的新 session-token，WebKit 自动存入共享 data store。
-/// 加载完成后从 cookie store 读取新 session-token 并静默写回 Keychain。
+/// 加载完成后从 cookie store 读取新 session-token 并静默写回 Keychain，
+/// 随后把注入的 token 再从共享 store 中删掉（见 finish）——凭据只在续期的
+/// 那几秒里躺在磁盘上，Keychain 始终是唯一的真实来源。
 ///
 /// 适用场景：Level 1 SSR 刷新失败后的降级路径。比 URLSession 路径更可靠，
 /// 因为 WebKit 使用真实浏览器级别的 Cookie + TLS 指纹，通过 Cloudflare 的成功率更高。
@@ -198,6 +200,10 @@ final class CodexSilentRefreshCoordinator: NSObject {
         webView?.navigationDelegate = nil
         webView = nil
         navigationDelegate = nil
+        // 注入的 session-token 不留在磁盘上的 default() store 里：新值此时已写回
+        // Keychain，而下一次续期本来就会先删旧值再重新注入。Cloudflare 的
+        // cf_clearance/__cf_bm 不在清理范围内，留着供下次通行。
+        WebsiteDataCleaner.removeCredentialCookiesFromWebKitStore(for: .codex)
         let cb = completion
         completion = nil
         cb?(result)

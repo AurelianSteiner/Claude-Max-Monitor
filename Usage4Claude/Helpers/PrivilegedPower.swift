@@ -19,13 +19,15 @@
 //
 //  Was die Regel erlaubt — und was nicht:
 //
-//      <kurzname> ALL=(root) NOPASSWD: /usr/bin/pmset
+//      <kurzname> ALL=(root) NOPASSWD: /usr/bin/pmset -a disablesleep 1,
+//                                      /usr/bin/pmset -a disablesleep 0
+//                                      (in der Datei EINE Zeile)
 //
-//    Genau EIN Binary: /usr/bin/pmset als root, ohne Passwort, nur für den
-//    angemeldeten Benutzer. pmset verwaltet ausschließlich Energie-
-//    einstellungen — es startet keine Programme, liest keine Dateien fremder
-//    Nutzer und eskaliert nichts darüber hinaus. Dieser enge Zuschnitt ist
-//    der ganze Sinn der Regel: kein „NOPASSWD: ALL“, kein Shell-Zugriff.
+//    Genau die zwei Aufrufe, die diese Datei absetzt — sudoers vergleicht
+//    die Argumentliste Zeichen für Zeichen, jeder andere pmset-Aufruf bleibt
+//    passwortpflichtig. Kein „NOPASSWD: ALL“, kein Shell-Zugriff, und auch
+//    kein freies pmset (das sonst Zeitpläne stellen, den Mac aufwecken oder
+//    Batterie-Schwellen verstellen könnte).
 //    Wieder loswerden:  sudo rm /etc/sudoers.d/claude-max-monitor
 //
 //  Sicherheitsregeln in diesem File:
@@ -36,6 +38,11 @@
 //    • Die Regel wird erst mit `visudo -cf` validiert und nur bei Erfolg
 //      nach /etc/sudoers.d installiert (440, root:wheel) — eine kaputte
 //      Datei dort kann sudo systemweit lahmlegen.
+//    • Ältere Versionen installierten die Regel noch OHNE Argumentliste
+//      (freies pmset als root). Die Datei ist 440 root:wheel und für die App
+//      unlesbar, also wird die alte Regel an ihrer Wirkung erkannt (siehe
+//      `hasLegacyBroadRule`) und beim nächsten bewussten Schaltvorgang durch
+//      die enge ersetzt — sonst bliebe sie für immer liegen.
 //    • Das Passwort sieht ausschließlich der System-Dialog. Die App liest,
 //      loggt und speichert nichts dergleichen — hier gibt es schlicht keinen
 //      Code-Pfad, der es je zu Gesicht bekäme.
@@ -81,13 +88,28 @@ enum PrivilegedPower {
     /// Benutzeraktion aufrufen (Schalter in der Übersicht), nie beim Start.
     static func setSleepDisabled(_ on: Bool, completion: @escaping (Result<Void, PrivilegedPowerError>) -> Void) {
         queue.async {
-            if runSilently(on) {
-                DispatchQueue.main.async { completion(.success(())) }
-                return
-            }
-            let result = runInteractively(on)
+            let result = apply(on)
             DispatchQueue.main.async { completion(result) }
         }
+    }
+
+    /// Schaltvorgang inklusive Regel-Upgrade. Blockierend, läuft auf `queue`.
+    private static func apply(_ on: Bool) -> Result<Void, PrivilegedPowerError> {
+        // Die Prüfung muss VOR dem stillen Weg stehen: die alte, weite Regel
+        // deckt `pmset -a disablesleep` mit ab, `runSilently` würde also
+        // gelingen und sie stillschweigend für immer liegen lassen.
+        if hasLegacyBroadRule() {
+            log.notice("Alte, zu weite sudoers-Regel erkannt — wird durch die enge ersetzt")
+            let upgraded = runInteractively(on)
+            if case .success = upgraded { return upgraded }
+            // Abgebrochen oder fehlgeschlagen: die alte Regel liegt noch und
+            // trägt den Schaltvorgang weiter — daran darf der Schalter nicht
+            // scheitern. Der nächste Schaltvorgang versucht das Upgrade erneut.
+            return runSilently(on) ? .success(()) : upgraded
+        }
+
+        if runSilently(on) { return .success(()) }
+        return runInteractively(on)
     }
 
     /// Nur der stille Weg (`sudo -n`) — für den Start der App (Re-Apply des
@@ -117,11 +139,23 @@ enum PrivilegedPower {
     /// installiert ist. Kein Dialog, keine Rückfrage — `-n` bricht sonst
     /// sofort ab.
     private static func runSilently(_ on: Bool) -> Bool {
+        let ok = sudoAllowsWithoutPassword([pmsetPath, "-a", "disablesleep", on ? "1" : "0"])
+        if ok {
+            log.notice("disablesleep still auf \(on ? "1" : "0", privacy: .public) gesetzt")
+        }
+        return ok
+    }
+
+    /// Ein `sudo -n`-Versuch: `true`, wenn der Befehl ohne Passwort durchlief.
+    /// `-n` bricht ab, statt zu fragen — hier erscheint nie ein Dialog.
+    /// Ausgabe geht nach /dev/null statt in eine Pipe, damit kein ungelesener
+    /// Puffer den Prozess vor `waitUntilExit` festhalten kann.
+    private static func sudoAllowsWithoutPassword(_ arguments: [String]) -> Bool {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/sudo")
-        process.arguments = ["-n", pmsetPath, "-a", "disablesleep", on ? "1" : "0"]
-        process.standardOutput = Pipe()
-        process.standardError = Pipe()
+        process.arguments = ["-n"] + arguments
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
 
         do {
             try process.run()
@@ -130,12 +164,34 @@ enum PrivilegedPower {
             return false
         }
         process.waitUntilExit()
+        return process.terminationStatus == 0
+    }
 
-        let ok = process.terminationStatus == 0
-        if ok {
-            log.notice("disablesleep still auf \(on ? "1" : "0", privacy: .public) gesetzt")
-        }
-        return ok
+    // MARK: - Alte, zu weite Regel erkennen
+
+    /// Liegt noch die alte Regel ohne Argumentliste (freies pmset als root)?
+    ///
+    /// Die Regeldatei ist 440 root:wheel und für die App unlesbar; geprüft
+    /// wird deshalb ihre Wirkung. `pmset -g` liest nur Einstellungen (keine
+    /// Nebenwirkung) und ist von der ALTEN Regel gedeckt, von der engen nicht.
+    private static func hasLegacyBroadRule() -> Bool {
+        // Die Gegenprobe erst, wenn die erste anschlägt: sonst spawnt jeder
+        // Schaltvorgang ein sudo für nichts und hinterlässt im Systemlog eine
+        // überflüssige „not allowed“-Zeile.
+        guard sudoAllowsWithoutPassword([pmsetPath, "-g"]) else { return false }
+        return needsRuleUpgrade(
+            pmsetAllowedWithoutRuleArguments: true,
+            anyCommandAllowedWithoutPassword: sudoAllowsWithoutPassword(["/usr/bin/true"])
+        )
+    }
+
+    /// Auswertung der beiden Proben. Wer ohnehin ein pauschales `NOPASSWD: ALL`
+    /// eingerichtet hat, lässt auch `/usr/bin/true` durch — dann sagt die
+    /// pmset-Probe nichts über UNSERE Regel aus, und ein „Upgrade“ brächte nur
+    /// einen Passwortdialog bei jedem Schaltvorgang.
+    static func needsRuleUpgrade(pmsetAllowedWithoutRuleArguments: Bool,
+                                 anyCommandAllowedWithoutPassword: Bool) -> Bool {
+        pmsetAllowedWithoutRuleArguments && !anyCommandAllowedWithoutPassword
     }
 
     // MARK: - Einmal-Freigabe (interaktiv)
@@ -151,7 +207,7 @@ enum PrivilegedPower {
             // Regel + Schaltvorgang in EINEM Admin-Kontext. `set -e` bricht
             // beim ersten Fehler ab: scheitert visudo, wird nichts
             // installiert und pmset nicht ausgeführt.
-            let rule = "\(user) ALL=(root) NOPASSWD: \(pmsetPath)"
+            let rule = sudoersRule(for: user)
             shell = [
                 "set -e",
                 "umask 077",
@@ -208,6 +264,18 @@ enum PrivilegedPower {
 
         log.error("Einmal-Freigabe fehlgeschlagen: \(message, privacy: .public)")
         return .failure(.failed(message))
+    }
+
+    // MARK: - Die Regel
+
+    /// Die Einmal-Regel — eine Zeile, exakt die beiden Aufrufe aus
+    /// `runSilently`. sudoers deckt nur Argumentlisten ab, die Zeichen für
+    /// Zeichen passen; ohne Liste stünde jeder pmset-Aufruf offen. Wer den
+    /// Aufruf in `runSilently` ändert, muss diese Zeile mitziehen, sonst
+    /// fragt die App wieder bei jedem Schaltvorgang nach dem Passwort.
+    /// - Parameter user: MUSS `isValidShortUserName` bestanden haben.
+    static func sudoersRule(for user: String) -> String {
+        "\(user) ALL=(root) NOPASSWD: \(pmsetPath) -a disablesleep 1, \(pmsetPath) -a disablesleep 0"
     }
 
     // MARK: - Validierung & Escaping

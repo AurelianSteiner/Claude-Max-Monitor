@@ -42,6 +42,9 @@ enum TeamServerError: Error, Equatable {
     case invalidTeamId
     /// Token leer oder vom Server abgelehnt (401)
     case invalidToken
+    /// Server-URL ohne TLS — es wurde nichts gesendet, das Token bliebe
+    /// sonst im Klartext im Netz (nur `localhost` darf http)
+    case insecureURL
     /// Netz weg, Timeout, DNS — alles, was vor einer Antwort schiefgeht
     case network(String)
     /// Der Server hat geantwortet, aber mit einem Fehler ({"error": …})
@@ -56,6 +59,7 @@ extension TeamServerError: LocalizedError {
         case .notConnected:               return L.Team.serverNotConnected
         case .invalidTeamId:              return L.Team.serverInvalidTeamId
         case .invalidToken:               return L.Team.serverInvalidToken
+        case .insecureURL:                return L.Team.serverInsecureURL
         case .network:                    return L.Team.serverUnreachable
         case .server(_, let message):     return message
         case .invalidResponse:            return L.Team.serverBadResponse

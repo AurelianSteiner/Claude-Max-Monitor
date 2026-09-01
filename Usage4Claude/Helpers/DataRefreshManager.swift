@@ -399,8 +399,9 @@ class DataRefreshManager: ObservableObject {
             markCodexNeedsRelogin()
             return
         }
-        let prefix = UserSettings.shared.codexSessionToken.prefix(16)
-        Logger.menuBar.info("Codex accessToken 已过期，启动三级刷新链（session prefix=\(prefix)…）")
+        // 只记录长度：token 片段同样是凭据材料，不进日志（长度 0 即表示没有凭据）
+        let tokenLength = UserSettings.shared.codexSessionToken.count
+        Logger.menuBar.info("Codex accessToken 已过期，启动三级刷新链（session-token 长度=\(tokenLength)）")
         attemptLevel1SSRRefresh()
     }
 

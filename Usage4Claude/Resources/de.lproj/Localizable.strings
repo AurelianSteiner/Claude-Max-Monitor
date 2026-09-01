@@ -362,6 +362,8 @@
 "team.server.invalid_token" = "Token ungültig.";
 "team.server.unreachable" = "Server nicht erreichbar.";
 "team.server.bad_response" = "Unerwartete Antwort vom Server.";
+"team.server.insecure_url" = "Die Server-URL muss https verwenden. Unverschlüsseltes http ist nur für ein Relay auf diesem Mac (localhost) erlaubt.";
+"team.server.insecure_saved_url" = "Die gespeicherte Server-URL nutzt unverschlüsseltes http und wird deshalb nicht verwendet. Eine https-Adresse eintragen und neu verbinden.";
 
 /* Team — Server-Verbindung (Karte in den Einstellungen) */
 "team.server.section" = "Mit Server verbinden";
